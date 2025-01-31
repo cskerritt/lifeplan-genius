@@ -19,10 +19,8 @@ export function LocationSelector({
 }: LocationSelectorProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Remove any non-numeric characters and ensure it's exactly 5 digits
-    const cleanZip = zipCode.replace(/\D/g, '').slice(0, 5);
-    if (cleanZip.length === 5) {
-      onLookup(cleanZip);
+    if (zipCode.length === 5) {
+      onLookup(zipCode);
     }
   };
 
@@ -36,7 +34,7 @@ export function LocationSelector({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="zipCode">ZIP Code</Label>
-        <div className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             id="zipCode"
             placeholder="Enter ZIP code"
@@ -48,13 +46,13 @@ export function LocationSelector({
             required
           />
           <Button 
-            onClick={handleSubmit}
+            type="submit"
             disabled={isLoading || !zipCode || zipCode.length !== 5}
           >
             <Search className="h-4 w-4 mr-2" />
             {isLoading ? 'Looking up...' : 'Lookup'}
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   );

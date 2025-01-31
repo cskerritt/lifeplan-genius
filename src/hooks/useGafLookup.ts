@@ -17,7 +17,7 @@ export function useGafLookup() {
   const lookupGeoFactors = async (zipCode: string) => {
     // Clean and pad the ZIP code
     const cleanZip = zipCode.replace(/\D/g, '').padStart(5, '0');
-    console.log('Looking up GAF for ZIP:', cleanZip);
+    console.log('Looking up ZIP:', cleanZip);
     
     // Validate the ZIP code format
     if (cleanZip.length !== 5) {
@@ -58,7 +58,7 @@ export function useGafLookup() {
       return data;
 
     } catch (error) {
-      console.error('Error looking up geographic factors:', error);
+      console.error('Error looking up location:', error);
       toast({
         variant: "destructive",
         title: "Error",
