@@ -19,12 +19,11 @@ export function LocationSelector({
 }: LocationSelectorProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (zipCode.length !== 5) return;
-    
-    // Pad the ZIP code with leading zeros if needed
-    const paddedZip = zipCode.padStart(5, '0');
-    console.log('Looking up ZIP code:', paddedZip);
-    onLookup(paddedZip);
+    // Remove any non-numeric characters and ensure it's exactly 5 digits
+    const cleanZip = zipCode.replace(/\D/g, '').slice(0, 5);
+    if (cleanZip.length === 5) {
+      onLookup(cleanZip);
+    }
   };
 
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {

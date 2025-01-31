@@ -38,10 +38,9 @@ export default function EvalueeInfoForm({
   };
 
   const handleZipLookup = async (zipCode: string) => {
-    const formattedZip = zipCode.padStart(5, '0');
-    console.log('Looking up ZIP:', formattedZip);
+    console.log('Looking up ZIP:', zipCode);
     
-    const gafData = await lookupGeoFactors(formattedZip);
+    const gafData = await lookupGeoFactors(zipCode);
     
     if (gafData) {
       handleFieldChange('city', gafData.city || '');

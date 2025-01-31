@@ -15,7 +15,11 @@ export function useGafLookup() {
   const { toast } = useToast();
 
   const lookupGeoFactors = async (zipCode: string) => {
-    if (!zipCode || zipCode.length !== 5) {
+    // Clean the ZIP code - remove non-numeric characters
+    const cleanZip = zipCode.replace(/\D/g, '');
+    
+    // Validate the ZIP code format
+    if (!/^\d{5}$/.test(cleanZip)) {
       toast({
         variant: "destructive",
         title: "Invalid ZIP Code",
@@ -25,13 +29,13 @@ export function useGafLookup() {
     }
 
     setIsLoading(true);
-    console.log('Looking up GAF for ZIP:', zipCode);
+    console.log('Looking up GAF for ZIP:', cleanZip);
 
     try {
       const { data, error } = await supabase
         .from('gaf_lookup')
         .select('mfr_code, pfr_code, city, state_name')
-        .eq('zip', zipCode)
+        .eq('zip', cleanZip)
         .maybeSingle();
 
       if (error) throw error;
