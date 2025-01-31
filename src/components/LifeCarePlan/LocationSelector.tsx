@@ -32,6 +32,7 @@ export function LocationSelector({
     }
     // Pad the ZIP code with leading zeros if needed
     const paddedZip = zipCode.padStart(5, '0');
+    console.log('Looking up ZIP code:', paddedZip); // Debug log
     onLookup(paddedZip);
   };
 
