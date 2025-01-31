@@ -79,9 +79,9 @@ export function StateSelector({
 }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
   
-  // Ensure that we always have an array to work with
+  // Ensure we always have a valid array to work with
   const displayStates = React.useMemo(() => {
-    return Array.isArray(states) ? states : US_STATES;
+    return Array.isArray(states) && states.length > 0 ? states : US_STATES;
   }, [states]);
 
   const selectedState = React.useMemo(
@@ -113,7 +113,7 @@ export function StateSelector({
             <CommandInput placeholder="Search states..." />
             <CommandEmpty>No state found.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-auto">
-              {(Array.isArray(displayStates) ? displayStates : []).map((state) => (
+              {displayStates.map((state) => (
                 <CommandItem
                   key={state.id}
                   value={state.name}
