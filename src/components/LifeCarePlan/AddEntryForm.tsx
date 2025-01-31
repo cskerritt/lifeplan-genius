@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CPTCode } from '@/types/lifecare';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { CPTCodeSearch } from './CPTCodeSearch';
+import { AgeRangeForm } from './AgeRangeForm';
+import { FrequencyForm } from './FrequencyForm';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface AddEntryFormProps {
@@ -25,64 +25,10 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
   const [startAge, setStartAge] = useState('');
   const [endAge, setEndAge] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [cptOptions, setCptOptions] = useState<CPTCode[]>([]);
-  const [showCptOptions, setShowCptOptions] = useState(false);
   const [selectedCPT, setSelectedCPT] = useState<CPTCode | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('costs');
-
-  const searchCPTCodes = async (term: string) => {
-    if (!term) {
-      setCptOptions([]);
-      setShowCptOptions(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('cpt_codes')
-        .select('*')
-        .or(`code.ilike.%${term}%,code_description.ilike.%${term}%`)
-        .limit(10);
-
-      if (error) throw error;
-      setCptOptions(data as CPTCode[]);
-      setShowCptOptions(true);
-    } catch (error) {
-      console.error('Error searching CPT codes:', error);
-      setError('Error searching CPT codes');
-    }
-  };
-
-  const handleCPTSelection = async (cpt: CPTCode) => {
-    try {
-      const { data: geoData, error: geoError } = await supabase
-        .from('geographic_factors')
-        .select('*')
-        .eq('zip', zipCode.padStart(5, '0'))
-        .maybeSingle();
-
-      if (geoError) throw geoError;
-
-      if (!geoData) {
-        throw new Error('No geographic factors found for this ZIP code');
-      }
-
-      setSelectedCPT({
-        ...cpt,
-        mfr_factor: geoData.mfr_factor || 1,
-        pfr_factor: geoData.pfr_factor || 1
-      });
-
-      setSearchTerm(cpt.code);
-      setItem(cpt.code_description);
-      setShowCptOptions(false);
-    } catch (error) {
-      console.error('Error getting geographic factors:', error);
-      setError('Error calculating adjusted rates');
-    }
-  };
 
   const calculateCosts = () => {
     if (!selectedCPT) return null;
@@ -100,6 +46,35 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
       avg_cost: avgCost,
       mfr_adjusted: selectedCPT.mfu_50th * mfrFactor,
       pfr_adjusted: selectedCPT.pfr_50th * pfrFactor
+    };
+  };
+
+  const calculateFrequencyCosts = (baseCosts: ReturnType<typeof calculateCosts>) => {
+    if (!baseCosts) return null;
+
+    if (isOneTime) {
+      return {
+        min_annual_cost: 0,
+        max_annual_cost: 0,
+        avg_annual_cost: 0,
+        one_time_cost: baseCosts.avg_cost
+      };
+    }
+
+    const minFreq = parseFloat(minFrequency) || 0;
+    const maxFreq = parseFloat(maxFrequency) || minFreq;
+    const minDur = parseFloat(minDuration) || 1;
+    const maxDur = parseFloat(maxDuration) || minDur;
+
+    const minAnnualCost = baseCosts.min_cost * minFreq;
+    const maxAnnualCost = baseCosts.max_cost * maxFreq;
+    const avgAnnualCost = (minAnnualCost + maxAnnualCost) / 2;
+
+    return {
+      min_annual_cost: minAnnualCost,
+      max_annual_cost: maxAnnualCost,
+      avg_annual_cost: avgAnnualCost,
+      one_time_cost: null
     };
   };
 
@@ -161,9 +136,9 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-semibold">Add {category} Entry</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="h-5 w-5" />
-          </Button>
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -180,172 +155,58 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
               <TabsTrigger value="frequency">Frequency</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="costs" className="space-y-4">
-              <div className="relative">
-                <Label>CPT Code</Label>
-                <Input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    searchCPTCodes(e.target.value);
-                  }}
-                  placeholder="Search CPT codes..."
-                />
-                {showCptOptions && cptOptions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto">
-                    {cptOptions.map((option) => (
-                      <button
-                        key={option.code}
-                        type="button"
-                        className="w-full px-4 py-2 text-left hover:bg-gray-100"
-                        onClick={() => handleCPTSelection(option)}
-                      >
-                        <div className="font-medium">{option.code}</div>
-                        <div className="text-sm text-gray-500">{option.code_description}</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <Label>Item Description</Label>
-                <Input
-                  type="text"
-                  value={item}
-                  onChange={(e) => setItem(e.target.value)}
-                  required
-                />
-              </div>
-
-              {selectedCPT && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Cost Summary</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Base Rate</p>
-                      <p className="text-lg font-semibold">${selectedCPT.pfr_50th.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">MFR Adjusted</p>
-                      <p className="text-lg font-semibold">
-                        ${(selectedCPT.pfr_50th * (selectedCPT.mfr_factor || 1)).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">PFR Adjusted</p>
-                      <p className="text-lg font-semibold">
-                        ${(selectedCPT.pfr_50th * (selectedCPT.pfr_factor || 1)).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <TabsContent value="costs">
+              <CPTCodeSearch
+                onSelect={setSelectedCPT}
+                zipCode={zipCode}
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+                selectedCPT={selectedCPT}
+              />
             </TabsContent>
 
-            <TabsContent value="age" className="space-y-4">
-              <div>
-                <Label>Start Age</Label>
-                <Input
-                  type="number"
-                  value={startAge}
-                  onChange={(e) => setStartAge(e.target.value)}
-                  required
-                  min="0"
-                  step="0.1"
-                />
-              </div>
-              <div>
-                <Label>End Age</Label>
-                <Input
-                  type="number"
-                  value={endAge}
-                  onChange={(e) => setEndAge(e.target.value)}
-                  required
-                  min="0"
-                  step="0.1"
-                />
-              </div>
+            <TabsContent value="age">
+              <AgeRangeForm
+                startAge={startAge}
+                endAge={endAge}
+                onStartAgeChange={setStartAge}
+                onEndAgeChange={setEndAge}
+              />
             </TabsContent>
 
-            <TabsContent value="frequency" className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="oneTime"
-                  checked={isOneTime}
-                  onChange={(e) => setIsOneTime(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600"
-                />
-                <Label htmlFor="oneTime">One-time cost</Label>
-              </div>
-
-              {!isOneTime && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Minimum Frequency</Label>
-                      <Input
-                        type="number"
-                        value={minFrequency}
-                        onChange={(e) => setMinFrequency(e.target.value)}
-                        required={!isOneTime}
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <div>
-                      <Label>Maximum Frequency</Label>
-                      <Input
-                        type="number"
-                        value={maxFrequency}
-                        onChange={(e) => setMaxFrequency(e.target.value)}
-                        min={parseFloat(minFrequency) || 0}
-                        step="0.01"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Minimum Duration (years)</Label>
-                      <Input
-                        type="number"
-                        value={minDuration}
-                        onChange={(e) => setMinDuration(e.target.value)}
-                        required={!isOneTime}
-                        min="0.1"
-                        step="0.1"
-                      />
-                    </div>
-                    <div>
-                      <Label>Maximum Duration (years)</Label>
-                      <Input
-                        type="number"
-                        value={maxDuration}
-                        onChange={(e) => setMaxDuration(e.target.value)}
-                        min={parseFloat(minDuration) || 0.1}
-                        step="0.1"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+            <TabsContent value="frequency">
+              <FrequencyForm
+                isOneTime={isOneTime}
+                onIsOneTimeChange={setIsOneTime}
+                minFrequency={minFrequency}
+                maxFrequency={maxFrequency}
+                minDuration={minDuration}
+                maxDuration={maxDuration}
+                onMinFrequencyChange={setMinFrequency}
+                onMaxFrequencyChange={setMaxFrequency}
+                onMinDurationChange={setMinDuration}
+                onMaxDurationChange={setMaxDuration}
+                costs={calculateFrequencyCosts(calculateCosts())}
+              />
             </TabsContent>
           </Tabs>
 
           <div className="flex justify-between pt-6 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={loading || !selectedCPT || !startAge || !endAge ||
                 (!isOneTime && (!minFrequency || !minDuration))}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {loading ? 'Saving...' : 'Save Entry'}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
