@@ -16,6 +16,11 @@ interface DemographicsDisplayProps {
 export default function DemographicsDisplay({ ageData, geoFactors }: DemographicsDisplayProps) {
   console.log('GAF values:', geoFactors); // Debug log
 
+  const formatNumber = (value: number | undefined | null) => {
+    if (value === null || value === undefined) return 'N/A';
+    return value.toFixed(4);
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-4">
@@ -42,13 +47,13 @@ export default function DemographicsDisplay({ ageData, geoFactors }: Demographic
           <div>
             <p className="text-sm text-gray-500">MFR</p>
             <p className="text-2xl font-bold">
-              {geoFactors?.mfr_code ? geoFactors.mfr_code.toFixed(4) : 'N/A'}
+              {formatNumber(geoFactors?.mfr_code)}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-500">PFR</p>
             <p className="text-2xl font-bold">
-              {geoFactors?.pfr_code ? geoFactors.pfr_code.toFixed(4) : 'N/A'}
+              {formatNumber(geoFactors?.pfr_code)}
             </p>
           </div>
         </div>
