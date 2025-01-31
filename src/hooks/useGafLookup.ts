@@ -2,20 +2,14 @@ import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface GafFactors {
-  mfr_code: number;
-  pfr_code: number;
-  city?: string;
-  state_name?: string;
-}
-
 export function useGafLookup() {
-  const [geoFactors, setGeoFactors] = useState<GafFactors | null>(null);
+  const [geoFactors, setGeoFactors] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
   const { toast } = useToast();
 
   const lookupCitiesByState = async (state: string) => {
+    console.log('🔍 Looking up cities for state:', state);
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -24,14 +18,17 @@ export function useGafLookup() {
         .eq('state_name', state)
         .not('city', 'is', null);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching cities:', error);
+        throw error;
+      }
 
-      // Get unique cities
+      console.log('📍 Found cities:', data);
       const uniqueCities = Array.from(new Set(data.map(row => row.city))).filter(Boolean);
       setCities(uniqueCities as string[]);
 
     } catch (error) {
-      console.error('Error looking up cities:', error);
+      console.error('❌ Error in lookupCitiesByState:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -43,10 +40,12 @@ export function useGafLookup() {
   };
 
   const lookupGeoFactors = async (zipCode: string) => {
+    console.log('🔍 Looking up ZIP:', zipCode);
     const cleanZip = zipCode.replace(/\D/g, '').padStart(5, '0');
-    console.log('Looking up ZIP:', cleanZip);
+    console.log('🧹 Cleaned ZIP:', cleanZip);
     
     if (cleanZip.length !== 5) {
+      console.warn('⚠️ Invalid ZIP length:', cleanZip.length);
       toast({
         variant: "destructive",
         title: "Invalid ZIP Code",
@@ -58,15 +57,22 @@ export function useGafLookup() {
     setIsLoading(true);
 
     try {
+      console.log('📡 Fetching from Supabase...');
       const { data, error } = await supabase
         .from('gaf_lookup')
-        .select('mfr_code, pfr_code, city, state_name')
+        .select('city, state_name, mfr_code, pfr_code')
         .eq('zip', cleanZip)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        throw error;
+      }
+
+      console.log('📦 Received data:', data);
 
       if (!data) {
+        console.warn('⚠️ No data found for ZIP:', cleanZip);
         toast({
           variant: "destructive",
           title: "Location Not Found",
@@ -83,6 +89,7 @@ export function useGafLookup() {
         state_name: data.state_name
       };
 
+      console.log('✅ Processed factors:', factors);
       setGeoFactors(factors);
       
       toast({
@@ -93,7 +100,7 @@ export function useGafLookup() {
       return factors;
 
     } catch (error) {
-      console.error('Error looking up location:', error);
+      console.error('❌ Error in lookupGeoFactors:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -106,5 +113,5 @@ export function useGafLookup() {
     }
   };
 
-  return { geoFactors, cities, isLoading, lookupGeoFactors, lookupCitiesByState };
+  return { geoFactors, isLoading, cities, lookupGeoFactors, lookupCitiesByState };
 }

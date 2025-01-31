@@ -16,6 +16,8 @@ interface DemographicsDisplayProps {
 }
 
 export default function DemographicsDisplay({ ageData, geoFactors }: DemographicsDisplayProps) {
+  console.log('🎯 DemographicsDisplay rendered with geoFactors:', geoFactors);
+  
   const formatNumber = (value: number | undefined | null) => {
     if (value === null || value === undefined) return 'N/A';
     return value.toFixed(4);
