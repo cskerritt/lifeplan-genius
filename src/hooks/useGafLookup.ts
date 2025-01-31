@@ -25,16 +25,13 @@ export function useGafLookup() {
         .eq('state_name', state)
         .not('city', 'is', null);
 
-      if (error) {
-        console.error('❌ Error fetching cities:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       const uniqueCities = Array.from(new Set(data.map(row => row.city))).filter(Boolean);
       setCities(uniqueCities as string[]);
 
     } catch (error) {
-      console.error('❌ Error in lookupCitiesByState:', error);
+      console.error('Error in lookupCitiesByState:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -45,26 +42,24 @@ export function useGafLookup() {
     }
   };
 
-  const lookupGeoFactors = async (input: string) => {
-    console.log('🔍 Looking up:', input);
+  const lookupGeoFactors = async (zipCode: string) => {
+    console.log('Looking up ZIP:', zipCode);
     setIsLoading(true);
     
     try {
+      // Format ZIP code to ensure 5 digits with leading zeros
+      const formattedZip = zipCode.padStart(5, '0');
+      
       const { data, error } = await supabase
         .from('gaf_lookup')
         .select('city, state_name, mfr_code, pfr_code')
-        .eq('zip', input.padStart(5, '0'))
+        .eq('zip', formattedZip)
         .maybeSingle();
 
-      if (error) {
-        console.error('❌ Query error:', error);
-        throw error;
-      }
-
-      console.log('📦 Raw query response:', data);
+      if (error) throw error;
 
       if (!data) {
-        console.warn(`⚠️ No data found for ZIP: ${input}`);
+        console.warn(`No data found for ZIP: ${zipCode}`);
         toast({
           variant: "destructive",
           title: "Location Not Found",
@@ -74,8 +69,6 @@ export function useGafLookup() {
         return null;
       }
 
-      console.log('✨ Processing data:', data);
-      
       const factors: GafFactors = {
         mfr_code: data.mfr_code,
         pfr_code: data.pfr_code,
@@ -83,18 +76,12 @@ export function useGafLookup() {
         state_name: data.state_name
       };
 
-      console.log('✅ Final processed factors:', factors);
+      console.log('Geographic factors found:', factors);
       setGeoFactors(factors);
-      
-      toast({
-        title: "Location Found",
-        description: `Found location data for ${data.city}, ${data.state_name}`
-      });
-
       return factors;
 
     } catch (error) {
-      console.error('❌ Error in lookupGeoFactors:', error);
+      console.error('Error in lookupGeoFactors:', error);
       toast({
         variant: "destructive",
         title: "Error",
