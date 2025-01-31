@@ -1,9 +1,12 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface State {
   id: string;
@@ -23,82 +26,25 @@ export function StateSelector({
   isLoading = false, 
   onValueChange 
 }: StateSelectorProps) {
-  const [open, setOpen] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
-
-  const selectedState = React.useMemo(() => 
-    states.find((state) => state.id === value),
-    [states, value]
-  );
-
-  const filteredStates = React.useMemo(() => {
-    if (!Array.isArray(states)) return [];
-    return states.filter((state) => 
-      state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      state.id.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [states, searchQuery]);
-
   return (
     <div className="space-y-2">
       <Label htmlFor="state">State</Label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            id="state"
-            role="combobox"
-            aria-expanded={open}
-            aria-label="Select state"
-            type="button"
-            className={cn(
-              "w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-              !value && "text-muted-foreground"
-            )}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              "Loading states..."
-            ) : selectedState ? (
-              selectedState.name
-            ) : (
-              "Select state"
-            )}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0">
-          <Command>
-            <CommandInput 
-              placeholder="Search states..." 
-              value={searchQuery}
-              onValueChange={setSearchQuery}
-              className="h-9"
-            />
-            <CommandEmpty>No state found.</CommandEmpty>
-            <CommandGroup className="max-h-[300px] overflow-auto">
-              {filteredStates.map((state) => (
-                <CommandItem
-                  key={state.id}
-                  value={state.name}
-                  onSelect={() => {
-                    onValueChange(state.id);
-                    setOpen(false);
-                    setSearchQuery("");
-                  }}
-                >
-                  {state.name}
-                  <Check
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      value === state.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      <Select 
+        value={value} 
+        onValueChange={onValueChange}
+        disabled={isLoading}
+      >
+        <SelectTrigger id="state">
+          <SelectValue placeholder={isLoading ? "Loading states..." : "Select state"} />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.isArray(states) && states.map((state) => (
+            <SelectItem key={state.id} value={state.id}>
+              {state.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
