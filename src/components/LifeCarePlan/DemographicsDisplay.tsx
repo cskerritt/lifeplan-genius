@@ -1,5 +1,5 @@
 import React from 'react';
-import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 interface DemographicsDisplayProps {
   ageData: {
@@ -8,47 +8,51 @@ interface DemographicsDisplayProps {
     projectedAgeAtDeath: number;
   };
   geoFactors: {
-    mfr_factor: number;
-    pfr_factor: number;
+    mfr_code: number;
+    pfr_code: number;
   } | null;
 }
 
 export default function DemographicsDisplay({ ageData, geoFactors }: DemographicsDisplayProps) {
+  console.log('GAF values:', geoFactors); // Debug log
+
   return (
     <div className="space-y-6">
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <Card className="p-4">
         <h3 className="text-lg font-medium mb-4">Age Information</h3>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <Label>Age Today</Label>
-            <div className="text-2xl font-bold mt-1">{ageData.ageToday}</div>
+            <p className="text-sm text-gray-500">Age Today</p>
+            <p className="text-2xl font-bold">{ageData.ageToday}</p>
           </div>
           <div>
-            <Label>Age at Injury</Label>
-            <div className="text-2xl font-bold mt-1">{ageData.ageAtInjury}</div>
+            <p className="text-sm text-gray-500">Age at Injury</p>
+            <p className="text-2xl font-bold">{ageData.ageAtInjury}</p>
           </div>
           <div>
-            <Label>Projected Age at Death</Label>
-            <div className="text-2xl font-bold mt-1">{ageData.projectedAgeAtDeath.toFixed(2)}</div>
+            <p className="text-sm text-gray-500">Projected Age at Death</p>
+            <p className="text-2xl font-bold">{ageData.projectedAgeAtDeath.toFixed(1)}</p>
           </div>
         </div>
-      </div>
+      </Card>
 
-      {geoFactors && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-medium mb-4">Geographic Adjustment Factors</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>MFR</Label>
-              <div className="text-2xl font-bold mt-1">{geoFactors.mfr_factor?.toFixed(4)}</div>
-            </div>
-            <div>
-              <Label>PFR</Label>
-              <div className="text-2xl font-bold mt-1">{geoFactors.pfr_factor?.toFixed(4)}</div>
-            </div>
+      <Card className="p-4">
+        <h3 className="text-lg font-medium mb-4">Geographic Adjustment Factors</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-gray-500">MFR</p>
+            <p className="text-2xl font-bold">
+              {geoFactors?.mfr_code ? geoFactors.mfr_code.toFixed(4) : 'N/A'}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">PFR</p>
+            <p className="text-2xl font-bold">
+              {geoFactors?.pfr_code ? geoFactors.pfr_code.toFixed(4) : 'N/A'}
+            </p>
           </div>
         </div>
-      )}
+      </Card>
     </div>
   );
 }

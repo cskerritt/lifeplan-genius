@@ -76,18 +76,30 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
   const lookupGeoFactors = async (zip: string) => {
     if (zip.length !== 5) return;
 
+    console.log('Looking up GAF for ZIP:', zip); // Debug log
+
     try {
       const { data, error } = await supabase
         .from('gaf_lookup')
-        .select('*')
+        .select('mfr_code, pfr_code')
         .eq('zip', zip.padStart(5, '0'))
         .maybeSingle();
 
       if (error) throw error;
+      
+      console.log('GAF lookup result:', data); // Debug log
+
       if (data) {
         setGeoFactors({
-          mfr_factor: data.mfr_code,
-          pfr_factor: data.pfr_code
+          mfr_code: data.mfr_code,
+          pfr_code: data.pfr_code
+        });
+      } else {
+        setGeoFactors(null);
+        toast({
+          variant: "destructive",
+          title: "ZIP Code Not Found",
+          description: "No geographic adjustment factors found for this ZIP code"
         });
       }
     } catch (error) {
