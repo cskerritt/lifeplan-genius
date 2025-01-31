@@ -15,22 +15,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CareItem } from "@/types/lifecare";
 
-const PlanForm = () => {
+interface PlanFormProps {
+  onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
+}
+
+const PlanForm = ({ onSubmit }: PlanFormProps) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    
+    const item = {
+      category: formData.get("category") as string,
+      service: formData.get("service") as string,
+      frequency: formData.get("frequency") as string,
+      cptCode: formData.get("cptCode") as string,
+      costPerUnit: Number(formData.get("cost")),
+    };
+
+    onSubmit(item);
+    form.reset();
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Add Care Item</CardTitle>
-        <CardDescription>
-          Add a new item to the life care plan
-        </CardDescription>
+        <CardDescription>Add a new item to the life care plan</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select>
+              <Select name="category">
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -44,16 +64,21 @@ const PlanForm = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="service">Service</Label>
-              <Input id="service" placeholder="Enter service name" />
+              <Input id="service" name="service" placeholder="Enter service name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cptCode">CPT/HCPCS Code</Label>
+              <Input id="cptCode" name="cptCode" placeholder="Enter code" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="frequency">Frequency</Label>
-              <Input id="frequency" placeholder="e.g., 2x per week" />
+              <Input id="frequency" name="frequency" placeholder="e.g., 2x per week" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cost">Cost per Unit</Label>
               <Input
                 id="cost"
+                name="cost"
                 type="number"
                 placeholder="Enter cost"
                 min="0"
@@ -61,7 +86,7 @@ const PlanForm = () => {
               />
             </div>
           </div>
-          <Button className="w-full bg-medical-500 hover:bg-medical-600">
+          <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
             Add Item
           </Button>
         </form>
