@@ -23,7 +23,7 @@ export function useLocationData() {
     const fetchLocations = async () => {
       setIsLoading(true);
       try {
-        // Fetch distinct states from gaf_lookup
+        // Fetch distinct states first
         const { data: statesData, error: statesError } = await supabase
           .from('gaf_lookup')
           .select('state_id, state_name')
@@ -33,18 +33,11 @@ export function useLocationData() {
 
         if (statesData) {
           // Create a unique set of states
-          const uniqueStatesMap = new Map();
-          statesData.forEach(state => {
-            if (!uniqueStatesMap.has(state.state_id)) {
-              uniqueStatesMap.set(state.state_id, {
-                id: state.state_id,
-                name: state.state_name
-              });
-            }
-          });
-
-          const uniqueStates = Array.from(uniqueStatesMap.values())
-            .sort((a, b) => a.name.localeCompare(b.name));
+          const uniqueStates = Array.from(
+            new Set(
+              statesData.map(state => JSON.stringify({ id: state.state_id, name: state.state_name }))
+            )
+          ).map(str => JSON.parse(str));
 
           setStates(uniqueStates);
           console.log('States loaded:', uniqueStates.length);
