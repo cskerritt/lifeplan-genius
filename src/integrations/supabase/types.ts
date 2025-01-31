@@ -372,6 +372,8 @@ export type Database = {
           gender: string
           id: string
           last_name: string
+          life_expectancy: number | null
+          projected_age_at_death: number | null
           race: string
           state: string
           statistical_lifespan: number | null
@@ -392,6 +394,8 @@ export type Database = {
           gender?: string
           id?: string
           last_name?: string
+          life_expectancy?: number | null
+          projected_age_at_death?: number | null
           race?: string
           state?: string
           statistical_lifespan?: number | null
@@ -412,6 +416,8 @@ export type Database = {
           gender?: string
           id?: string
           last_name?: string
+          life_expectancy?: number | null
+          projected_age_at_death?: number | null
           race?: string
           state?: string
           statistical_lifespan?: number | null
