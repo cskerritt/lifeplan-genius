@@ -296,11 +296,11 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
                   <h3 className="text-lg font-medium mb-4">Geographic Adjustment Factors</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Medical Fees GAF (MFR)</Label>
+                      <Label>MFR</Label>
                       <div className="text-2xl font-bold mt-1">{geoFactors.mfr_factor?.toFixed(4)}</div>
                     </div>
                     <div>
-                      <Label>Practice Expense GAF (PFR)</Label>
+                      <Label>PFR</Label>
                       <div className="text-2xl font-bold mt-1">{geoFactors.pfr_factor?.toFixed(4)}</div>
                     </div>
                   </div>
