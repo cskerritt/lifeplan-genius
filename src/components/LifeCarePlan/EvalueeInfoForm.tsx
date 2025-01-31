@@ -49,7 +49,15 @@ export default function EvalueeInfoForm({
   };
 
   const handleZipLookup = async (zipCode: string) => {
-    const gafData = await lookupGeoFactors(zipCode);
+    const trimmedZip = zipCode.trim();
+    // Validate that the zip code is a 5-digit number and not "00000"
+    if (!/^\d{5}$/.test(trimmedZip) || trimmedZip === "00000") {
+      console.warn("Invalid zip code provided:", trimmedZip);
+      return;
+    }
+    
+    console.log("Looking up ZIP:", trimmedZip);
+    const gafData = await lookupGeoFactors(trimmedZip);
     
     if (gafData) {
       handleFieldChange('city', gafData.city || '');

@@ -47,13 +47,10 @@ export function useGafLookup() {
     setIsLoading(true);
     
     try {
-      // Format ZIP code to ensure 5 digits with leading zeros
-      const formattedZip = zipCode.padStart(5, '0');
-      
       const { data, error } = await supabase
         .from('gaf_lookup')
         .select('city, state_name, mfr_code, pfr_code')
-        .eq('zip', formattedZip)
+        .eq('zip', zipCode.padStart(5, '0'))
         .maybeSingle();
 
       if (error) throw error;
