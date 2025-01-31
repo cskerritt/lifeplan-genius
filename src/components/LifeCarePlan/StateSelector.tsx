@@ -84,7 +84,11 @@ export function StateSelector({
   onValueChange 
 }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
-  const displayStates = states.length > 0 ? states : US_STATES;
+  const displayStates = Array.from(states || US_STATES);
+  const selectedState = React.useMemo(
+    () => displayStates.find((state) => state.id === value),
+    [displayStates, value]
+  );
 
   return (
     <div className="space-y-2">
@@ -98,8 +102,8 @@ export function StateSelector({
             className="w-full justify-between"
             disabled={isLoading}
           >
-            {value
-              ? displayStates.find((state) => state.id === value)?.name
+            {selectedState
+              ? selectedState.name
               : isLoading ? "Loading states..." : "Select state..."}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
