@@ -22,12 +22,12 @@ export function StateSelector({ value, states = [], isLoading, onValueChange }: 
   const [searchQuery, setSearchQuery] = React.useState("");
   
   const selectedState = React.useMemo(() => 
-    (states || []).find((state) => state.id === value),
+    states.find((state) => state.id === value),
     [states, value]
   );
 
   const filteredStates = React.useMemo(() => 
-    (states || []).filter((state) => 
+    states.filter((state) => 
       state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       state.id.toLowerCase().includes(searchQuery.toLowerCase())
     ),
@@ -41,9 +41,10 @@ export function StateSelector({ value, states = [], isLoading, onValueChange }: 
         <PopoverTrigger asChild>
           <button
             id="state"
-            type="button"
             role="combobox"
             aria-expanded={open}
+            aria-label="Select state"
+            type="button"
             className={cn(
               "w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
               !value && "text-muted-foreground"
@@ -70,7 +71,7 @@ export function StateSelector({ value, states = [], isLoading, onValueChange }: 
             />
             <CommandEmpty>No state found.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-auto">
-              {(filteredStates || []).map((state) => (
+              {filteredStates.map((state) => (
                 <CommandItem
                   key={state.id}
                   value={state.name}
