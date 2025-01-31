@@ -17,12 +17,12 @@ export function StateSelector({ value, states = [], isLoading, onValueChange }: 
   const [searchQuery, setSearchQuery] = React.useState("");
   
   const selectedState = React.useMemo(() => 
-    states.find((state) => state.id === value),
+    (states || []).find((state) => state.id === value),
     [states, value]
   );
 
   const filteredStates = React.useMemo(() => 
-    states.filter((state) => 
+    (states || []).filter((state) => 
       state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       state.id.toLowerCase().includes(searchQuery.toLowerCase())
     ),
