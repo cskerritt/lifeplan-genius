@@ -1,12 +1,5 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -19,8 +12,9 @@ interface StateSelectorProps {
   onValueChange: (value: string) => void;
 }
 
-export function StateSelector({ value, states, isLoading, onValueChange }: StateSelectorProps) {
+export function StateSelector({ value, states = [], isLoading, onValueChange }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
+  const selectedState = states.find((state) => state.id === value);
 
   return (
     <div className="space-y-2">
@@ -28,6 +22,7 @@ export function StateSelector({ value, states, isLoading, onValueChange }: State
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
+            type="button"
             role="combobox"
             aria-expanded={open}
             className={cn(
@@ -36,7 +31,13 @@ export function StateSelector({ value, states, isLoading, onValueChange }: State
             )}
             disabled={isLoading}
           >
-            {value ? states.find((state) => state.id === value)?.name : "Select state"}
+            {isLoading ? (
+              "Loading states..."
+            ) : selectedState ? (
+              selectedState.name
+            ) : (
+              "Select state"
+            )}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </button>
         </PopoverTrigger>
@@ -45,7 +46,7 @@ export function StateSelector({ value, states, isLoading, onValueChange }: State
             <CommandInput placeholder="Search states..." className="h-9" />
             <CommandEmpty>No state found.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-auto">
-              {states.map((state) => (
+              {(states || []).map((state) => (
                 <CommandItem
                   key={state.id}
                   value={state.name}
