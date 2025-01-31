@@ -37,7 +37,6 @@ export function LocationSelector({
   };
 
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow numbers and limit to 5 digits
     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
     onZipCodeChange(value);
   };
@@ -60,7 +59,7 @@ export function LocationSelector({
         />
 
         <div className="space-y-2">
-          <Label htmlFor="zipCodeInput">ZIP Code (Optional)</Label>
+          <Label htmlFor="zipCodeInput">ZIP Code</Label>
           <div className="flex gap-2">
             <Input
               id="zipCodeInput"
@@ -77,7 +76,7 @@ export function LocationSelector({
               disabled={isLoading || !zipCode || zipCode.length !== 5}
             >
               <Search className="h-4 w-4 mr-2" />
-              {isLoading ? 'Looking up...' : 'Validate'}
+              {isLoading ? 'Looking up...' : 'Lookup'}
             </Button>
           </div>
         </div>

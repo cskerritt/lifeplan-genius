@@ -10,6 +10,8 @@ interface DemographicsDisplayProps {
   geoFactors: {
     mfr_code: number;
     pfr_code: number;
+    city?: string;
+    state_name?: string;
   } | null;
 }
 
@@ -43,13 +45,19 @@ export default function DemographicsDisplay({ ageData, geoFactors }: Demographic
         <h3 className="text-lg font-medium mb-4">Geographic Adjustment Factors</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-500">MFR</p>
+            <p className="text-sm text-gray-500">MFR (Medicare Fee Relative)</p>
             <p className="text-2xl font-bold">{formatNumber(geoFactors?.mfr_code)}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">PFR</p>
+            <p className="text-sm text-gray-500">PFR (Private Fee Relative)</p>
             <p className="text-2xl font-bold">{formatNumber(geoFactors?.pfr_code)}</p>
           </div>
+          {geoFactors?.city && geoFactors?.state_name && (
+            <div className="col-span-2 mt-2">
+              <p className="text-sm text-gray-500">Location</p>
+              <p className="text-lg">{geoFactors.city}, {geoFactors.state_name}</p>
+            </div>
+          )}
         </div>
       </Card>
     </div>
