@@ -40,7 +40,7 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
       console.error('Error fetching CPT codes:', error);
       return;
     }
-    setCptOptions(data);
+    setCptOptions(data as CPTCode[]);
     setShowCptOptions(true);
   };
 
@@ -82,13 +82,13 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
 
       const { error: saveError } = await supabase
         .from('care_plan_entries')
-        .insert([{
+        .insert({
           plan_id: planId,
           category,
           item,
           cpt_code: selectedCPT.code,
-          cpt_description: selectedCPT.description,
-          frequency: parseFloat(frequency),
+          cpt_description: selectedCPT.code_description,
+          frequency: frequency,
           annual_cost: annualCost,
           lifetime_cost: lifetimeCost,
           start_age: parseFloat(startAge),
@@ -98,7 +98,7 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
           avg_cost: costs.avg_cost,
           mfr_adjusted: costs.mfr_adjusted,
           pfr_adjusted: costs.pfr_adjusted
-        }]);
+        });
 
       if (saveError) throw saveError;
       onSave();
@@ -148,7 +148,7 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
                     onClick={() => handleCPTSelection(option)}
                   >
                     <div className="font-medium">{option.code}</div>
-                    <div className="text-sm text-gray-500">{option.description}</div>
+                    <div className="text-sm text-gray-500">{option.code_description}</div>
                   </button>
                 ))}
               </div>
@@ -195,8 +195,12 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
             />
           </div>
 
-          <Button type="submit" loading={loading}>
-            Add Entry
+          <Button 
+            type="submit" 
+            disabled={loading}
+            className={loading ? 'opacity-50 cursor-not-allowed' : ''}
+          >
+            {loading ? 'Adding...' : 'Add Entry'}
           </Button>
         </form>
       </div>

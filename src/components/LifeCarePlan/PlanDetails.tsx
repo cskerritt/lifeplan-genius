@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, User, Home, Table2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { LifeCarePlan } from '@/types/lifecare';
-import { Tables } from '@/integrations/supabase/types';
-
-type GeographicFactor = Tables<'geographic_factors'>;
+import { LifeCarePlan, GeographicFactor } from '@/types/lifecare';
 
 export default function PlanDetails() {
   const { id } = useParams();

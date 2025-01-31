@@ -15,9 +15,20 @@ export interface CostRange {
   high: number;
 }
 
-export interface GeographicAdjustment {
-  region: string;
-  factor: number;
+export interface GeographicFactor {
+  id: string;
+  zip: string;
+  city: string | null;
+  state_id: string;
+  state_name: string;
+  county_fips: string;
+  county_name: string;
+  mfr_code: string;
+  pfr_code: string;
+  gaf_lookup: number | null;
+  created_at: string | null;
+  mfr_factor: number | null;
+  pfr_factor: number | null;
 }
 
 export interface CareItem {
@@ -50,47 +61,35 @@ export interface CategoryTotal {
 
 export interface CPTCode {
   code: string;
-  description: string;
-  base_rate_50th: number;
-  base_rate_75th: number;
+  code_description: string;
+  created_at?: string;
+  mfu_50th: number;
+  mfu_75th: number;
+  mfu_90th: number;
+  pfr_50th: number;
+  pfr_75th: number;
+  pfr_90th: number;
   mfr_factor?: number;
   pfr_factor?: number;
 }
 
-export interface SurgicalComponent {
-  surgeonFee: CostRange;
-  anesthesiaFee: CostRange;
-  facilityFee: CostRange;
-  total: CostRange;
-}
-
-export interface MedicationDetails {
-  name: string;
-  dosage: string;
-  quantity: number;
-  priceQuotes: number[];
-  costRange: CostRange;
-}
-
 export interface LifeCarePlan {
   id: string;
-  evalueeId: string;
-  items: CareItem[];
-  categoryTotals: CategoryTotal[];
-  grandTotal: CostRange;
-  createdAt: string;
-  updatedAt: string;
+  user_id: string;
   first_name: string;
   last_name: string;
   date_of_birth: string;
-  date_of_injury: string;
+  date_of_injury: string | null;
   race: string;
   gender: string;
   street_address: string;
   city: string;
   state: string;
-  zip_code: string;
+  zip_code: string | null;
   county_apc: string;
   county_drg: string;
-  statistical_lifespan?: number;
+  age_at_injury: number | null;
+  statistical_lifespan: number | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
