@@ -23,42 +23,48 @@ export function useLocationData() {
     const fetchLocations = async () => {
       setIsLoading(true);
       try {
-        // First, fetch all unique states directly
+        // First, fetch all unique states with distinct to ensure we get all states
         const { data: statesData, error: statesError } = await supabase
           .from('gaf_lookup')
           .select('state_id, state_name')
-          .order('state_name', { ascending: true });
+          .order('state_name')
+          .limit(1000); // Increased limit to ensure we get all states
 
         if (statesError) throw statesError;
 
         if (statesData) {
-          // Create a unique set of states
-          const uniqueStates = Array.from(
-            new Map(
-              statesData.map(state => [
-                state.state_id,
-                { id: state.state_id, name: state.state_name }
-              ])
-            ).values()
-          ).sort((a, b) => a.name.localeCompare(b.name));
+          // Create a unique set of states using Set to remove duplicates
+          const uniqueStatesMap = new Map();
+          statesData.forEach(state => {
+            if (!uniqueStatesMap.has(state.state_id)) {
+              uniqueStatesMap.set(state.state_id, {
+                id: state.state_id,
+                name: state.state_name
+              });
+            }
+          });
+
+          const uniqueStates = Array.from(uniqueStatesMap.values())
+            .sort((a, b) => a.name.localeCompare(b.name));
 
           setStates(uniqueStates);
+          console.log('Number of unique states:', uniqueStates.length);
         }
 
         // Then fetch all locations
         const { data: locationsData, error: locationsError } = await supabase
           .from('gaf_lookup')
           .select('city, state_id, state_name')
-          .order('city', { ascending: true });
+          .order('city')
+          .limit(5000); // Increased limit to ensure we get all locations
 
         if (locationsError) throw locationsError;
 
         if (locationsData) {
-          setLocations(locationsData as Location[]);
+          setLocations(locationsData);
+          console.log('Number of locations:', locationsData.length);
         }
 
-        console.log('Fetched states:', statesData?.length);
-        console.log('Fetched locations:', locationsData?.length);
       } catch (error) {
         console.error('Error fetching locations:', error);
         toast({
