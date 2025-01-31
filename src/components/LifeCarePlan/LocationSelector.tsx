@@ -3,17 +3,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Search } from 'lucide-react';
+import { StateSelector } from './StateSelector';
+import { CitySelector } from './CitySelector';
 
 interface LocationSelectorProps {
   zipCode: string;
+  state: string;
+  city: string;
+  cities: string[];
   onZipCodeChange: (zipCode: string) => void;
+  onStateChange: (state: string) => void;
+  onCityChange: (city: string) => void;
   onLookup: (zipCode: string) => void;
   isLoading?: boolean;
 }
 
 export function LocationSelector({ 
   zipCode, 
-  onZipCodeChange, 
+  state,
+  city,
+  cities,
+  onZipCodeChange,
+  onStateChange,
+  onCityChange,
   onLookup,
   isLoading 
 }: LocationSelectorProps) {
@@ -32,27 +44,42 @@ export function LocationSelector({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="zipCode">ZIP Code</Label>
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            id="zipCode"
-            placeholder="Enter ZIP code"
-            value={zipCode}
-            onChange={handleZipChange}
-            maxLength={5}
-            pattern="[0-9]{5}"
-            className="flex-1"
-            required
-          />
-          <Button 
-            type="submit"
-            disabled={isLoading || !zipCode || zipCode.length !== 5}
-          >
-            <Search className="h-4 w-4 mr-2" />
-            {isLoading ? 'Looking up...' : 'Lookup'}
-          </Button>
-        </form>
+      <div className="space-y-4">
+        <StateSelector
+          value={state}
+          onValueChange={onStateChange}
+          isLoading={isLoading}
+        />
+
+        <CitySelector
+          value={city}
+          cities={cities}
+          isLoading={isLoading}
+          disabled={!state}
+          onValueChange={onCityChange}
+        />
+
+        <div className="space-y-2">
+          <Label htmlFor="zipCodeInput">ZIP Code (Optional)</Label>
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <Input
+              id="zipCodeInput"
+              placeholder="Enter ZIP code"
+              value={zipCode}
+              onChange={handleZipChange}
+              maxLength={5}
+              pattern="[0-9]{5}"
+              className="flex-1"
+            />
+            <Button 
+              type="submit"
+              disabled={isLoading || !zipCode || zipCode.length !== 5}
+            >
+              <Search className="h-4 w-4 mr-2" />
+              {isLoading ? 'Looking up...' : 'Validate'}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -31,10 +31,21 @@ export default function EvalueeInfoForm({
   onCancel,
   onSubmit
 }: EvalueeInfoFormProps) {
-  const { isLoading, lookupGeoFactors } = useGafLookup();
+  const { isLoading, cities, lookupGeoFactors, lookupCitiesByState } = useGafLookup();
 
   const handleFieldChange = (field: string, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
+  };
+
+  const handleStateChange = async (state: string) => {
+    handleFieldChange('state', state);
+    handleFieldChange('city', ''); // Reset city when state changes
+    await lookupCitiesByState(state);
+  };
+
+  const handleCityChange = (city: string) => {
+    handleFieldChange('city', city);
+    onLocationChange(city, formData.state);
   };
 
   const handleZipLookup = async (zipCode: string) => {
@@ -62,38 +73,20 @@ export default function EvalueeInfoForm({
 
       <LocationSelector
         zipCode={formData.zipCode}
+        state={formData.state}
+        city={formData.city}
+        cities={cities}
         onZipCodeChange={(value) => handleFieldChange('zipCode', value)}
+        onStateChange={handleStateChange}
+        onCityChange={handleCityChange}
         onLookup={handleZipLookup}
         isLoading={isLoading}
       />
 
-      {formData.city && formData.state && (
-        <div className="space-y-2">
-          <div>
-            <Label htmlFor="city">City</Label>
-            <Input
-              id="city"
-              value={formData.city}
-              onChange={(e) => handleFieldChange('city', e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="state">State</Label>
-            <Input
-              id="state"
-              value={formData.state}
-              onChange={(e) => handleFieldChange('state', e.target.value)}
-              required
-            />
-          </div>
-        </div>
-      )}
-
       <div className="space-y-2">
-        <Label htmlFor="lifeExpectancy">Life Expectancy (years)</Label>
+        <Label htmlFor="lifeExpectancyInput">Life Expectancy (years)</Label>
         <Input
-          id="lifeExpectancy"
+          id="lifeExpectancyInput"
           type="number"
           step="0.01"
           value={formData.lifeExpectancy}

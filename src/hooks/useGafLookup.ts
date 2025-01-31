@@ -12,14 +12,40 @@ interface GafFactors {
 export function useGafLookup() {
   const [geoFactors, setGeoFactors] = useState<GafFactors | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [cities, setCities] = useState<string[]>([]);
   const { toast } = useToast();
 
+  const lookupCitiesByState = async (state: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('gaf_lookup')
+        .select('city')
+        .eq('state_name', state)
+        .not('city', 'is', null);
+
+      if (error) throw error;
+
+      // Get unique cities
+      const uniqueCities = Array.from(new Set(data.map(row => row.city))).filter(Boolean);
+      setCities(uniqueCities as string[]);
+
+    } catch (error) {
+      console.error('Error looking up cities:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to lookup cities"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const lookupGeoFactors = async (zipCode: string) => {
-    // Clean and pad the ZIP code
     const cleanZip = zipCode.replace(/\D/g, '').padStart(5, '0');
     console.log('Looking up ZIP:', cleanZip);
     
-    // Validate the ZIP code format
     if (cleanZip.length !== 5) {
       toast({
         variant: "destructive",
@@ -70,5 +96,5 @@ export function useGafLookup() {
     }
   };
 
-  return { geoFactors, isLoading, lookupGeoFactors };
+  return { geoFactors, cities, isLoading, lookupGeoFactors, lookupCitiesByState };
 }
