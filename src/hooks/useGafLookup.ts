@@ -65,14 +65,20 @@ export function useGafLookup() {
 
     try {
       console.log('📡 Fetching from Supabase...');
-      // First, let's debug what tables and data we have access to
-      const { data: tables } = await supabase
+      
+      // Debug query to check table structure and sample data
+      const { data: debugData, error: debugError } = await supabase
         .from('gaf_lookup')
         .select('*')
         .limit(1);
       
-      console.log('🔍 Available data structure:', tables);
+      if (debugError) {
+        console.error('❌ Debug query error:', debugError);
+      } else {
+        console.log('🔍 Table structure:', debugData);
+      }
 
+      // Main query for ZIP lookup
       const { data, error } = await supabase
         .from('gaf_lookup')
         .select('city, state_name, mfr_code, pfr_code')
@@ -84,16 +90,18 @@ export function useGafLookup() {
         throw error;
       }
 
-      console.log('📦 Received data:', data);
+      console.log('📦 Raw query response:', data);
 
       if (!data) {
         console.warn('⚠️ No data found for ZIP:', cleanZip);
-        // Let's try to debug what data exists in the table
+        
+        // Debug query to check available ZIP codes
         const { data: sampleData } = await supabase
           .from('gaf_lookup')
-          .select('zip')
+          .select('zip, city, state_name')
           .limit(5);
-        console.log('📊 Sample ZIP codes in database:', sampleData);
+        
+        console.log('📊 Sample records in database:', sampleData);
         
         toast({
           variant: "destructive",
@@ -104,6 +112,8 @@ export function useGafLookup() {
         return null;
       }
 
+      console.log('✨ Processing data:', data);
+      
       const factors: GafFactors = {
         mfr_code: data.mfr_code,
         pfr_code: data.pfr_code,
@@ -111,7 +121,7 @@ export function useGafLookup() {
         state_name: data.state_name
       };
 
-      console.log('✅ Processed factors:', factors);
+      console.log('✅ Final processed factors:', factors);
       setGeoFactors(factors);
       
       toast({
