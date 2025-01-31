@@ -70,12 +70,13 @@ export function useGafLookup() {
       const { data: debugData, error: debugError } = await supabase
         .from('gaf_lookup')
         .select('*')
-        .limit(1);
+        .eq('zip', cleanZip)
+        .maybeSingle();
       
       if (debugError) {
         console.error('❌ Debug query error:', debugError);
       } else {
-        console.log('🔍 Table structure:', debugData);
+        console.log('🔍 Full record found:', debugData);
       }
 
       // Main query for ZIP lookup
