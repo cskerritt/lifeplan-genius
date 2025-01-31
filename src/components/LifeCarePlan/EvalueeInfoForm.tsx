@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from '@/integrations/supabase/client';
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
 import { useGafLookup } from '@/hooks/useGafLookup';
@@ -38,17 +39,25 @@ export default function EvalueeInfoForm({
   };
 
   const handleZipLookup = async (zipCode: string) => {
+    const formattedZip = zipCode.padStart(5, '0');
+    console.log('Looking up ZIP:', formattedZip);
+    
     const { data, error } = await supabase
       .from('gaf_lookup')
       .select('city, state_name')
-      .eq('zip', zipCode)
+      .eq('zip', formattedZip)
       .maybeSingle();
+
+    if (error) {
+      console.error('Error looking up ZIP:', error);
+      return;
+    }
 
     if (data) {
       handleFieldChange('city', data.city || '');
       handleFieldChange('state', data.state_name || '');
       onLocationChange(data.city || '', data.state_name || '');
-      lookupGeoFactors(zipCode);
+      lookupGeoFactors(formattedZip);
     }
   };
 
