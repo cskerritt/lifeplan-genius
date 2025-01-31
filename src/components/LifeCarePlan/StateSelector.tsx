@@ -5,9 +5,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface State {
+  id: string;
+  name: string;
+}
+
 interface StateSelectorProps {
   value: string;
-  states: { id: string; name: string; }[];
+  states: State[];
   isLoading: boolean;
   onValueChange: (value: string) => void;
 }
