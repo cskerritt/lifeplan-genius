@@ -46,68 +46,41 @@ export function useGafLookup() {
     }
   };
 
-  const lookupGeoFactors = async (zipCode: string) => {
-    console.log('🔍 Looking up ZIP:', zipCode);
-    const cleanZip = zipCode.replace(/\D/g, '').padStart(5, '0');
-    console.log('🧹 Cleaned ZIP:', cleanZip);
-    
-    if (cleanZip.length !== 5) {
-      console.warn('⚠️ Invalid ZIP length:', cleanZip.length);
-      toast({
-        variant: "destructive",
-        title: "Invalid ZIP Code",
-        description: "Please enter a valid 5-digit ZIP code"
-      });
-      return null;
-    }
-
+  const lookupGeoFactors = async (input: string) => {
+    console.log('🔍 Looking up:', input);
     setIsLoading(true);
-
+    
     try {
-      console.log('📡 Fetching from Supabase...');
+      // If input is a ZIP code (5 digits), use it directly
+      const isZipCode = /^\d{5}$/.test(input);
+      const cleanZip = isZipCode ? input : '';
       
-      // Debug query to check table structure and sample data
-      const { data: debugData, error: debugError } = await supabase
+      let query = supabase
         .from('gaf_lookup')
-        .select('*')
-        .eq('zip', cleanZip)
-        .maybeSingle();
+        .select('city, state_name, mfr_code, pfr_code');
       
-      if (debugError) {
-        console.error('❌ Debug query error:', debugError);
+      if (isZipCode) {
+        query = query.eq('zip', cleanZip);
       } else {
-        console.log('🔍 Full record found:', debugData);
+        // If not a ZIP code, assume it's a city name
+        query = query.eq('city', input);
       }
-
-      // Main query for ZIP lookup
-      const { data, error } = await supabase
-        .from('gaf_lookup')
-        .select('city, state_name, mfr_code, pfr_code')
-        .eq('zip', cleanZip)
-        .maybeSingle();
+      
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
-        console.error('❌ Supabase error:', error);
+        console.error('❌ Query error:', error);
         throw error;
       }
 
       console.log('📦 Raw query response:', data);
 
       if (!data) {
-        console.warn('⚠️ No data found for ZIP:', cleanZip);
-        
-        // Debug query to check available ZIP codes
-        const { data: sampleData } = await supabase
-          .from('gaf_lookup')
-          .select('zip, city, state_name')
-          .limit(5);
-        
-        console.log('📊 Sample records in database:', sampleData);
-        
+        console.warn(`⚠️ No data found for ${isZipCode ? 'ZIP' : 'city'}: ${input}`);
         toast({
           variant: "destructive",
           title: "Location Not Found",
-          description: "No location data found for this ZIP code"
+          description: `No location data found for this ${isZipCode ? 'ZIP code' : 'city'}`
         });
         setGeoFactors(null);
         return null;
