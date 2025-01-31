@@ -21,6 +21,7 @@ interface EvalueeFormProps {
 
 export default function EvalueeForm({ onSave }: EvalueeFormProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
