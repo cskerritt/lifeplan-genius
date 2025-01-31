@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
+import { useGafLookup } from '@/hooks/useGafLookup';
 
 interface EvalueeInfoFormProps {
   formData: {
@@ -30,21 +31,27 @@ export default function EvalueeInfoForm({
   onCancel,
   onSubmit
 }: EvalueeInfoFormProps) {
+  const { geoFactors, lookupGeoFactors } = useGafLookup();
+  const [isLoading, setIsLoading] = React.useState(false);
+
   const handleFieldChange = (field: string, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
   };
 
-  const handleCityChange = (city: string) => {
-    handleFieldChange('city', city);
-    onLocationChange(city, formData.state);
+  const handleZipLookup = async (zipCode: string) => {
+    setIsLoading(true);
+    await lookupGeoFactors(zipCode);
+    setIsLoading(false);
   };
 
-  const handleStateChange = (state: string) => {
-    handleFieldChange('state', state);
-    if (formData.city) {
-      onLocationChange(formData.city, state);
+  // Update city and state when geoFactors changes
+  React.useEffect(() => {
+    if (geoFactors) {
+      handleFieldChange('city', geoFactors.city || '');
+      handleFieldChange('state', geoFactors.state || '');
+      onLocationChange(geoFactors.city || '', geoFactors.state || '');
     }
-  };
+  }, [geoFactors]);
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -58,22 +65,34 @@ export default function EvalueeInfoForm({
       />
 
       <LocationSelector
-        city={formData.city}
-        state={formData.state}
-        onCityChange={handleCityChange}
-        onStateChange={handleStateChange}
+        zipCode={formData.zipCode}
+        onZipCodeChange={(value) => handleFieldChange('zipCode', value)}
+        onLookup={handleZipLookup}
+        isLoading={isLoading}
       />
 
-      <div className="space-y-2">
-        <Label htmlFor="zipCode">ZIP Code</Label>
-        <Input
-          id="zipCode"
-          value={formData.zipCode}
-          onChange={(e) => handleFieldChange('zipCode', e.target.value)}
-          pattern="[0-9]{5}"
-          required
-        />
-      </div>
+      {geoFactors && (
+        <div className="space-y-2">
+          <div>
+            <Label htmlFor="city">City</Label>
+            <Input
+              id="city"
+              value={formData.city}
+              onChange={(e) => handleFieldChange('city', e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="state">State</Label>
+            <Input
+              id="state"
+              value={formData.state}
+              onChange={(e) => handleFieldChange('state', e.target.value)}
+              required
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="lifeExpectancy">Life Expectancy (years)</Label>

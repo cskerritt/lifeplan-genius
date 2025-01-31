@@ -1,59 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import { useLocationData } from '@/hooks/useLocationData';
-import { StateSelector } from './StateSelector';
-import { CitySelector } from './CitySelector';
+import React from 'react';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Search } from 'lucide-react';
 
 interface LocationSelectorProps {
-  city: string;
-  state: string;
-  onCityChange: (city: string) => void;
-  onStateChange: (state: string) => void;
+  zipCode: string;
+  onZipCodeChange: (zipCode: string) => void;
+  onLookup: (zipCode: string) => void;
+  isLoading?: boolean;
 }
 
 export function LocationSelector({ 
-  city, 
-  state, 
-  onCityChange, 
-  onStateChange 
+  zipCode, 
+  onZipCodeChange, 
+  onLookup,
+  isLoading 
 }: LocationSelectorProps) {
-  const { locations, states, isLoading } = useLocationData();
-  const [cities, setCities] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (state) {
-      const stateCities = Array.from(new Set(
-        locations
-          .filter(loc => loc.state_id === state)
-          .map(loc => loc.city)
-          .filter(Boolean)
-      )).sort((a, b) => a.localeCompare(b));
-      
-      setCities(stateCities);
-
-      // Reset city if it's not in the new list of cities
-      if (city && !stateCities.includes(city)) {
-        onCityChange('');
-      }
-    } else {
-      setCities([]);
-    }
-  }, [state, locations, city, onCityChange]);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onLookup(zipCode);
+  };
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <StateSelector
-        value={state}
-        states={states}
-        isLoading={isLoading}
-        onValueChange={onStateChange}
-      />
-      <CitySelector
-        value={city}
-        cities={cities}
-        isLoading={isLoading}
-        disabled={!state}
-        onValueChange={onCityChange}
-      />
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="zipCode">ZIP Code</Label>
+        <div className="flex gap-2">
+          <Input
+            id="zipCode"
+            placeholder="Enter ZIP code"
+            value={zipCode}
+            onChange={(e) => onZipCodeChange(e.target.value)}
+            maxLength={5}
+            pattern="[0-9]{5}"
+            className="flex-1"
+            required
+          />
+          <Button 
+            type="submit" 
+            disabled={isLoading || !zipCode || zipCode.length !== 5}
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Lookup
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }

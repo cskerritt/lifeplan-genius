@@ -6,15 +6,23 @@ export function useGafLookup() {
   const { toast } = useToast();
   const [geoFactors, setGeoFactors] = useState<any>(null);
 
-  const lookupGeoFactors = async (city: string, state: string) => {
-    console.log('Looking up GAF for:', city, state);
+  const lookupGeoFactors = async (zipCode: string) => {
+    console.log('Looking up GAF for ZIP:', zipCode);
+
+    if (!zipCode || zipCode.length !== 5) {
+      toast({
+        variant: "destructive",
+        title: "Invalid ZIP Code",
+        description: "Please enter a valid 5-digit ZIP code"
+      });
+      return;
+    }
 
     try {
       const { data, error } = await supabase
         .from('gaf_lookup')
-        .select('mfr_code, pfr_code')
-        .ilike('city', city)
-        .eq('state_id', state)
+        .select('mfr_code, pfr_code, city, state_name')
+        .eq('zip', zipCode)
         .maybeSingle();
 
       if (error) throw error;
@@ -24,14 +32,21 @@ export function useGafLookup() {
       if (data) {
         setGeoFactors({
           mfr_code: data.mfr_code,
-          pfr_code: data.pfr_code
+          pfr_code: data.pfr_code,
+          city: data.city,
+          state: data.state_name
+        });
+        
+        toast({
+          title: "Location Found",
+          description: `Found factors for ${data.city}, ${data.state_name}`
         });
       } else {
         setGeoFactors(null);
         toast({
           variant: "destructive",
           title: "Location Not Found",
-          description: "No geographic adjustment factors found for this location"
+          description: "No geographic adjustment factors found for this ZIP code"
         });
       }
     } catch (error) {
