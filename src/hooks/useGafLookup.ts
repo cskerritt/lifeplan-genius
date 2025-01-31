@@ -30,7 +30,6 @@ export function useGafLookup() {
         throw error;
       }
 
-      console.log('📍 Found cities:', data);
       const uniqueCities = Array.from(new Set(data.map(row => row.city))).filter(Boolean);
       setCities(uniqueCities as string[]);
 
@@ -51,22 +50,11 @@ export function useGafLookup() {
     setIsLoading(true);
     
     try {
-      // If input is a ZIP code (5 digits), use it directly
-      const isZipCode = /^\d{5}$/.test(input);
-      const cleanZip = isZipCode ? input : '';
-      
-      let query = supabase
+      const { data, error } = await supabase
         .from('gaf_lookup')
-        .select('city, state_name, mfr_code, pfr_code');
-      
-      if (isZipCode) {
-        query = query.eq('zip', cleanZip);
-      } else {
-        // If not a ZIP code, assume it's a city name
-        query = query.eq('city', input);
-      }
-      
-      const { data, error } = await query.maybeSingle();
+        .select('city, state_name, mfr_code, pfr_code')
+        .eq('zip', input.padStart(5, '0'))
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Query error:', error);
@@ -76,11 +64,11 @@ export function useGafLookup() {
       console.log('📦 Raw query response:', data);
 
       if (!data) {
-        console.warn(`⚠️ No data found for ${isZipCode ? 'ZIP' : 'city'}: ${input}`);
+        console.warn(`⚠️ No data found for ZIP: ${input}`);
         toast({
           variant: "destructive",
           title: "Location Not Found",
-          description: `No location data found for this ${isZipCode ? 'ZIP code' : 'city'}`
+          description: "No location data found for this ZIP code"
         });
         setGeoFactors(null);
         return null;

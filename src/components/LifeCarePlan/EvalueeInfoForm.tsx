@@ -39,7 +39,7 @@ export default function EvalueeInfoForm({
 
   const handleStateChange = async (state: string) => {
     handleFieldChange('state', state);
-    handleFieldChange('city', ''); // Reset city when state changes
+    handleFieldChange('city', '');
     await lookupCitiesByState(state);
   };
 
