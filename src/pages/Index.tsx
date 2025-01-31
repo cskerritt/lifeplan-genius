@@ -47,10 +47,23 @@ const Index = () => {
     items.forEach((item) => {
       grandTotal += item.annualCost;
       const categoryTotal = totals.find((t) => t.category === item.category);
+      
       if (categoryTotal) {
         categoryTotal.total += item.annualCost;
+        // Update cost ranges
+        categoryTotal.costRange.low += item.costRange.low;
+        categoryTotal.costRange.average += item.costRange.average;
+        categoryTotal.costRange.high += item.costRange.high;
       } else {
-        totals.push({ category: item.category, total: item.annualCost });
+        totals.push({
+          category: item.category,
+          total: item.annualCost,
+          costRange: {
+            low: item.costRange.low,
+            average: item.costRange.average,
+            high: item.costRange.high,
+          },
+        });
       }
     });
 

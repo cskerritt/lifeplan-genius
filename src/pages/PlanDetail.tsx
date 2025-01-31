@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import EvalueeForm from "@/components/LifeCarePlan/EvalueeForm";
 import PlanForm from "@/components/LifeCarePlan/PlanForm";
 import PlanTable from "@/components/LifeCarePlan/PlanTable";
-import { CareItem, Evaluee } from "@/types/lifecare";
+import { CareItem, Evaluee, CategoryTotal } from "@/types/lifecare";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -48,15 +48,26 @@ const PlanDetail = () => {
   };
 
   const calculateTotals = () => {
-    const totals = items.reduce((acc, item) => {
+    const totals: CategoryTotal[] = items.reduce((acc, item) => {
       const existingCategory = acc.find((t) => t.category === item.category);
       if (existingCategory) {
         existingCategory.total += item.annualCost;
+        existingCategory.costRange.low += item.costRange.low;
+        existingCategory.costRange.average += item.costRange.average;
+        existingCategory.costRange.high += item.costRange.high;
       } else {
-        acc.push({ category: item.category, total: item.annualCost });
+        acc.push({
+          category: item.category,
+          total: item.annualCost,
+          costRange: {
+            low: item.costRange.low,
+            average: item.costRange.average,
+            high: item.costRange.high,
+          },
+        });
       }
       return acc;
-    }, [] as { category: string; total: number }[]);
+    }, [] as CategoryTotal[]);
 
     const grandTotal = totals.reduce((sum, category) => sum + category.total, 0);
 
