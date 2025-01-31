@@ -98,7 +98,7 @@ export function StateSelector({
         <SelectTrigger id="state">
           <SelectValue placeholder={isLoading ? "Loading states..." : "Select state"} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-[300px]">
           {displayStates.map((state) => (
             <SelectItem key={state.id} value={state.id}>
               {state.name}
