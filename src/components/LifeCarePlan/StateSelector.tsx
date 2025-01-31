@@ -14,7 +14,20 @@ interface StateSelectorProps {
 
 export function StateSelector({ value, states = [], isLoading, onValueChange }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
-  const selectedState = states.find((state) => state.id === value);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  
+  const selectedState = React.useMemo(() => 
+    states.find((state) => state.id === value),
+    [states, value]
+  );
+
+  const filteredStates = React.useMemo(() => 
+    states.filter((state) => 
+      state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      state.id.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+    [states, searchQuery]
+  );
 
   return (
     <div className="space-y-2">
@@ -43,16 +56,22 @@ export function StateSelector({ value, states = [], isLoading, onValueChange }: 
         </PopoverTrigger>
         <PopoverContent className="w-[300px] p-0">
           <Command>
-            <CommandInput placeholder="Search states..." className="h-9" />
+            <CommandInput 
+              placeholder="Search states..." 
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+              className="h-9" 
+            />
             <CommandEmpty>No state found.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-auto">
-              {(states || []).map((state) => (
+              {filteredStates.map((state) => (
                 <CommandItem
                   key={state.id}
                   value={state.name}
                   onSelect={() => {
                     onValueChange(state.id);
                     setOpen(false);
+                    setSearchQuery("");
                   }}
                 >
                   {state.name}
