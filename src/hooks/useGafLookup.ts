@@ -72,16 +72,25 @@ export function useGafLookup() {
           title: "Location Not Found",
           description: "No location data found for this ZIP code"
         });
+        setGeoFactors(null);
         return null;
       }
 
+      const factors = {
+        mfr_code: data.mfr_code,
+        pfr_code: data.pfr_code,
+        city: data.city,
+        state_name: data.state_name
+      };
+
+      setGeoFactors(factors);
+      
       toast({
         title: "Location Found",
-        description: `Found location data for ${data.city || ''}, ${data.state_name || ''}`
+        description: `Found location data for ${data.city}, ${data.state_name}`
       });
 
-      setGeoFactors(data);
-      return data;
+      return factors;
 
     } catch (error) {
       console.error('Error looking up location:', error);
@@ -90,6 +99,7 @@ export function useGafLookup() {
         title: "Error",
         description: "Failed to lookup location data"
       });
+      setGeoFactors(null);
       return null;
     } finally {
       setIsLoading(false);
