@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface GafFactors {
@@ -15,11 +15,11 @@ export function useGafLookup() {
   const { toast } = useToast();
 
   const lookupGeoFactors = async (zipCode: string) => {
-    // Clean the ZIP code - remove non-numeric characters
-    const cleanZip = zipCode.replace(/\D/g, '');
+    // Clean and pad the ZIP code
+    const cleanZip = zipCode.replace(/\D/g, '').padStart(5, '0');
     
     // Validate the ZIP code format
-    if (!/^\d{5}$/.test(cleanZip)) {
+    if (cleanZip.length !== 5) {
       toast({
         variant: "destructive",
         title: "Invalid ZIP Code",
@@ -40,23 +40,7 @@ export function useGafLookup() {
 
       if (error) throw error;
 
-      if (data) {
-        const factors = {
-          mfr_code: data.mfr_code,
-          pfr_code: data.pfr_code,
-          city: data.city,
-          state_name: data.state_name
-        };
-        setGeoFactors(factors);
-        
-        toast({
-          title: "Location Found",
-          description: `Found location data for ${data.city || ''}, ${data.state_name || ''}`
-        });
-        
-        return factors;
-      } else {
-        setGeoFactors(null);
+      if (!data) {
         toast({
           variant: "destructive",
           title: "Location Not Found",
@@ -64,9 +48,12 @@ export function useGafLookup() {
         });
         return null;
       }
+
+      setGeoFactors(data);
+      return data;
+
     } catch (error) {
       console.error('Error looking up geographic factors:', error);
-      setGeoFactors(null);
       toast({
         variant: "destructive",
         title: "Error",
