@@ -7,6 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface State {
   id: string;
@@ -85,27 +90,54 @@ export function StateSelector({
   isLoading = false, 
   onValueChange 
 }: StateSelectorProps) {
+  const [open, setOpen] = React.useState(false);
   const displayStates = states.length > 0 ? states : US_STATES;
 
   return (
     <div className="space-y-2">
       <Label htmlFor="state">State</Label>
-      <Select 
-        value={value} 
-        onValueChange={onValueChange}
-        disabled={isLoading}
-      >
-        <SelectTrigger id="state">
-          <SelectValue placeholder={isLoading ? "Loading states..." : "Select state"} />
-        </SelectTrigger>
-        <SelectContent className="max-h-[300px]">
-          {displayStates.map((state) => (
-            <SelectItem key={state.id} value={state.id}>
-              {state.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+            disabled={isLoading}
+          >
+            {value
+              ? displayStates.find((state) => state.id === value)?.name
+              : isLoading ? "Loading states..." : "Select state..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput placeholder="Search states..." />
+            <CommandEmpty>No state found.</CommandEmpty>
+            <CommandGroup className="max-h-[300px] overflow-auto">
+              {displayStates.map((state) => (
+                <CommandItem
+                  key={state.id}
+                  value={state.name}
+                  onSelect={() => {
+                    onValueChange(state.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === state.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {state.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
