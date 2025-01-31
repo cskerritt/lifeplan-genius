@@ -76,7 +76,7 @@ export default function PlanDetails() {
         <div>
           <h2>Geographic Factors</h2>
           <p>County: {geoFactor.county_name}</p>
-          <p>Region: {geoFactor.region}</p>
+          <p>State: {geoFactor.state_name}</p>
         </div>
       )}
       <h2>Care Plan Items</h2>

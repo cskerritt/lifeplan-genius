@@ -40,7 +40,7 @@ export interface CareItem {
   costPerUnit: number;
   annualCost: number;
   costRange: CostRange;
-  geographicAdjustment?: GeographicAdjustment;
+  geographicFactor?: GeographicFactor;
 }
 
 export type CareCategory =
