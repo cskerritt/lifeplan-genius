@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import {
   Card,
   CardContent,
@@ -12,6 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import EvalueeInfoForm from './EvalueeInfoForm';
 import DemographicsDisplay from './DemographicsDisplay';
+import { useAgeCalculations } from '@/hooks/useAgeCalculations';
+import { useEvalueeFormSubmit } from '@/hooks/useEvalueeFormSubmit';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EvalueeFormProps {
   onSave?: (evaluee: any) => void;
@@ -19,7 +21,6 @@ interface EvalueeFormProps {
 
 export default function EvalueeForm({ onSave }: EvalueeFormProps) {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -33,47 +34,13 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
   });
 
   const [geoFactors, setGeoFactors] = useState<any>(null);
-  const [ageData, setAgeData] = useState({
-    ageToday: 0,
-    ageAtInjury: 0,
-    projectedAgeAtDeath: 0
+  const ageData = useAgeCalculations({
+    dateOfBirth: formData.dateOfBirth,
+    dateOfInjury: formData.dateOfInjury,
+    lifeExpectancy: formData.lifeExpectancy
   });
 
-  const calculateAges = () => {
-    if (!formData.dateOfBirth) return;
-
-    const today = new Date();
-    const birth = new Date(formData.dateOfBirth);
-    const injury = formData.dateOfInjury ? new Date(formData.dateOfInjury) : null;
-    const le = parseFloat(formData.lifeExpectancy) || 0;
-
-    let ageToday = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-      ageToday--;
-    }
-
-    let ageAtInjury = 0;
-    if (injury) {
-      ageAtInjury = injury.getFullYear() - birth.getFullYear();
-      const m2 = injury.getMonth() - birth.getMonth();
-      if (m2 < 0 || (m2 === 0 && injury.getDate() < birth.getDate())) {
-        ageAtInjury--;
-      }
-    }
-
-    const projectedAgeAtDeath = ageToday + le;
-
-    setAgeData({
-      ageToday,
-      ageAtInjury,
-      projectedAgeAtDeath
-    });
-  };
-
-  useEffect(() => {
-    calculateAges();
-  }, [formData.dateOfBirth, formData.dateOfInjury, formData.lifeExpectancy]);
+  const { handleSubmit } = useEvalueeFormSubmit(onSave);
 
   const lookupGeoFactors = async (city: string, state: string) => {
     console.log('Looking up GAF for:', city, state);
@@ -113,59 +80,8 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "You must be logged in to create a plan"
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('life_care_plans')
-        .insert([{
-          user_id: user.id,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          date_of_birth: formData.dateOfBirth,
-          date_of_injury: formData.dateOfInjury,
-          gender: formData.gender,
-          zip_code: formData.zipCode,
-          city: formData.city,
-          state: formData.state,
-          life_expectancy: parseFloat(formData.lifeExpectancy),
-          projected_age_at_death: ageData.projectedAgeAtDeath
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Life care plan created successfully"
-      });
-
-      if (onSave && data) {
-        onSave(data);
-      }
-      
-      navigate('/');
-    } catch (error) {
-      console.error("Error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred"
-      });
-    }
+  const onFormSubmit = (e: React.FormEvent) => {
+    handleSubmit(e, formData, ageData);
   };
 
   return (
@@ -187,7 +103,7 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
               onFormDataChange={setFormData}
               onLocationChange={lookupGeoFactors}
               onCancel={() => navigate('/')}
-              onSubmit={handleSubmit}
+              onSubmit={onFormSubmit}
             />
           </TabsContent>
 
