@@ -7,9 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StateSelectorProps {
   value: string;
@@ -19,47 +20,53 @@ interface StateSelectorProps {
 }
 
 export function StateSelector({ value, states, isLoading, onValueChange }: StateSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredStates = states.filter(state =>
-    state.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    state.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [open, setOpen] = React.useState(false);
 
   return (
     <div className="space-y-2">
       <Label htmlFor="state">State</Label>
-      <Select 
-        value={value} 
-        onValueChange={onValueChange}
-        disabled={isLoading}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={isLoading ? "Loading states..." : "Select state"} />
-        </SelectTrigger>
-        <SelectContent className="w-[300px]">
-          <div className="p-2">
-            <Input
-              placeholder="Search states..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mb-2"
-            />
-          </div>
-          <ScrollArea className="h-[200px]">
-            {filteredStates.map(state => (
-              <SelectItem key={state.id} value={state.id} className="cursor-pointer">
-                {state.name}
-              </SelectItem>
-            ))}
-            {filteredStates.length === 0 && (
-              <div className="p-2 text-sm text-gray-500 text-center">
-                No states found
-              </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "w-full flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              !value && "text-muted-foreground"
             )}
-          </ScrollArea>
-        </SelectContent>
-      </Select>
+            disabled={isLoading}
+          >
+            {value ? states.find((state) => state.id === value)?.name : "Select state"}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[300px] p-0">
+          <Command>
+            <CommandInput placeholder="Search states..." className="h-9" />
+            <CommandEmpty>No state found.</CommandEmpty>
+            <CommandGroup className="max-h-[300px] overflow-auto">
+              {states.map((state) => (
+                <CommandItem
+                  key={state.id}
+                  value={state.name}
+                  onSelect={() => {
+                    onValueChange(state.id);
+                    setOpen(false);
+                  }}
+                >
+                  {state.name}
+                  <Check
+                    className={cn(
+                      "ml-auto h-4 w-4",
+                      value === state.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
