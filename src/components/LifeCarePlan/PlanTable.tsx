@@ -25,18 +25,24 @@ const PlanTable = ({ items, categoryTotals, grandTotal }: PlanTableProps) => {
               <TableHead>Service</TableHead>
               <TableHead>CPT/HCPCS Code</TableHead>
               <TableHead>Frequency</TableHead>
-              <TableHead>Cost per Unit</TableHead>
+              <TableHead>Cost Range</TableHead>
               <TableHead>Annual Cost</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.category}</TableCell>
+                <TableCell className="capitalize">{item.category}</TableCell>
                 <TableCell>{item.service}</TableCell>
                 <TableCell>{item.cptCode}</TableCell>
                 <TableCell>{item.frequency}</TableCell>
-                <TableCell>${item.costPerUnit.toFixed(2)}</TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    <div>Low: ${item.costRange.low.toFixed(2)}</div>
+                    <div>Avg: ${item.costRange.average.toFixed(2)}</div>
+                    <div>High: ${item.costRange.high.toFixed(2)}</div>
+                  </div>
+                </TableCell>
                 <TableCell>${item.annualCost.toFixed(2)}</TableCell>
               </TableRow>
             ))}
@@ -49,8 +55,15 @@ const PlanTable = ({ items, categoryTotals, grandTotal }: PlanTableProps) => {
         <div className="space-y-2">
           {categoryTotals.map((total) => (
             <div key={total.category} className="flex justify-between">
-              <span>{total.category}:</span>
-              <span className="font-semibold">${total.total.toFixed(2)}</span>
+              <span className="capitalize">{total.category}:</span>
+              <div className="text-right">
+                <div className="text-sm text-gray-600">
+                  Range: ${total.costRange.low.toFixed(2)} - ${total.costRange.high.toFixed(2)}
+                </div>
+                <span className="font-semibold">
+                  ${total.total.toFixed(2)}
+                </span>
+              </div>
             </div>
           ))}
           <div className="border-t pt-2 mt-4 flex justify-between text-lg font-bold">
