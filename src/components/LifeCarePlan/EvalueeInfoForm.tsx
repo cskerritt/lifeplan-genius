@@ -64,35 +64,42 @@ export default function EvalueeInfoForm({
     }
   };
 
+  const handleMainFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      <BasicInfoForm
-        firstName={formData.firstName}
-        lastName={formData.lastName}
-        dateOfBirth={formData.dateOfBirth}
-        dateOfInjury={formData.dateOfInjury}
-        gender={formData.gender}
-        onFieldChange={handleFieldChange}
-      />
+    <div className="space-y-6">
+      <form onSubmit={handleMainFormSubmit}>
+        <BasicInfoForm
+          firstName={formData.firstName}
+          lastName={formData.lastName}
+          dateOfBirth={formData.dateOfBirth}
+          dateOfInjury={formData.dateOfInjury}
+          gender={formData.gender}
+          onFieldChange={handleFieldChange}
+        />
 
-      <LocationSelector
-        zipCode={formData.zipCode}
-        state={formData.state}
-        city={formData.city}
-        cities={cities}
-        onZipCodeChange={(value) => handleFieldChange('zipCode', value)}
-        onStateChange={handleStateChange}
-        onCityChange={handleCityChange}
-        onLookup={handleZipLookup}
-        isLoading={isLoading}
-      />
+        <LocationSelector
+          zipCode={formData.zipCode}
+          state={formData.state}
+          city={formData.city}
+          cities={cities}
+          onZipCodeChange={(value) => handleFieldChange('zipCode', value)}
+          onStateChange={handleStateChange}
+          onCityChange={handleCityChange}
+          onLookup={handleZipLookup}
+          isLoading={isLoading}
+        />
 
-      <LifeExpectancyInput
-        value={formData.lifeExpectancy}
-        onChange={(value) => handleFieldChange('lifeExpectancy', value)}
-      />
+        <LifeExpectancyInput
+          value={formData.lifeExpectancy}
+          onChange={(value) => handleFieldChange('lifeExpectancy', value)}
+        />
 
-      <FormActions onCancel={onCancel} />
-    </form>
+        <FormActions onCancel={onCancel} />
+      </form>
+    </div>
   );
 }
