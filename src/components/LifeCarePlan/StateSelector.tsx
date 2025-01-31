@@ -80,7 +80,6 @@ export function StateSelector({
 }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
   
-  // Ensure we always have a valid array of states to work with
   const displayStates = React.useMemo(() => {
     return states && Array.isArray(states) ? states : US_STATES;
   }, [states]);
@@ -117,7 +116,7 @@ export function StateSelector({
               {displayStates.map((state) => (
                 <CommandItem
                   key={state.id}
-                  value={state.id}
+                  value={state.name}
                   onSelect={() => {
                     onValueChange(state.id);
                     setOpen(false);
