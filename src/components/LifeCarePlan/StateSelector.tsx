@@ -20,7 +20,7 @@ interface StateSelectorProps {
 export function StateSelector({ 
   value, 
   states = [], 
-  isLoading, 
+  isLoading = false, 
   onValueChange 
 }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
@@ -31,13 +31,13 @@ export function StateSelector({
     [states, value]
   );
 
-  const filteredStates = React.useMemo(() => 
-    states.filter((state) => 
+  const filteredStates = React.useMemo(() => {
+    if (!Array.isArray(states)) return [];
+    return states.filter((state) => 
       state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       state.id.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-    [states, searchQuery]
-  );
+    );
+  }, [states, searchQuery]);
 
   return (
     <div className="space-y-2">
