@@ -84,7 +84,12 @@ export function StateSelector({
   onValueChange 
 }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
-  const displayStates = Array.from(states || US_STATES);
+  
+  // Safely initialize displayStates with a default value
+  const displayStates = React.useMemo(() => {
+    return states || US_STATES;
+  }, [states]);
+
   const selectedState = React.useMemo(
     () => displayStates.find((state) => state.id === value),
     [displayStates, value]
