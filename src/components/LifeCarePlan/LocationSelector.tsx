@@ -41,6 +41,15 @@ export function LocationSelector({
     onZipCodeChange(value);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (zipCode.length === 5) {
+        onLookup(zipCode);
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-4">
@@ -66,6 +75,7 @@ export function LocationSelector({
               placeholder="Enter ZIP code"
               value={zipCode}
               onChange={handleZipChange}
+              onKeyDown={handleKeyDown}
               maxLength={5}
               pattern="[0-9]{5}"
               className="flex-1"
