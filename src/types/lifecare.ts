@@ -48,6 +48,15 @@ export interface CategoryTotal {
   costRange: CostRange;
 }
 
+export interface CPTCode {
+  code: string;
+  description: string;
+  base_rate_50th: number;
+  base_rate_75th: number;
+  mfr_factor?: number;
+  pfr_factor?: number;
+}
+
 export interface SurgicalComponent {
   surgeonFee: CostRange;
   anesthesiaFee: CostRange;
@@ -71,4 +80,17 @@ export interface LifeCarePlan {
   grandTotal: CostRange;
   createdAt: string;
   updatedAt: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  date_of_injury: string;
+  race: string;
+  gender: string;
+  street_address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  county_apc: string;
+  county_drg: string;
+  statistical_lifespan?: number;
 }

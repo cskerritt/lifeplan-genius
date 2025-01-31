@@ -293,7 +293,9 @@ export type Database = {
           gaf_lookup: number | null
           id: string
           mfr_code: string
+          mfr_factor: number | null
           pfr_code: string
+          pfr_factor: number | null
           state_id: string
           state_name: string
           zip: string
@@ -306,7 +308,9 @@ export type Database = {
           gaf_lookup?: number | null
           id?: string
           mfr_code: string
+          mfr_factor?: number | null
           pfr_code: string
+          pfr_factor?: number | null
           state_id: string
           state_name: string
           zip: string
@@ -319,7 +323,9 @@ export type Database = {
           gaf_lookup?: number | null
           id?: string
           mfr_code?: string
+          mfr_factor?: number | null
           pfr_code?: string
+          pfr_factor?: number | null
           state_id?: string
           state_name?: string
           zip?: string
