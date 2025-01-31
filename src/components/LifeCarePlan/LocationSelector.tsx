@@ -34,7 +34,7 @@ export function LocationSelector({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="zipCode">ZIP Code</Label>
         <div className="flex gap-2">
@@ -49,7 +49,7 @@ export function LocationSelector({
             required
           />
           <Button 
-            type="submit"
+            onClick={handleSubmit}
             disabled={isLoading || !zipCode || zipCode.length !== 5}
           >
             <Search className="h-4 w-4 mr-2" />
@@ -57,6 +57,6 @@ export function LocationSelector({
           </Button>
         </div>
       </div>
-    </form>
+    </div>
   );
 }

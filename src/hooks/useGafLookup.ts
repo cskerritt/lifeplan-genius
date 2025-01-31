@@ -21,7 +21,7 @@ export function useGafLookup() {
         title: "Invalid ZIP Code",
         description: "Please enter a valid 5-digit ZIP code"
       });
-      return;
+      return null;
     }
 
     setIsLoading(true);
@@ -37,17 +37,20 @@ export function useGafLookup() {
       if (error) throw error;
 
       if (data) {
-        setGeoFactors({
+        const factors = {
           mfr_code: data.mfr_code,
           pfr_code: data.pfr_code,
           city: data.city,
           state_name: data.state_name
-        });
+        };
+        setGeoFactors(factors);
         
         toast({
           title: "Location Found",
           description: `Found location data for ${data.city || ''}, ${data.state_name || ''}`
         });
+        
+        return factors;
       } else {
         setGeoFactors(null);
         toast({
@@ -55,6 +58,7 @@ export function useGafLookup() {
           title: "Location Not Found",
           description: "No data found for this ZIP code"
         });
+        return null;
       }
     } catch (error) {
       console.error('Error looking up geographic factors:', error);
@@ -64,6 +68,7 @@ export function useGafLookup() {
         title: "Error",
         description: "Failed to fetch location data"
       });
+      return null;
     } finally {
       setIsLoading(false);
     }
