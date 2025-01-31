@@ -9,10 +9,12 @@ import { Link } from "react-router-dom";
 
 const Index = () => {
   const { toast } = useToast();
+  console.log("Fetching life care plans..."); // Debug log
 
   const { data: plans, isLoading, error } = useQuery({
     queryKey: ["life-care-plans"],
     queryFn: async () => {
+      console.log("Executing query..."); // Debug log
       const { data, error } = await supabase
         .from("life_care_plans")
         .select(`
@@ -22,6 +24,7 @@ const Index = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error("Supabase error:", error); // Debug log
         toast({
           variant: "destructive",
           title: "Error fetching plans",
@@ -30,6 +33,7 @@ const Index = () => {
         throw error;
       }
 
+      console.log("Fetched data:", data); // Debug log
       return data;
     },
   });
@@ -38,7 +42,11 @@ const Index = () => {
     return (
       <div className="space-y-6">
         <Skeleton className="h-12 w-3/4" />
-        <Skeleton className="h-48 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -47,12 +55,13 @@ const Index = () => {
     return (
       <div className="text-center py-12">
         <p className="text-red-500">Failed to load life care plans</p>
+        <pre className="mt-2 text-sm text-gray-600">{JSON.stringify(error, null, 2)}</pre>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Life Care Plans Dashboard</h1>
         <p className="mt-2 text-gray-600">
@@ -101,11 +110,11 @@ const Index = () => {
           </Card>
         ))}
 
-        {plans?.length === 0 && (
+        {(!plans || plans.length === 0) && (
           <div className="col-span-full text-center py-12 bg-gray-50 rounded-lg">
             <p className="text-gray-600">No life care plans found</p>
-            <Button className="mt-4">
-              Create New Plan
+            <Button className="mt-4" asChild>
+              <Link to="/plans/new">Create New Plan</Link>
             </Button>
           </div>
         )}
