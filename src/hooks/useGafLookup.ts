@@ -17,6 +17,7 @@ export function useGafLookup() {
   const lookupGeoFactors = async (zipCode: string) => {
     // Clean and pad the ZIP code
     const cleanZip = zipCode.replace(/\D/g, '').padStart(5, '0');
+    console.log('Looking up GAF for ZIP:', cleanZip);
     
     // Validate the ZIP code format
     if (cleanZip.length !== 5) {
@@ -29,7 +30,6 @@ export function useGafLookup() {
     }
 
     setIsLoading(true);
-    console.log('Looking up GAF for ZIP:', cleanZip);
 
     try {
       const { data, error } = await supabase
@@ -44,10 +44,15 @@ export function useGafLookup() {
         toast({
           variant: "destructive",
           title: "Location Not Found",
-          description: "No data found for this ZIP code"
+          description: "No location data found for this ZIP code"
         });
         return null;
       }
+
+      toast({
+        title: "Location Found",
+        description: `Found location data for ${data.city || ''}, ${data.state_name || ''}`
+      });
 
       setGeoFactors(data);
       return data;
@@ -57,7 +62,7 @@ export function useGafLookup() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to fetch location data"
+        description: "Failed to lookup location data"
       });
       return null;
     } finally {
