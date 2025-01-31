@@ -35,6 +35,7 @@ export function StateSelector({ value, states = [], isLoading, onValueChange }: 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
+            id="state"
             type="button"
             role="combobox"
             aria-expanded={open}
@@ -60,11 +61,11 @@ export function StateSelector({ value, states = [], isLoading, onValueChange }: 
               placeholder="Search states..." 
               value={searchQuery}
               onValueChange={setSearchQuery}
-              className="h-9" 
+              className="h-9"
             />
             <CommandEmpty>No state found.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-auto">
-              {filteredStates.map((state) => (
+              {(filteredStates || []).map((state) => (
                 <CommandItem
                   key={state.id}
                   value={state.name}
