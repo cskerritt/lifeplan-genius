@@ -27,7 +27,6 @@ const US_STATES: State[] = [
   { id: 'CO', name: 'Colorado' },
   { id: 'CT', name: 'Connecticut' },
   { id: 'DE', name: 'Delaware' },
-  { id: 'DC', name: 'District of Columbia' },
   { id: 'FL', name: 'Florida' },
   { id: 'GA', name: 'Georgia' },
   { id: 'HI', name: 'Hawaii' },
