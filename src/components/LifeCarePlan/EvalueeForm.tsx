@@ -17,12 +17,17 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { Evaluee } from "@/types/lifecare";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface EvalueeFormProps {
-  onSave: (evaluee: Evaluee) => void;
+  onSave?: (evaluee: Evaluee) => void;
 }
 
 const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<Evaluee>({
     id: crypto.randomUUID(),
     firstName: "",
@@ -34,9 +39,66 @@ const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
     email: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "You must be logged in to create a life care plan",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('life_care_plans')
+        .insert({
+          user_id: user.id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          date_of_birth: formData.dateOfBirth,
+          gender: formData.gender,
+          street_address: formData.address,
+          city: "", // These fields are required by the schema
+          state: "",
+          zip_code: "",
+          race: "",
+          county_apc: "",
+          county_drg: "",
+        });
+
+      if (error) {
+        console.error("Error saving evaluee:", error);
+        toast({
+          variant: "destructive",
+          title: "Error saving evaluee",
+          description: error.message,
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Evaluee information saved successfully",
+      });
+
+      if (onSave) {
+        onSave(formData);
+      }
+      
+      navigate('/');
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
+      });
+    }
   };
 
   return (
@@ -56,6 +118,7 @@ const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
                 }
+                required
               />
             </div>
             <div className="space-y-2">
@@ -66,6 +129,7 @@ const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
+                required
               />
             </div>
             <div className="space-y-2">
@@ -77,6 +141,7 @@ const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
                 onChange={(e) =>
                   setFormData({ ...formData, dateOfBirth: e.target.value })
                 }
+                required
               />
             </div>
             <div className="space-y-2">
@@ -86,6 +151,7 @@ const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
                 onValueChange={(value) =>
                   setFormData({ ...formData, gender: value })
                 }
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select gender" />
