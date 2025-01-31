@@ -34,7 +34,7 @@ export function CitySelector({ value, cities, isLoading, disabled, onValueChange
             } 
           />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-[300px]">
           {cities.map(city => (
             <SelectItem key={city} value={city}>
               {city}

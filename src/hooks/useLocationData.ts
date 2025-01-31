@@ -23,22 +23,31 @@ export function useLocationData() {
     const fetchLocations = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data: gafData, error: gafError } = await supabase
           .from('gaf_lookup')
           .select('city, state_id, state_name')
           .order('state_name', { ascending: true });
 
-        if (error) throw error;
+        if (gafError) throw gafError;
 
-        if (data) {
-          setLocations(data as Location[]);
+        if (gafData) {
+          setLocations(gafData as Location[]);
           
-          const uniqueStates = Array.from(new Set(
-            data.map(loc => JSON.stringify({ id: loc.state_id, name: loc.state_name }))
-          )).map(str => JSON.parse(str));
+          // Create a unique set of states using both state_id and state_name
+          const uniqueStates = Array.from(
+            new Map(
+              gafData.map(loc => [
+                loc.state_id,
+                { id: loc.state_id, name: loc.state_name }
+              ])
+            ).values()
+          );
           
           setStates(uniqueStates.sort((a, b) => a.name.localeCompare(b.name)));
         }
+
+        console.log('Fetched states:', states.length);
+        console.log('Fetched locations:', locations.length);
       } catch (error) {
         console.error('Error fetching locations:', error);
         toast({

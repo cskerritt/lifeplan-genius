@@ -27,7 +27,7 @@ export function StateSelector({ value, states, isLoading, onValueChange }: State
         <SelectTrigger>
           <SelectValue placeholder={isLoading ? "Loading states..." : "Select state"} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-[300px]">
           {states.map(state => (
             <SelectItem key={state.id} value={state.id}>
               {state.name}

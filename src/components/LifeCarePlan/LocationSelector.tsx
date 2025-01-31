@@ -30,6 +30,7 @@ export function LocationSelector({
       
       setCities(stateCities);
 
+      // Reset city if it's not in the new list of cities
       if (city && !stateCities.includes(city)) {
         onCityChange('');
       }
