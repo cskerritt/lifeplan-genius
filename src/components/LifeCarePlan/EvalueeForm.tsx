@@ -89,14 +89,17 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
 
     try {
       const { data, error } = await supabase
-        .from('geographic_factors')
+        .from('gaf_lookup')
         .select('*')
         .eq('zip', zip.padStart(5, '0'))
         .maybeSingle();
 
       if (error) throw error;
       if (data) {
-        setGeoFactors(data);
+        setGeoFactors({
+          mfr_factor: data.mfr_code,
+          pfr_factor: data.pfr_code
+        });
       }
     } catch (error) {
       console.error('Error fetching geographic factors:', error);
