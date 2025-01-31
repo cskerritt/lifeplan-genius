@@ -25,6 +25,9 @@ interface EvalueeFormProps {
   onSave?: (evaluee: Evaluee) => void;
 }
 
+// Constant preview UUID that follows the correct format
+const PREVIEW_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -45,8 +48,8 @@ const EvalueeForm = ({ onSave }: EvalueeFormProps) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // For preview/development, use a mock user ID if not authenticated
-      const userId = user?.id || 'preview-user-id';
+      // For preview/development, use a valid UUID if not authenticated
+      const userId = user?.id || PREVIEW_USER_ID;
       
       const { error } = await supabase
         .from('life_care_plans')
