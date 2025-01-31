@@ -31,23 +31,27 @@ interface PlanCardProps {
 
 const PlanCard = ({ plan, onDelete }: PlanCardProps) => {
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="group hover:shadow-lg transition-all duration-300 bg-white/50 backdrop-blur-sm border border-gray-200">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center">
-            <User className="w-5 h-5 mr-2 text-medical-500" />
-            {plan.first_name} {plan.last_name}
-          </span>
-          <div className="flex gap-2">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 rounded-full bg-medical-50 text-medical-500">
+              <User className="w-5 h-5" />
+            </div>
+            <span className="font-semibold text-gray-900">
+              {plan.first_name} {plan.last_name}
+            </span>
+          </div>
+          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <Link to={`/plans/${plan.id}`}>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="hover:bg-medical-50 hover:text-medical-600">
                 <FileText className="w-4 h-4 mr-2" />
-                View
+                View Details
               </Button>
             </Link>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600">
+                <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
@@ -55,7 +59,7 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps) => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Life Care Plan</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete this life care plan? This action cannot be undone.
+                    Are you sure you want to delete the life care plan for {plan.first_name} {plan.last_name}? This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -64,7 +68,7 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps) => {
                     onClick={() => onDelete(plan.id)}
                     className="bg-red-500 hover:bg-red-600"
                   >
-                    Delete
+                    Delete Plan
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -73,24 +77,29 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center text-gray-600">
-          <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-          {plan.city}, {plan.state} {plan.zip_code}
-        </div>
-        <div className="flex items-center text-gray-600">
-          <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-          DOB: {new Date(plan.date_of_birth).toLocaleDateString()}
-        </div>
-        {plan.date_of_injury && (
+        <div className="flex flex-col space-y-2 text-sm">
+          <div className="flex items-center text-gray-600">
+            <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+            {plan.city}, {plan.state} {plan.zip_code}
+          </div>
           <div className="flex items-center text-gray-600">
             <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-            Injury Date: {new Date(plan.date_of_injury).toLocaleDateString()}
+            Born: {new Date(plan.date_of_birth).toLocaleDateString()}
           </div>
-        )}
-        <div className="mt-4 pt-4 border-t">
-          <p className="text-sm text-gray-500">
-            {plan.care_plan_entries?.length || 0} care items
-          </p>
+          {plan.date_of_injury && (
+            <div className="flex items-center text-gray-600">
+              <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+              Injury Date: {new Date(plan.date_of_injury).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+        <div className="pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-500">Care Items</span>
+            <span className="text-sm font-medium text-medical-600">
+              {plan.care_plan_entries?.length || 0}
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>

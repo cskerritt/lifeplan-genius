@@ -70,42 +70,30 @@ const Index = () => {
     );
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6 p-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-12 w-1/3" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <Skeleton className="h-12 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-48" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500">Failed to load life care plans</p>
-        <pre className="mt-2 text-sm text-gray-600">{JSON.stringify(error, null, 2)}</pre>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-6">
+        <div className="text-center space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900">Unable to Load Plans</h2>
+          <p className="text-gray-600">There was an error loading your life care plans.</p>
+          <Button onClick={() => refetch()} className="bg-medical-500 hover:bg-medical-600">
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-8 p-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Life Care Plans Dashboard</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900">Life Care Plans</h1>
+          <p className="mt-1 text-gray-600">
             Manage and track your life care plans
           </p>
         </div>
-        <Button asChild className="bg-medical-500 hover:bg-medical-600">
+        <Button asChild className="bg-medical-500 hover:bg-medical-600 whitespace-nowrap">
           <Link to="/plans/new">
             <Plus className="w-4 h-4 mr-2" />
             New Plan
@@ -115,15 +103,33 @@ const Index = () => {
 
       <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPlans?.length ? (
-          filteredPlans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} onDelete={handleDelete} />
-          ))
-        ) : (
-          <EmptyState />
-        )}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-4 rounded-lg border border-gray-200 p-4">
+              <div className="flex justify-between items-start">
+                <Skeleton className="h-8 w-1/2" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPlans?.length ? (
+            filteredPlans.map((plan) => (
+              <PlanCard key={plan.id} plan={plan} onDelete={handleDelete} />
+            ))
+          ) : (
+            <EmptyState />
+          )}
+        </div>
+      )}
     </div>
   );
 };
