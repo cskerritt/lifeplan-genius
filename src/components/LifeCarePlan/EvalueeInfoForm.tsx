@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
-import { useGafLookup } from '@/hooks/useGafLookup';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/hooks/use-toast";
 
 interface EvalueeInfoFormProps {
   formData: {
@@ -31,7 +32,7 @@ export default function EvalueeInfoForm({
   onCancel,
   onSubmit
 }: EvalueeInfoFormProps) {
-  const { geoFactors, lookupGeoFactors } = useGafLookup();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleFieldChange = (field: string, value: string) => {
@@ -40,18 +41,42 @@ export default function EvalueeInfoForm({
 
   const handleZipLookup = async (zipCode: string) => {
     setIsLoading(true);
-    await lookupGeoFactors(zipCode);
-    setIsLoading(false);
-  };
+    try {
+      const { data, error } = await supabase
+        .from('gaf_lookup')
+        .select('city, state_name, mfr_code, pfr_code')
+        .eq('zip', zipCode)
+        .maybeSingle();
 
-  // Update city and state when geoFactors changes
-  React.useEffect(() => {
-    if (geoFactors) {
-      handleFieldChange('city', geoFactors.city || '');
-      handleFieldChange('state', geoFactors.state || '');
-      onLocationChange(geoFactors.city || '', geoFactors.state || '');
+      if (error) throw error;
+
+      if (data) {
+        handleFieldChange('city', data.city || '');
+        handleFieldChange('state', data.state_name || '');
+        onLocationChange(data.city || '', data.state_name || '');
+        
+        toast({
+          title: "Location Found",
+          description: `Found location data for ${data.city}, ${data.state_name}`
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Location Not Found",
+          description: "No data found for this ZIP code"
+        });
+      }
+    } catch (error) {
+      console.error('Error looking up ZIP:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to look up location data"
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [geoFactors]);
+  };
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -71,7 +96,7 @@ export default function EvalueeInfoForm({
         isLoading={isLoading}
       />
 
-      {geoFactors && (
+      {formData.city && formData.state && (
         <div className="space-y-2">
           <div>
             <Label htmlFor="city">City</Label>
