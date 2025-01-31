@@ -23,17 +23,16 @@ export function useLocationData() {
     const fetchLocations = async () => {
       setIsLoading(true);
       try {
-        // First, fetch all unique states with distinct to ensure we get all states
+        // Fetch distinct states from gaf_lookup
         const { data: statesData, error: statesError } = await supabase
           .from('gaf_lookup')
           .select('state_id, state_name')
-          .order('state_name')
-          .limit(1000); // Increased limit to ensure we get all states
+          .order('state_name');
 
         if (statesError) throw statesError;
 
         if (statesData) {
-          // Create a unique set of states using Set to remove duplicates
+          // Create a unique set of states
           const uniqueStatesMap = new Map();
           statesData.forEach(state => {
             if (!uniqueStatesMap.has(state.state_id)) {
@@ -48,21 +47,20 @@ export function useLocationData() {
             .sort((a, b) => a.name.localeCompare(b.name));
 
           setStates(uniqueStates);
-          console.log('Number of unique states:', uniqueStates.length);
+          console.log('States loaded:', uniqueStates.length);
         }
 
         // Then fetch all locations
         const { data: locationsData, error: locationsError } = await supabase
           .from('gaf_lookup')
           .select('city, state_id, state_name')
-          .order('city')
-          .limit(5000); // Increased limit to ensure we get all locations
+          .order('city');
 
         if (locationsError) throw locationsError;
 
         if (locationsData) {
           setLocations(locationsData);
-          console.log('Number of locations:', locationsData.length);
+          console.log('Locations loaded:', locationsData.length);
         }
 
       } catch (error) {
