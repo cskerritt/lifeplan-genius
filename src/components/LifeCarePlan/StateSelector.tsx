@@ -69,12 +69,7 @@ const US_STATES: State[] = [
   { id: 'WA', name: 'Washington' },
   { id: 'WV', name: 'West Virginia' },
   { id: 'WI', name: 'Wisconsin' },
-  { id: 'WY', name: 'Wyoming' },
-  { id: 'AS', name: 'American Samoa' },
-  { id: 'GU', name: 'Guam' },
-  { id: 'MP', name: 'Northern Mariana Islands' },
-  { id: 'PR', name: 'Puerto Rico' },
-  { id: 'VI', name: 'U.S. Virgin Islands' }
+  { id: 'WY', name: 'Wyoming' }
 ];
 
 export function StateSelector({ 
@@ -85,9 +80,9 @@ export function StateSelector({
 }: StateSelectorProps) {
   const [open, setOpen] = React.useState(false);
   
-  // Safely initialize displayStates with a default value
+  // Ensure we always have a valid array of states to work with
   const displayStates = React.useMemo(() => {
-    return states || US_STATES;
+    return states && Array.isArray(states) ? states : US_STATES;
   }, [states]);
 
   const selectedState = React.useMemo(
@@ -97,10 +92,11 @@ export function StateSelector({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="state">State</Label>
+      <Label htmlFor="state-selector">State</Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
+            id="state-selector"
             variant="outline"
             role="combobox"
             aria-expanded={open}
@@ -121,6 +117,7 @@ export function StateSelector({
               {displayStates.map((state) => (
                 <CommandItem
                   key={state.id}
+                  value={state.id}
                   onSelect={() => {
                     onValueChange(state.id);
                     setOpen(false);
