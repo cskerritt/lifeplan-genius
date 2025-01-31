@@ -23,31 +23,42 @@ export function useLocationData() {
     const fetchLocations = async () => {
       setIsLoading(true);
       try {
-        const { data: gafData, error: gafError } = await supabase
+        // First, fetch all unique states directly
+        const { data: statesData, error: statesError } = await supabase
           .from('gaf_lookup')
-          .select('city, state_id, state_name')
+          .select('state_id, state_name')
           .order('state_name', { ascending: true });
 
-        if (gafError) throw gafError;
+        if (statesError) throw statesError;
 
-        if (gafData) {
-          setLocations(gafData as Location[]);
-          
-          // Create a unique set of states using both state_id and state_name
+        if (statesData) {
+          // Create a unique set of states
           const uniqueStates = Array.from(
             new Map(
-              gafData.map(loc => [
-                loc.state_id,
-                { id: loc.state_id, name: loc.state_name }
+              statesData.map(state => [
+                state.state_id,
+                { id: state.state_id, name: state.state_name }
               ])
             ).values()
-          );
-          
-          setStates(uniqueStates.sort((a, b) => a.name.localeCompare(b.name)));
+          ).sort((a, b) => a.name.localeCompare(b.name));
+
+          setStates(uniqueStates);
         }
 
-        console.log('Fetched states:', states.length);
-        console.log('Fetched locations:', locations.length);
+        // Then fetch all locations
+        const { data: locationsData, error: locationsError } = await supabase
+          .from('gaf_lookup')
+          .select('city, state_id, state_name')
+          .order('city', { ascending: true });
+
+        if (locationsError) throw locationsError;
+
+        if (locationsData) {
+          setLocations(locationsData as Location[]);
+        }
+
+        console.log('Fetched states:', statesData?.length);
+        console.log('Fetched locations:', locationsData?.length);
       } catch (error) {
         console.error('Error fetching locations:', error);
         toast({
