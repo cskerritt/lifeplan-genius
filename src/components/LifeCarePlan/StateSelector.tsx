@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface StateSelectorProps {
   value: string;
@@ -14,45 +15,46 @@ export function StateSelector({
   isLoading = false, 
   onValueChange 
 }: StateSelectorProps) {
+  const { toast } = useToast();
+  const [inputValue, setInputValue] = useState(value);
   const [error, setError] = useState<string | null>(null);
 
-  // Validate state against GAF lookup table
-  const validateState = async (stateInput: string) => {
-    if (!stateInput) {
-      setError(null);
-      return;
-    }
-
-    try {
-      const { data, error: queryError } = await supabase
-        .from('gaf_lookup')
-        .select('state_name')
-        .ilike('state_name', stateInput)
-        .limit(1);
-
-      if (queryError) throw queryError;
-
-      if (data && data.length > 0) {
-        setError(null);
-        // Update with the correct case from the database
-        onValueChange(data[0].state_name);
-      } else {
-        setError('Please enter a valid US state name');
-      }
-    } catch (err) {
-      console.error('Error validating state:', err);
-      setError('Error validating state');
-    }
-  };
-
-  // Debounce validation to avoid too many database calls
+  // Debounced validation of state
   useEffect(() => {
+    const validateState = async () => {
+      if (!inputValue) {
+        setError(null);
+        return;
+      }
+
+      try {
+        const { data, error: queryError } = await supabase
+          .from('gaf_lookup')
+          .select('state_name')
+          .ilike('state_name', inputValue)
+          .limit(1);
+
+        if (queryError) throw queryError;
+
+        if (data && data.length > 0) {
+          setError(null);
+          // Update with the correct case from the database
+          onValueChange(data[0].state_name);
+        } else {
+          setError('Please enter a valid US state name');
+        }
+      } catch (err) {
+        console.error('Error validating state:', err);
+        setError('Error validating state');
+      }
+    };
+
     const timeoutId = setTimeout(() => {
-      validateState(value);
-    }, 500);
+      validateState();
+    }, 500); // Debounce for 500ms
 
     return () => clearTimeout(timeoutId);
-  }, [value]);
+  }, [inputValue]);
 
   return (
     <div className="space-y-2">
@@ -60,8 +62,8 @@ export function StateSelector({
       <Input
         id="state-input"
         type="text"
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
         placeholder="Enter state name"
         disabled={isLoading}
         className={error ? "border-red-500" : ""}
