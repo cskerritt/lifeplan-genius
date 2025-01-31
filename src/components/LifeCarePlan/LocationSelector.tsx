@@ -30,7 +30,15 @@ export function LocationSelector({
       });
       return;
     }
-    onLookup(zipCode);
+    // Pad the ZIP code with leading zeros if needed
+    const paddedZip = zipCode.padStart(5, '0');
+    onLookup(paddedZip);
+  };
+
+  const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow numbers
+    const value = e.target.value.replace(/\D/g, '');
+    onZipCodeChange(value);
   };
 
   return (
@@ -42,7 +50,7 @@ export function LocationSelector({
             id="zipCode"
             placeholder="Enter ZIP code"
             value={zipCode}
-            onChange={(e) => onZipCodeChange(e.target.value)}
+            onChange={handleZipChange}
             maxLength={5}
             pattern="[0-9]{5}"
             className="flex-1"

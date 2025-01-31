@@ -41,6 +41,7 @@ export default function EvalueeInfoForm({
 
   const handleZipLookup = async (zipCode: string) => {
     setIsLoading(true);
+    console.log('Looking up ZIP:', zipCode); // Debug log
     try {
       const { data, error } = await supabase
         .from('gaf_lookup')
