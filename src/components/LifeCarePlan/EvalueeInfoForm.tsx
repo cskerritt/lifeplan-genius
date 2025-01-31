@@ -17,11 +17,13 @@ interface EvalueeInfoFormProps {
     dateOfBirth: string;
     dateOfInjury: string;
     gender: string;
+    city: string;
+    state: string;
     zipCode: string;
     lifeExpectancy: string;
   };
   onFormDataChange: (data: any) => void;
-  onZipChange: (zip: string) => void;
+  onLocationChange: (city: string, state: string) => void;
   onCancel: () => void;
   onSubmit: (e: React.FormEvent) => void;
 }
@@ -29,10 +31,18 @@ interface EvalueeInfoFormProps {
 export default function EvalueeInfoForm({
   formData,
   onFormDataChange,
-  onZipChange,
+  onLocationChange,
   onCancel,
   onSubmit
 }: EvalueeInfoFormProps) {
+  const handleCityStateChange = (field: string, value: string) => {
+    const newFormData = { ...formData, [field]: value };
+    onFormDataChange(newFormData);
+    if (newFormData.city && newFormData.state) {
+      onLocationChange(newFormData.city, newFormData.state);
+    }
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -91,17 +101,38 @@ export default function EvalueeInfoForm({
           </Select>
         </div>
         <div className="space-y-2">
+          <Label htmlFor="city">City/Town</Label>
+          <Input
+            id="city"
+            value={formData.city}
+            onChange={(e) => handleCityStateChange('city', e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="state">State</Label>
+          <Select
+            value={formData.state}
+            onValueChange={(value) => handleCityStateChange('state', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent>
+              {/* Add all US states */}
+              <SelectItem value="AL">Alabama</SelectItem>
+              <SelectItem value="AK">Alaska</SelectItem>
+              <SelectItem value="AZ">Arizona</SelectItem>
+              {/* ... Add all other states */}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="zipCode">ZIP Code</Label>
           <Input
             id="zipCode"
             value={formData.zipCode}
-            onChange={(e) => {
-              const zip = e.target.value.slice(0, 5);
-              onFormDataChange({ ...formData, zipCode: zip });
-              if (zip.length === 5) {
-                onZipChange(zip);
-              }
-            }}
+            onChange={(e) => onFormDataChange({ ...formData, zipCode: e.target.value })}
             pattern="[0-9]{5}"
             required
           />
