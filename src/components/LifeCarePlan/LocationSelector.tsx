@@ -29,8 +29,7 @@ export function LocationSelector({
   onLookup,
   isLoading 
 }: LocationSelectorProps) {
-  const handleZipSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleZipLookup = () => {
     if (zipCode.length === 5) {
       onLookup(zipCode);
     }
@@ -44,9 +43,7 @@ export function LocationSelector({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (zipCode.length === 5) {
-        onLookup(zipCode);
-      }
+      handleZipLookup();
     }
   };
 
@@ -82,7 +79,7 @@ export function LocationSelector({
             />
             <Button 
               type="button"
-              onClick={handleZipSubmit}
+              onClick={handleZipLookup}
               disabled={isLoading || !zipCode || zipCode.length !== 5}
             >
               <Search className="h-4 w-4 mr-2" />
