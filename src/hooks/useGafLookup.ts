@@ -2,8 +2,15 @@ import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+interface GafFactors {
+  mfr_code: number;
+  pfr_code: number;
+  city?: string;
+  state_name?: string;
+}
+
 export function useGafLookup() {
-  const [geoFactors, setGeoFactors] = useState<any>(null);
+  const [geoFactors, setGeoFactors] = useState<GafFactors | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
   const { toast } = useToast();
@@ -58,6 +65,14 @@ export function useGafLookup() {
 
     try {
       console.log('📡 Fetching from Supabase...');
+      // First, let's debug what tables and data we have access to
+      const { data: tables } = await supabase
+        .from('gaf_lookup')
+        .select('*')
+        .limit(1);
+      
+      console.log('🔍 Available data structure:', tables);
+
       const { data, error } = await supabase
         .from('gaf_lookup')
         .select('city, state_name, mfr_code, pfr_code')
@@ -73,6 +88,13 @@ export function useGafLookup() {
 
       if (!data) {
         console.warn('⚠️ No data found for ZIP:', cleanZip);
+        // Let's try to debug what data exists in the table
+        const { data: sampleData } = await supabase
+          .from('gaf_lookup')
+          .select('zip')
+          .limit(5);
+        console.log('📊 Sample ZIP codes in database:', sampleData);
+        
         toast({
           variant: "destructive",
           title: "Location Not Found",
@@ -82,7 +104,7 @@ export function useGafLookup() {
         return null;
       }
 
-      const factors = {
+      const factors: GafFactors = {
         mfr_code: data.mfr_code,
         pfr_code: data.pfr_code,
         city: data.city,
