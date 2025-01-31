@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Search } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 
 interface LocationSelectorProps {
   zipCode: string;
@@ -18,32 +17,24 @@ export function LocationSelector({
   onLookup,
   isLoading 
 }: LocationSelectorProps) {
-  const { toast } = useToast();
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (zipCode.length !== 5) {
-      toast({
-        variant: "destructive",
-        title: "Invalid ZIP Code",
-        description: "Please enter a valid 5-digit ZIP code"
-      });
-      return;
-    }
+    if (zipCode.length !== 5) return;
+    
     // Pad the ZIP code with leading zeros if needed
     const paddedZip = zipCode.padStart(5, '0');
-    console.log('Looking up ZIP code:', paddedZip); // Debug log
+    console.log('Looking up ZIP code:', paddedZip);
     onLookup(paddedZip);
   };
 
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow numbers
-    const value = e.target.value.replace(/\D/g, '');
+    // Only allow numbers and limit to 5 digits
+    const value = e.target.value.replace(/\D/g, '').slice(0, 5);
     onZipCodeChange(value);
   };
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="zipCode">ZIP Code</Label>
         <div className="flex gap-2">
@@ -58,8 +49,7 @@ export function LocationSelector({
             required
           />
           <Button 
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             disabled={isLoading || !zipCode || zipCode.length !== 5}
           >
             <Search className="h-4 w-4 mr-2" />
@@ -67,6 +57,6 @@ export function LocationSelector({
           </Button>
         </div>
       </div>
-    </div>
+    </form>
   );
 }

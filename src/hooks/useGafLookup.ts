@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
+
+interface GafFactors {
+  mfr_code: number;
+  pfr_code: number;
+  city?: string;
+  state_name?: string;
+}
 
 export function useGafLookup() {
+  const [geoFactors, setGeoFactors] = useState<GafFactors | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [geoFactors, setGeoFactors] = useState<any>(null);
 
   const lookupGeoFactors = async (zipCode: string) => {
-    console.log('Looking up GAF for ZIP:', zipCode);
-
     if (!zipCode || zipCode.length !== 5) {
       toast({
         variant: "destructive",
@@ -18,6 +24,9 @@ export function useGafLookup() {
       return;
     }
 
+    setIsLoading(true);
+    console.log('Looking up GAF for ZIP:', zipCode);
+
     try {
       const { data, error } = await supabase
         .from('gaf_lookup')
@@ -26,38 +35,39 @@ export function useGafLookup() {
         .maybeSingle();
 
       if (error) throw error;
-      
-      console.log('GAF lookup result:', data);
 
       if (data) {
         setGeoFactors({
           mfr_code: data.mfr_code,
           pfr_code: data.pfr_code,
           city: data.city,
-          state: data.state_name
+          state_name: data.state_name
         });
         
         toast({
           title: "Location Found",
-          description: `Found factors for ${data.city}, ${data.state_name}`
+          description: `Found location data for ${data.city || ''}, ${data.state_name || ''}`
         });
       } else {
         setGeoFactors(null);
         toast({
           variant: "destructive",
           title: "Location Not Found",
-          description: "No geographic adjustment factors found for this ZIP code"
+          description: "No data found for this ZIP code"
         });
       }
     } catch (error) {
-      console.error('Error fetching geographic factors:', error);
+      console.error('Error looking up geographic factors:', error);
+      setGeoFactors(null);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to fetch geographic factors"
+        description: "Failed to fetch location data"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return { geoFactors, lookupGeoFactors };
+  return { geoFactors, isLoading, lookupGeoFactors };
 }

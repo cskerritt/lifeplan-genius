@@ -4,8 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from "@/hooks/use-toast";
+import { useGafLookup } from '@/hooks/useGafLookup';
 
 interface EvalueeInfoFormProps {
   formData: {
@@ -32,50 +31,24 @@ export default function EvalueeInfoForm({
   onCancel,
   onSubmit
 }: EvalueeInfoFormProps) {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const { isLoading, lookupGeoFactors } = useGafLookup();
 
   const handleFieldChange = (field: string, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
   };
 
   const handleZipLookup = async (zipCode: string) => {
-    setIsLoading(true);
-    console.log('Looking up ZIP:', zipCode); // Debug log
-    try {
-      const { data, error } = await supabase
-        .from('gaf_lookup')
-        .select('city, state_name, mfr_code, pfr_code')
-        .eq('zip', zipCode)
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from('gaf_lookup')
+      .select('city, state_name')
+      .eq('zip', zipCode)
+      .maybeSingle();
 
-      if (error) throw error;
-
-      if (data) {
-        handleFieldChange('city', data.city || '');
-        handleFieldChange('state', data.state_name || '');
-        onLocationChange(data.city || '', data.state_name || '');
-        
-        toast({
-          title: "Location Found",
-          description: `Found location data for ${data.city}, ${data.state_name}`
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Location Not Found",
-          description: "No data found for this ZIP code"
-        });
-      }
-    } catch (error) {
-      console.error('Error looking up ZIP:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to look up location data"
-      });
-    } finally {
-      setIsLoading(false);
+    if (data) {
+      handleFieldChange('city', data.city || '');
+      handleFieldChange('state', data.state_name || '');
+      onLocationChange(data.city || '', data.state_name || '');
+      lookupGeoFactors(zipCode);
     }
   };
 
