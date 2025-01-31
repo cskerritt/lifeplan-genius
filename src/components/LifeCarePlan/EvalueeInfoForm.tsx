@@ -1,9 +1,8 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
+import { LifeExpectancyInput } from './LifeExpectancyInput';
+import { FormActions } from './FormActions';
 import { useGafLookup } from '@/hooks/useGafLookup';
 
 interface EvalueeInfoFormProps {
@@ -50,7 +49,6 @@ export default function EvalueeInfoForm({
 
   const handleZipLookup = async (zipCode: string) => {
     const trimmedZip = zipCode.trim();
-    // Validate that the zip code is a 5-digit number and not "00000"
     if (!/^\d{5}$/.test(trimmedZip) || trimmedZip === "00000") {
       console.warn("Invalid zip code provided:", trimmedZip);
       return;
@@ -89,26 +87,12 @@ export default function EvalueeInfoForm({
         isLoading={isLoading}
       />
 
-      <div className="space-y-2">
-        <Label htmlFor="lifeExpectancyInput">Life Expectancy (years)</Label>
-        <Input
-          id="lifeExpectancyInput"
-          type="number"
-          step="0.01"
-          value={formData.lifeExpectancy}
-          onChange={(e) => handleFieldChange('lifeExpectancy', e.target.value)}
-          required
-        />
-      </div>
+      <LifeExpectancyInput
+        value={formData.lifeExpectancy}
+        onChange={(value) => handleFieldChange('lifeExpectancy', value)}
+      />
 
-      <div className="flex justify-end space-x-4 mt-6">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          Create Plan
-        </Button>
-      </div>
+      <FormActions onCancel={onCancel} />
     </form>
   );
 }
