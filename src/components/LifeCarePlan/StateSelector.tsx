@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,11 @@ export function StateSelector({
   const { toast } = useToast();
   const [inputValue, setInputValue] = useState(value);
   const [error, setError] = useState<string | null>(null);
+
+  // Update input value when value prop changes (e.g. from ZIP lookup)
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
 
   // Debounced validation of state
   useEffect(() => {

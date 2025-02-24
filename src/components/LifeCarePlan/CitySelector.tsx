@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import {
@@ -25,7 +26,7 @@ export function CitySelector({ value, cities, isLoading, disabled, onValueChange
         onValueChange={onValueChange}
         disabled={disabled || isLoading}
       >
-        <SelectTrigger>
+        <SelectTrigger className="w-full">
           <SelectValue 
             placeholder={
               isLoading ? "Loading cities..." : 
