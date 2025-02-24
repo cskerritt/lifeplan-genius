@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -19,13 +20,18 @@ const PlanDetail = () => {
   const [geoFactors, setGeoFactors] = useState<{ mfr_factor: number; pfr_factor: number } | null>(null);
 
   const fetchGeoFactors = async (zipCode: string) => {
+    console.log('Fetching geographic factors for ZIP:', zipCode);
     try {
       const { data, error } = await supabase
         .rpc('search_geographic_factors', { zip_code: zipCode });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error in fetchGeoFactors:', error);
+        throw error;
+      }
 
       if (data && data.length > 0) {
+        console.log('Found geographic factors:', data[0]);
         setGeoFactors({
           mfr_factor: data[0].mfr_code,
           pfr_factor: data[0].pfr_code
@@ -37,15 +43,24 @@ const PlanDetail = () => {
   };
 
   const lookupCPTCode = async (code: string) => {
+    console.log('Looking up CPT code:', code);
     try {
+      // Use the validate_cpt_code function instead of direct table query
       const { data, error } = await supabase
-        .from('cpt_codes')
-        .select('*')
-        .eq('code', code)
-        .single();
+        .rpc('validate_cpt_code', { code_to_check: code });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error in lookupCPTCode:', error);
+        throw error;
+      }
+
+      console.log('CPT code lookup result:', data);
+      
+      if (data && data.length > 0 && data[0].is_valid) {
+        return data[0];
+      }
+      
+      return null;
     } catch (error) {
       console.error('Error looking up CPT code:', error);
       return null;
@@ -56,6 +71,7 @@ const PlanDetail = () => {
     baseRate: number,
     cptCode: string | null = null
   ) => {
+    console.log('Calculating adjusted costs:', { baseRate, cptCode });
     try {
       let low = baseRate;
       let average = baseRate;
@@ -64,6 +80,7 @@ const PlanDetail = () => {
       if (cptCode) {
         const cptData = await lookupCPTCode(cptCode);
         if (cptData) {
+          console.log('Using CPT code data:', cptData);
           low = cptData.pfr_50th;
           average = cptData.pfr_75th;
           high = cptData.pfr_90th;
@@ -71,10 +88,30 @@ const PlanDetail = () => {
       }
 
       if (geoFactors) {
+        console.log('Applying geographic factors:', geoFactors);
         const { mfr_factor, pfr_factor } = geoFactors;
-        low *= ((mfr_factor + pfr_factor) / 2);
-        average *= ((mfr_factor + pfr_factor) / 2) * 1.15;
-        high *= ((mfr_factor + pfr_factor) / 2) * 1.25;
+        
+        // Use RPC function for cost adjustment
+        const { data: adjustedCosts, error } = await supabase
+          .rpc('calculate_adjusted_costs', {
+            base_fee: baseRate,
+            mfr_factor: mfr_factor,
+            pfr_factor: pfr_factor
+          });
+
+        if (error) {
+          console.error('Error calculating adjusted costs:', error);
+          throw error;
+        }
+
+        if (adjustedCosts && adjustedCosts.length > 0) {
+          console.log('Adjusted costs calculated:', adjustedCosts[0]);
+          return {
+            low: Math.round(adjustedCosts[0].min_cost * 100) / 100,
+            average: Math.round(adjustedCosts[0].avg_cost * 100) / 100,
+            high: Math.round(adjustedCosts[0].max_cost * 100) / 100
+          };
+        }
       }
 
       return {
@@ -89,6 +126,7 @@ const PlanDetail = () => {
   };
 
   const calculateAnnualCost = (frequency: string, costPerUnit: number) => {
+    console.log('Calculating annual cost:', { frequency, costPerUnit });
     const frequencyLower = frequency.toLowerCase();
     let multiplier = 1;
 
@@ -103,12 +141,16 @@ const PlanDetail = () => {
       multiplier = 1;
     }
 
-    return Math.round(costPerUnit * multiplier * 100) / 100;
+    const annualCost = Math.round(costPerUnit * multiplier * 100) / 100;
+    console.log('Calculated annual cost:', annualCost);
+    return annualCost;
   };
 
   const handleAddItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
+    console.log('Adding new item:', newItem);
     try {
       const adjustedCosts = await calculateAdjustedCosts(newItem.costPerUnit, newItem.cptCode);
+      console.log('Adjusted costs calculated:', adjustedCosts);
       
       const annualCost = calculateAnnualCost(
         newItem.frequency,
@@ -123,6 +165,7 @@ const PlanDetail = () => {
       };
 
       if (id !== "new") {
+        console.log('Adding item to existing plan:', id);
         const { data: planData } = await supabase
           .from('life_care_plans')
           .select('life_expectancy')
@@ -150,7 +193,10 @@ const PlanDetail = () => {
             is_one_time: false
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error inserting care plan entry:', error);
+          throw error;
+        }
       }
 
       setItems(prev => [...prev, item]);
