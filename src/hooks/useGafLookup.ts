@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -47,10 +48,13 @@ export function useGafLookup() {
     setIsLoading(true);
     
     try {
+      // Make sure the ZIP is padded to 5 digits
+      const paddedZip = zipCode.padStart(5, '0');
+      
       const { data, error } = await supabase
         .from('gaf_lookup')
         .select('city, state_name, mfr_code, pfr_code')
-        .eq('zip', zipCode.padStart(5, '0'))
+        .eq('zip', paddedZip)
         .maybeSingle();
 
       if (error) throw error;

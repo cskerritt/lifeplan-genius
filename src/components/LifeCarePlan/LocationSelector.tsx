@@ -34,20 +34,15 @@ export function LocationSelector({
   const { toast } = useToast();
 
   const handleZipLookup = () => {
-    // For testing, we'll focus on ZIP code 02917
-    const validZip = "02917";
-    
-    if (zipCode === validZip) {
-      console.log("Looking up valid ZIP:", validZip);
-      onLookup(validZip);
-    } else {
+    if (!zipCode || zipCode.length !== 5) {
       toast({
         variant: "destructive",
         title: "Invalid ZIP Code",
-        description: "Please use ZIP code 02917 for testing"
+        description: "Please enter a valid 5-digit ZIP code"
       });
-      onZipCodeChange(validZip); // Automatically set the valid ZIP
+      return;
     }
+    onLookup(zipCode);
   };
 
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,11 +75,11 @@ export function LocationSelector({
         />
 
         <div className="space-y-2">
-          <Label htmlFor="zipCodeInput">ZIP Code (use 02917)</Label>
+          <Label htmlFor="zipCodeInput">ZIP Code</Label>
           <div className="flex gap-2">
             <Input
               id="zipCodeInput"
-              placeholder="Enter 02917"
+              placeholder="Enter ZIP code"
               value={zipCode}
               onChange={handleZipChange}
               onKeyDown={handleKeyDown}
