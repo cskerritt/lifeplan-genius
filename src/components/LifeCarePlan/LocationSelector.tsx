@@ -34,7 +34,7 @@ export function LocationSelector({
   const { toast } = useToast();
 
   const handleZipLookup = () => {
-    if (!zipCode || zipCode.length !== 5) {
+    if (!/^\d{5}$/.test(zipCode)) {
       toast({
         variant: "destructive",
         title: "Invalid ZIP Code",

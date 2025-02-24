@@ -21,7 +21,7 @@ export function useGafLookup() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('gaf_lookup')  // Changed from geographic_factors to gaf_lookup
+        .from('gaf_lookup')
         .select('city')
         .eq('state_name', state)
         .not('city', 'is', null);
@@ -46,50 +46,36 @@ export function useGafLookup() {
   const lookupGeoFactors = async (zipCode: string) => {
     console.log('Looking up ZIP:', zipCode);
     setIsLoading(true);
+    setGeoFactors(null); // Reset any previous data
     
     try {
-      // Make sure the ZIP is padded to 5 digits
-      const paddedZip = zipCode.padStart(5, '0');
-      console.log('Padded ZIP for lookup:', paddedZip);
-      
-      // Log the query we're about to make
-      console.log('Querying gaf_lookup table with ZIP:', paddedZip);
-      
-      const { data, error } = await supabase
-        .from('gaf_lookup')  // Changed from geographic_factors to gaf_lookup
-        .select('city, state_name, mfr_code, pfr_code')  // Updated field names
-        .eq('zip', paddedZip)
-        .maybeSingle();
+      if (!/^\d{5}$/.test(zipCode)) {
+        throw new Error('Invalid ZIP code format');
+      }
 
-      // Log the raw response
-      console.log('Supabase response:', { data, error });
+      // Query with exact ZIP match
+      const { data, error } = await supabase
+        .rpc('search_geographic_factors', { zip_code: zipCode });
 
       if (error) throw error;
 
-      if (!data) {
-        console.warn(`No data found for ZIP: ${zipCode}`);
+      if (!data || data.length === 0) {
         toast({
           variant: "destructive",
           title: "Location Not Found",
           description: "No location data found for this ZIP code"
         });
-        setGeoFactors(null);
         return null;
       }
 
-      // Log the data before transformation
-      console.log('Raw data from database:', data);
-
       const factors: GafFactors = {
-        mfr_code: Number(data.mfr_code), // Field name changed from mfr_factor
-        pfr_code: Number(data.pfr_code), // Field name changed from pfr_factor
-        city: data.city,
-        state_name: data.state_name
+        mfr_code: Number(data[0].mfr_code),
+        pfr_code: Number(data[0].pfr_code),
+        city: data[0].city,
+        state_name: data[0].state_name
       };
 
-      // Log the transformed factors
-      console.log('Transformed factors:', factors);
-      
+      console.log('Found GAF factors:', factors);
       setGeoFactors(factors);
       return factors;
 
@@ -98,9 +84,8 @@ export function useGafLookup() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to lookup location data"
+        description: error instanceof Error ? error.message : "Failed to lookup location data"
       });
-      setGeoFactors(null);
       return null;
     } finally {
       setIsLoading(false);
