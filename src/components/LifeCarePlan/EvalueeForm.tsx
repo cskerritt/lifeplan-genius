@@ -14,15 +14,17 @@ import { useEvalueeFormSubmit } from '@/hooks/useEvalueeFormSubmit';
 import { useGafLookup } from '@/hooks/useGafLookup';
 import { useEvalueeFormState } from '@/hooks/useEvalueeFormState';
 import EvalueeTabs from './EvalueeTabs';
+import { Evaluee } from '@/types/lifecare';
 
 interface EvalueeFormProps {
   onSave?: (evaluee: any) => void;
+  initialData?: Evaluee | null;
 }
 
-export default function EvalueeForm({ onSave }: EvalueeFormProps) {
+export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { formData, updateFormData } = useEvalueeFormState();
+  const { formData, updateFormData } = useEvalueeFormState(initialData);
   const { geoFactors, lookupGeoFactors } = useGafLookup();
   
   const ageData = useAgeCalculations({
@@ -45,8 +47,10 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>New Life Care Plan</CardTitle>
-        <CardDescription>Enter evaluee information to begin</CardDescription>
+        <CardTitle>{initialData ? "Edit Life Care Plan" : "New Life Care Plan"}</CardTitle>
+        <CardDescription>
+          {initialData ? "Update evaluee information" : "Enter evaluee information to begin"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <EvalueeTabs
