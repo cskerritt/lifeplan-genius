@@ -83,6 +83,14 @@ export function useGafLookup() {
 
       console.log('Found GAF factors:', factors);
       setGeoFactors(factors);
+
+      // Show success toast with the GAF data
+      toast({
+        title: "Location Found",
+        description: `${factors.city}, ${factors.state_name}\nMFR: ${factors.mfr_code.toFixed(4)}\nPFR: ${factors.pfr_code.toFixed(4)}`,
+        variant: "default"
+      });
+
       return factors;
 
     } catch (error) {
