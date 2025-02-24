@@ -16,6 +16,158 @@ const PlanDetail = () => {
   const [evaluee, setEvaluee] = useState<Evaluee | null>(null);
   const [items, setItems] = useState<CareItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [geoFactors, setGeoFactors] = useState<{ mfr_factor: number; pfr_factor: number } | null>(null);
+
+  const fetchGeoFactors = async (zipCode: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('search_geographic_factors', { zip_code: zipCode });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setGeoFactors({
+          mfr_factor: data[0].mfr_code,
+          pfr_factor: data[0].pfr_code
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching geographic factors:', error);
+    }
+  };
+
+  const lookupCPTCode = async (code: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('cpt_codes')
+        .select('*')
+        .eq('code', code)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error looking up CPT code:', error);
+      return null;
+    }
+  };
+
+  const calculateAdjustedCosts = async (
+    baseRate: number,
+    cptCode: string | null = null
+  ) => {
+    try {
+      let low = baseRate;
+      let average = baseRate;
+      let high = baseRate;
+
+      if (cptCode) {
+        const cptData = await lookupCPTCode(cptCode);
+        if (cptData) {
+          low = cptData.pfr_50th;
+          average = cptData.pfr_75th;
+          high = cptData.pfr_90th;
+        }
+      }
+
+      if (geoFactors) {
+        const { mfr_factor, pfr_factor } = geoFactors;
+        low *= ((mfr_factor + pfr_factor) / 2);
+        average *= ((mfr_factor + pfr_factor) / 2) * 1.15;
+        high *= ((mfr_factor + pfr_factor) / 2) * 1.25;
+      }
+
+      return {
+        low: Math.round(low * 100) / 100,
+        average: Math.round(average * 100) / 100,
+        high: Math.round(high * 100) / 100
+      };
+    } catch (error) {
+      console.error('Error calculating adjusted costs:', error);
+      return { low: baseRate, average: baseRate, high: baseRate };
+    }
+  };
+
+  const calculateAnnualCost = (frequency: string, costPerUnit: number) => {
+    const frequencyLower = frequency.toLowerCase();
+    let multiplier = 1;
+
+    if (frequencyLower.includes("per week")) {
+      const timesPerWeek = parseInt(frequency);
+      multiplier = timesPerWeek * 52;
+    } else if (frequencyLower.includes("monthly")) {
+      multiplier = 12;
+    } else if (frequencyLower.includes("quarterly")) {
+      multiplier = 4;
+    } else if (frequencyLower.includes("annually")) {
+      multiplier = 1;
+    }
+
+    return Math.round(costPerUnit * multiplier * 100) / 100;
+  };
+
+  const handleAddItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
+    try {
+      const adjustedCosts = await calculateAdjustedCosts(newItem.costPerUnit, newItem.cptCode);
+      
+      const annualCost = calculateAnnualCost(
+        newItem.frequency,
+        adjustedCosts.average
+      );
+      
+      const item: CareItem = {
+        ...newItem,
+        id: crypto.randomUUID(),
+        annualCost,
+        costRange: adjustedCosts
+      };
+
+      if (id !== "new") {
+        const { data: planData } = await supabase
+          .from('life_care_plans')
+          .select('life_expectancy')
+          .eq('id', id)
+          .single();
+        
+        const lifeExpectancy = planData?.life_expectancy || 1;
+        const lifetimeCost = annualCost * lifeExpectancy;
+
+        const { error } = await supabase
+          .from('care_plan_entries')
+          .insert({
+            plan_id: id,
+            category: item.category,
+            item: item.service,
+            frequency: item.frequency,
+            cpt_code: item.cptCode,
+            min_cost: adjustedCosts.low,
+            avg_cost: adjustedCosts.average,
+            max_cost: adjustedCosts.high,
+            annual_cost: annualCost,
+            start_age: 0,
+            end_age: 100,
+            lifetime_cost: lifetimeCost,
+            is_one_time: false
+          });
+
+        if (error) throw error;
+      }
+
+      setItems(prev => [...prev, item]);
+      
+      toast({
+        title: "Success",
+        description: "Care item added successfully"
+      });
+    } catch (error) {
+      console.error("Error adding item:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add care item"
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -119,84 +271,6 @@ const PlanDetail = () => {
         description: "Failed to update the life care plan"
       });
     }
-  };
-
-  const handleAddItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
-    const annualCost = calculateAnnualCost(
-      newItem.frequency,
-      newItem.costPerUnit
-    );
-    
-    const item: CareItem = {
-      ...newItem,
-      id: crypto.randomUUID(),
-      annualCost,
-    };
-
-    try {
-      if (id !== "new") {
-        const { data: planData } = await supabase
-          .from('life_care_plans')
-          .select('life_expectancy')
-          .eq('id', id)
-          .single();
-        
-        const lifeExpectancy = planData?.life_expectancy || 1;
-        const lifetimeCost = annualCost * lifeExpectancy;
-
-        const { error } = await supabase
-          .from('care_plan_entries')
-          .insert({
-            plan_id: id,
-            category: item.category,
-            item: item.service,
-            frequency: item.frequency,
-            cpt_code: item.cptCode,
-            min_cost: item.costRange.low,
-            avg_cost: item.costRange.average,
-            max_cost: item.costRange.high,
-            annual_cost: item.annualCost,
-            start_age: 0,
-            end_age: 100,
-            lifetime_cost: lifetimeCost,
-            is_one_time: false
-          });
-
-        if (error) throw error;
-      }
-
-      setItems(prev => [...prev, item]);
-      
-      toast({
-        title: "Success",
-        description: "Care item added successfully"
-      });
-    } catch (error) {
-      console.error("Error adding item:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to add care item"
-      });
-    }
-  };
-
-  const calculateAnnualCost = (frequency: string, costPerUnit: number) => {
-    const frequencyLower = frequency.toLowerCase();
-    if (frequencyLower.includes("per week")) {
-      const timesPerWeek = parseInt(frequency);
-      return timesPerWeek * costPerUnit * 52;
-    }
-    if (frequencyLower.includes("monthly")) {
-      return costPerUnit * 12;
-    }
-    if (frequencyLower.includes("quarterly")) {
-      return costPerUnit * 4;
-    }
-    if (frequencyLower.includes("annually")) {
-      return costPerUnit;
-    }
-    return costPerUnit;
   };
 
   const calculateTotals = () => {
