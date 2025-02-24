@@ -636,12 +636,9 @@ export type Database = {
         Returns: {
           zip: string
           city: string
-          state_id: string
           state_name: string
-          county_name: string
-          mfr_code: string
-          pfr_code: string
-          gaf_lookup: number
+          mfr_code: number
+          pfr_code: number
         }[]
       }
       set_limit: {

@@ -49,17 +49,23 @@ export function useGafLookup() {
     setGeoFactors(null); // Reset any previous data
     
     try {
-      if (!/^\d{5}$/.test(zipCode)) {
-        throw new Error('Invalid ZIP code format');
+      const paddedZip = zipCode.padStart(5, '0');
+      console.log('Querying with ZIP:', paddedZip);
+
+      const { data, error } = await supabase
+        .rpc('search_geographic_factors', { 
+          zip_code: paddedZip 
+        });
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
       }
 
-      // Query with exact ZIP match
-      const { data, error } = await supabase
-        .rpc('search_geographic_factors', { zip_code: zipCode });
-
-      if (error) throw error;
+      console.log('Received data:', data);
 
       if (!data || data.length === 0) {
+        console.log('No data found for ZIP:', paddedZip);
         toast({
           variant: "destructive",
           title: "Location Not Found",
