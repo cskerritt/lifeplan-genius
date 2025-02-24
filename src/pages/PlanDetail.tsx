@@ -135,9 +135,18 @@ const PlanDetail = () => {
 
     try {
       if (id !== "new") {
+        const { data: planData } = await supabase
+          .from('life_care_plans')
+          .select('life_expectancy')
+          .eq('id', id)
+          .single();
+        
+        const lifeExpectancy = planData?.life_expectancy || 1;
+        const lifetimeCost = annualCost * lifeExpectancy;
+
         const { error } = await supabase
           .from('care_plan_entries')
-          .insert([{
+          .insert({
             plan_id: id,
             category: item.category,
             item: item.service,
@@ -146,8 +155,12 @@ const PlanDetail = () => {
             min_cost: item.costRange.low,
             avg_cost: item.costRange.average,
             max_cost: item.costRange.high,
-            annual_cost: item.annualCost
-          }]);
+            annual_cost: item.annualCost,
+            start_age: 0,
+            end_age: 100,
+            lifetime_cost: lifetimeCost,
+            is_one_time: false
+          });
 
         if (error) throw error;
       }
