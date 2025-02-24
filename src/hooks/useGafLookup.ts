@@ -21,7 +21,7 @@ export function useGafLookup() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('geographic_factors')
+        .from('gaf_lookup')  // Changed from geographic_factors to gaf_lookup
         .select('city')
         .eq('state_name', state)
         .not('city', 'is', null);
@@ -53,11 +53,11 @@ export function useGafLookup() {
       console.log('Padded ZIP for lookup:', paddedZip);
       
       // Log the query we're about to make
-      console.log('Querying geographic_factors table with ZIP:', paddedZip);
+      console.log('Querying gaf_lookup table with ZIP:', paddedZip);
       
       const { data, error } = await supabase
-        .from('geographic_factors')
-        .select('city, state_name, mfr_factor, pfr_factor')
+        .from('gaf_lookup')  // Changed from geographic_factors to gaf_lookup
+        .select('city, state_name, mfr_code, pfr_code')  // Updated field names
         .eq('zip', paddedZip)
         .maybeSingle();
 
@@ -81,8 +81,8 @@ export function useGafLookup() {
       console.log('Raw data from database:', data);
 
       const factors: GafFactors = {
-        mfr_code: Number(data.mfr_factor), // Convert from text to number
-        pfr_code: Number(data.pfr_factor), // Convert from text to number
+        mfr_code: Number(data.mfr_code), // Field name changed from mfr_factor
+        pfr_code: Number(data.pfr_code), // Field name changed from pfr_factor
         city: data.city,
         state_name: data.state_name
       };
