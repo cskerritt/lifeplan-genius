@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -32,6 +33,11 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
 
   const { handleSubmit } = useEvalueeFormSubmit(onSave);
 
+  const handleLocationChange = (city: string, state: string) => {
+    // We don't need to do anything here since the form data is already updated
+    // by the time this is called
+  };
+
   const onFormSubmit = (e: React.FormEvent) => {
     handleSubmit(e, formData, ageData);
   };
@@ -46,7 +52,7 @@ export default function EvalueeForm({ onSave }: EvalueeFormProps) {
         <EvalueeTabs
           formData={formData}
           onFormDataChange={updateFormData}
-          onLocationChange={lookupGeoFactors}
+          onLocationChange={handleLocationChange}
           onCancel={() => navigate('/')}
           onSubmit={onFormSubmit}
           ageData={ageData}
