@@ -21,7 +21,7 @@ export function useGafLookup() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('gaf_lookup')
+        .from('geographic_factors')
         .select('city')
         .eq('state_name', state)
         .not('city', 'is', null);
@@ -52,8 +52,8 @@ export function useGafLookup() {
       const paddedZip = zipCode.padStart(5, '0');
       
       const { data, error } = await supabase
-        .from('gaf_lookup')
-        .select('city, state_name, mfr_code, pfr_code')
+        .from('geographic_factors')
+        .select('city, state_name, mfr_factor, pfr_factor')
         .eq('zip', paddedZip)
         .maybeSingle();
 
@@ -71,8 +71,8 @@ export function useGafLookup() {
       }
 
       const factors: GafFactors = {
-        mfr_code: data.mfr_code,
-        pfr_code: data.pfr_code,
+        mfr_code: Number(data.mfr_factor), // Convert from text to number
+        pfr_code: Number(data.pfr_factor), // Convert from text to number
         city: data.city,
         state_name: data.state_name
       };
