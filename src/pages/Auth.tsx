@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,32 +22,76 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: window.location.origin
+          }
         });
-        if (error) throw error;
-        toast({
-          title: "Success!",
-          description: "Please check your email to verify your account.",
-        });
+
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "This email is already registered. Please sign in instead."
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: error.message
+            });
+          }
+          return;
+        }
+
+        if (data?.user) {
+          toast({
+            title: "Success!",
+            description: "Please check your email to verify your account.",
+          });
+          setIsSignUp(false); // Switch to sign in mode
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        if (error) throw error;
+
+        if (error) {
+          if (error.message.includes("Invalid login credentials")) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Incorrect email or password. Please try again."
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: error.message
+            });
+          }
+          return;
+        }
+
         navigate("/");
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: error.message
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const validateForm = () => {
+    return email.length > 0 && password.length >= 6;
   };
 
   return (
@@ -82,11 +127,21 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
+              {isSignUp && (
+                <p className="text-sm text-gray-500">
+                  Password must be at least 6 characters long
+                </p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || !validateForm()}
+            >
               {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
             </Button>
             <Button
