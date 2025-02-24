@@ -50,12 +50,19 @@ export function useGafLookup() {
     try {
       // Make sure the ZIP is padded to 5 digits
       const paddedZip = zipCode.padStart(5, '0');
+      console.log('Padded ZIP for lookup:', paddedZip);
+      
+      // Log the query we're about to make
+      console.log('Querying geographic_factors table with ZIP:', paddedZip);
       
       const { data, error } = await supabase
         .from('geographic_factors')
         .select('city, state_name, mfr_factor, pfr_factor')
         .eq('zip', paddedZip)
         .maybeSingle();
+
+      // Log the raw response
+      console.log('Supabase response:', { data, error });
 
       if (error) throw error;
 
@@ -70,6 +77,9 @@ export function useGafLookup() {
         return null;
       }
 
+      // Log the data before transformation
+      console.log('Raw data from database:', data);
+
       const factors: GafFactors = {
         mfr_code: Number(data.mfr_factor), // Convert from text to number
         pfr_code: Number(data.pfr_factor), // Convert from text to number
@@ -77,7 +87,9 @@ export function useGafLookup() {
         state_name: data.state_name
       };
 
-      console.log('Geographic factors found:', factors);
+      // Log the transformed factors
+      console.log('Transformed factors:', factors);
+      
       setGeoFactors(factors);
       return factors;
 
