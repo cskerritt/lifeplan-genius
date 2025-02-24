@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
@@ -44,7 +45,7 @@ export default function EvalueeInfoForm({
 
   const handleCityChange = (city: string) => {
     handleFieldChange('city', city);
-    onLocationChange(city, formData.state);
+    // Remove the onLocationChange call here since we don't need to trigger another lookup
   };
 
   const handleZipLookup = async (zipCode: string) => {
