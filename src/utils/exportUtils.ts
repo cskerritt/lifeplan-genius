@@ -1,4 +1,3 @@
-
 import { Document, Paragraph, Table, TableRow, TableCell, WidthType } from 'docx';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -31,7 +30,7 @@ export const exportToWord = async (data: ExportData) => {
   });
 
   // Generate blob from document
-  const buffer = await doc.save();
+  const buffer = await doc.save(); // This returns a Promise<Uint8Array>
   const blob = new Blob([buffer], { 
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
   });
