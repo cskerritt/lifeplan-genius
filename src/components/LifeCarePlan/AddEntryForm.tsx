@@ -15,9 +15,23 @@ interface AddEntryFormProps {
   onSave: () => void;
 }
 
+interface FrequencyDetails {
+  startAge: number;
+  stopAge: number;
+  timesPerYear: number;
+  isOneTime: boolean;
+  customFrequency: string;
+}
+
 export default function AddEntryForm({ planId, category, zipCode, onClose, onSave }: AddEntryFormProps) {
   const [item, setItem] = useState('');
-  const [isOneTime, setIsOneTime] = useState(false);
+  const [frequencyDetails, setFrequencyDetails] = useState<FrequencyDetails>({
+    startAge: 0,
+    stopAge: 100,
+    timesPerYear: 1,
+    isOneTime: false,
+    customFrequency: "",
+  });
   const [minFrequency, setMinFrequency] = useState('');
   const [maxFrequency, setMaxFrequency] = useState('');
   const [minDuration, setMinDuration] = useState('');
@@ -49,10 +63,17 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
     };
   };
 
+  const handleFrequencyChange = (field: keyof FrequencyDetails, value: number | boolean | string) => {
+    setFrequencyDetails(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   const calculateFrequencyCosts = (baseCosts: ReturnType<typeof calculateCosts>) => {
     if (!baseCosts) return null;
 
-    if (isOneTime) {
+    if (frequencyDetails.isOneTime) {
       return {
         min_annual_cost: 0,
         max_annual_cost: 0,
@@ -93,9 +114,9 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
 
     setLoading(true);
     try {
-      const annualCost = isOneTime ? 0 : costs.avg_cost * parseFloat(minFrequency);
+      const annualCost = frequencyDetails.isOneTime ? 0 : costs.avg_cost * parseFloat(minFrequency);
       const yearsOfCare = parseFloat(endAge) - parseFloat(startAge);
-      const lifetimeCost = isOneTime ? costs.avg_cost : annualCost * yearsOfCare;
+      const lifetimeCost = frequencyDetails.isOneTime ? costs.avg_cost : annualCost * yearsOfCare;
 
       const { error: saveError } = await supabase
         .from('care_plan_entries')
@@ -105,11 +126,11 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
           item,
           cpt_code: selectedCPT.code,
           cpt_description: selectedCPT.code_description,
-          is_one_time: isOneTime,
-          min_frequency: isOneTime ? null : parseFloat(minFrequency),
-          max_frequency: isOneTime ? null : parseFloat(maxFrequency) || parseFloat(minFrequency),
-          min_duration: isOneTime ? null : parseFloat(minDuration),
-          max_duration: isOneTime ? null : parseFloat(maxDuration) || parseFloat(minDuration),
+          is_one_time: frequencyDetails.isOneTime,
+          min_frequency: frequencyDetails.isOneTime ? null : parseFloat(minFrequency),
+          max_frequency: frequencyDetails.isOneTime ? null : parseFloat(maxFrequency) || parseFloat(minFrequency),
+          min_duration: frequencyDetails.isOneTime ? null : parseFloat(minDuration),
+          max_duration: frequencyDetails.isOneTime ? null : parseFloat(maxDuration) || parseFloat(minDuration),
           annual_cost: annualCost,
           lifetime_cost: lifetimeCost,
           start_age: parseFloat(startAge),
@@ -176,17 +197,8 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
 
             <TabsContent value="frequency">
               <FrequencyForm
-                isOneTime={isOneTime}
-                onIsOneTimeChange={setIsOneTime}
-                minFrequency={minFrequency}
-                maxFrequency={maxFrequency}
-                minDuration={minDuration}
-                maxDuration={maxDuration}
-                onMinFrequencyChange={setMinFrequency}
-                onMaxFrequencyChange={setMaxFrequency}
-                onMinDurationChange={setMinDuration}
-                onMaxDurationChange={setMaxDuration}
-                costs={calculateFrequencyCosts(calculateCosts())}
+                frequencyDetails={frequencyDetails}
+                onFrequencyChange={handleFrequencyChange}
               />
             </TabsContent>
           </Tabs>
@@ -202,7 +214,7 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
             <button
               type="submit"
               disabled={loading || !selectedCPT || !startAge || !endAge ||
-                (!isOneTime && (!minFrequency || !minDuration))}
+                (!frequencyDetails.isOneTime && (!minFrequency ))}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {loading ? 'Saving...' : 'Save Entry'}
