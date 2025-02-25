@@ -1,7 +1,8 @@
+
 import { TableRow, Table, WidthType, Paragraph, AlignmentType, TableCell } from 'docx';
 import { CareItem } from '@/types/lifecare';
 import { createTableBorders, createStyledCell } from './tableUtils';
-import { calculateCategoryTotal, calculateOneTimeTotal } from '../utils';
+import { calculateCategoryTotal, calculateOneTimeTotal, isOneTimeItem } from '../utils';
 
 export const createDetailedHeaderRow = () =>
   new TableRow({
@@ -18,8 +19,10 @@ export const createDetailedHeaderRow = () =>
   });
 
 export const createDetailedItemRows = (items: CareItem[]) =>
-  items.map((item, index) => 
-    new TableRow({
+  items.map((item, index) => {
+    const isOneTime = isOneTimeItem(item);
+    
+    return new TableRow({
       children: [
         createStyledCell(item.service, 25, index % 2 === 0 ? 'DBE5F1' : 'FFFFFF'),
         createStyledCell(item.startAge?.toString() || '', 10, index % 2 === 0 ? 'DBE5F1' : 'FFFFFF'),
@@ -34,15 +37,19 @@ export const createDetailedItemRows = (items: CareItem[]) =>
           shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
         }),
         createStyledCell(item.frequency, 15, index % 2 === 0 ? 'DBE5F1' : 'FFFFFF'),
-        createStyledCell(`$${item.annualCost.toFixed(2)}`, 15, index % 2 === 0 ? 'DBE5F1' : 'FFFFFF'),
         createStyledCell(
-          item.isOneTime ? `$${item.costRange.average.toFixed(2)}` : '$0.00',
+          isOneTime ? '$0.00' : `$${item.annualCost.toFixed(2)}`,
+          15,
+          index % 2 === 0 ? 'DBE5F1' : 'FFFFFF'
+        ),
+        createStyledCell(
+          isOneTime ? `$${item.costRange.average.toFixed(2)}` : '$0.00',
           10,
           index % 2 === 0 ? 'DBE5F1' : 'FFFFFF'
         )
       ]
-    })
-  );
+    });
+  });
 
 export const createDetailedTotalRow = (items: CareItem[]) => {
   const annualTotal = calculateCategoryTotal(items);

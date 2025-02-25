@@ -11,10 +11,15 @@ export const groupItemsByCategory = (items: CareItem[]) => {
   }, {} as Record<string, CareItem[]>);
 };
 
+export const isOneTimeItem = (item: CareItem): boolean => {
+  const frequency = item.frequency.toLowerCase();
+  return item.isOneTime || frequency.includes('one-time') || frequency.includes('one time');
+};
+
 export const calculateCategoryTotal = (items: CareItem[]) => {
   return items.reduce((sum, item) => {
-    // If it's a one-time cost, don't include it in the annual total
-    if (item.isOneTime || item.frequency.toLowerCase().includes('one-time')) {
+    // Skip one-time items for annual totals
+    if (isOneTimeItem(item)) {
       return sum;
     }
     return sum + item.annualCost;
@@ -23,7 +28,8 @@ export const calculateCategoryTotal = (items: CareItem[]) => {
 
 export const calculateOneTimeTotal = (items: CareItem[]) => {
   return items.reduce((sum, item) => {
-    if (item.isOneTime || item.frequency.toLowerCase().includes('one-time')) {
+    if (isOneTimeItem(item)) {
+      // For one-time items, use the average of the cost range
       return sum + item.costRange.average;
     }
     return sum;
@@ -32,7 +38,7 @@ export const calculateOneTimeTotal = (items: CareItem[]) => {
 
 export const calculateCategoryOneTimeTotal = (items: CareItem[]) => {
   return items.reduce((sum, item) => {
-    if (item.isOneTime || item.frequency.toLowerCase().includes('one-time')) {
+    if (isOneTimeItem(item)) {
       return sum + item.costRange.average;
     }
     return sum;
