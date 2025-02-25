@@ -36,6 +36,13 @@ interface FrequencyDetails {
   customFrequency: string;
 }
 
+interface SurgicalFormState {
+  name: string;
+  professionalFees: SurgicalComponent[];
+  anesthesiaFees: SurgicalComponent[];
+  facilityFees: SurgicalComponent[];
+}
+
 const PlanForm = ({ onSubmit }: PlanFormProps) => {
   const [category, setCategory] = useState<CareCategory>("physician");
   const [service, setService] = useState("");
@@ -68,6 +75,11 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     average: 0,
     high: 0,
   });
+  const [costResources, setCostResources] = useState<CostResource[]>([
+    { name: "", cost: 0 },
+    { name: "", cost: 0 },
+    { name: "", cost: 0 },
+  ]);
   const [isSurgical, setIsSurgical] = useState(false);
   const [surgicalProcedure, setSurgicalProcedure] = useState<SurgicalFormState>({
     name: "",
@@ -538,6 +550,11 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
       customFrequency: "",
     });
     setCostRange({ low: 0, average: 0, high: 0 });
+    setCostResources([
+      { name: "", cost: 0 },
+      { name: "", cost: 0 },
+      { name: "", cost: 0 },
+    ]);
     setIsSurgical(false);
     setSurgicalProcedure({
       name: "",
