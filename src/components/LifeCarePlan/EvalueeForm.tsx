@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -42,7 +43,7 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
     lifeExpectancy: formData.lifeExpectancy
   });
 
-  const handleSubmit = useEvalueeFormSubmit((updatedData) => {
+  const { handleSubmit } = useEvalueeFormSubmit((updatedData) => {
     updateFormData({
       firstName: updatedData.first_name,
       lastName: updatedData.last_name,
@@ -65,6 +66,7 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   };
 
   const onFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     await handleSubmit(e, formData, ageData, id);
     setIsEditing(false);
   };
