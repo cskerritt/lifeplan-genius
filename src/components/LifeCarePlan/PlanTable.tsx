@@ -27,7 +27,8 @@ interface PlanTableProps {
   items: CareItem[];
   categoryTotals: CategoryTotal[];
   grandTotal: number;
-  lifetimeTotal?: number;
+  lifetimeLow?: number;
+  lifetimeHigh?: number;
   evalueeName?: string;
   planId?: string;
   onDeleteItem?: (itemId: string) => void;
@@ -36,8 +37,9 @@ interface PlanTableProps {
 const PlanTable = ({ 
   items, 
   categoryTotals, 
-  grandTotal, 
-  lifetimeTotal = 0,
+  grandTotal,
+  lifetimeLow = 0,
+  lifetimeHigh = 0,
   evalueeName = "Unknown",
   planId = "unknown",
   onDeleteItem
@@ -49,7 +51,8 @@ const PlanTable = ({
       items,
       categoryTotals,
       grandTotal,
-      lifetimeTotal
+      lifetimeLow,
+      lifetimeHigh
     };
 
     if (format === 'word') {
@@ -175,7 +178,7 @@ const PlanTable = ({
           </div>
           <div className="flex justify-between text-lg font-bold text-medical-600">
             <span>Lifetime Total:</span>
-            <span>{formatCostRange(grandTotal, lifetimeTotal || 0)}</span>
+            <span>{formatCostRange(lifetimeLow, lifetimeHigh)}</span>
           </div>
         </div>
       </div>

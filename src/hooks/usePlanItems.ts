@@ -230,8 +230,17 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     }, [] as CategoryTotal[]);
 
     const grandTotal = totals.reduce((sum, category) => sum + category.total, 0);
+    
+    // Calculate lifetime totals by summing the low and high ranges
+    const lifetimeLow = totals.reduce((sum, category) => sum + category.costRange.low, 0);
+    const lifetimeHigh = totals.reduce((sum, category) => sum + category.costRange.high, 0);
 
-    return { categoryTotals: totals, grandTotal };
+    return { 
+      categoryTotals: totals, 
+      grandTotal,
+      lifetimeLow,
+      lifetimeHigh
+    };
   }, [items]);
 
   return {

@@ -49,7 +49,8 @@ const PlanDetail = () => {
     return <LoadingState />;
   }
 
-  const { categoryTotals, grandTotal } = calculateTotals();
+  // Calculate totals including lifetime ranges
+  const { categoryTotals, grandTotal, lifetimeLow, lifetimeHigh } = calculateTotals();
 
   return (
     <div className="space-y-6">
@@ -85,6 +86,8 @@ const PlanDetail = () => {
                 items={items}
                 categoryTotals={categoryTotals}
                 grandTotal={grandTotal}
+                lifetimeLow={lifetimeLow}
+                lifetimeHigh={lifetimeHigh}
                 onDeleteItem={deleteItem}
               />
             </div>
@@ -96,6 +99,8 @@ const PlanDetail = () => {
             items={items}
             categoryTotals={categoryTotals}
             grandTotal={grandTotal}
+            lifetimeLow={lifetimeLow}
+            lifetimeHigh={lifetimeHigh}
             onDeleteItem={deleteItem}
             evalueeName={`${evaluee?.firstName} ${evaluee?.lastName}`}
             planId={id}
