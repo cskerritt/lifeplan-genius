@@ -359,6 +359,88 @@ export type Database = {
         }
         Relationships: []
       }
+      life_care_plan_category_totals: {
+        Row: {
+          annual_cost: number
+          avg_cost: number | null
+          category: string
+          created_at: string | null
+          id: string
+          lifetime_cost: number
+          max_cost: number | null
+          min_cost: number | null
+          plan_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          annual_cost?: number
+          avg_cost?: number | null
+          category: string
+          created_at?: string | null
+          id?: string
+          lifetime_cost?: number
+          max_cost?: number | null
+          min_cost?: number | null
+          plan_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          annual_cost?: number
+          avg_cost?: number | null
+          category?: string
+          created_at?: string | null
+          id?: string
+          lifetime_cost?: number
+          max_cost?: number | null
+          min_cost?: number | null
+          plan_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "life_care_plan_category_totals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "life_care_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      life_care_plan_totals: {
+        Row: {
+          created_at: string | null
+          id: string
+          plan_id: string
+          total_annual_cost: number
+          total_lifetime_cost: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          plan_id: string
+          total_annual_cost?: number
+          total_lifetime_cost?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          plan_id?: string
+          total_annual_cost?: number
+          total_lifetime_cost?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "life_care_plan_totals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: true
+            referencedRelation: "life_care_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       life_care_plans: {
         Row: {
           age_at_injury: number | null
