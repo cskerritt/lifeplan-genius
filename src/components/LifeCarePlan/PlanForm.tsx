@@ -1,11 +1,4 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,28 +21,32 @@ import { useState } from "react";
 import { PlusCircle, Trash2, Search } from "lucide-react";
 import { SurgicalProcedureForm } from "./SurgicalForm/SurgicalProcedureForm";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 interface PlanFormProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
 }
 
-interface SurgicalFormState {
-  name: string;
-  professionalFees: SurgicalComponent[];
-  anesthesiaFees: SurgicalComponent[];
-  facilityFees: SurgicalComponent[];
+interface FrequencyDetails {
+  startAge: number;
+  stopAge: number;
+  timesPerYear: number;
+  isOneTime: boolean;
+  customFrequency: string;
 }
 
 const PlanForm = ({ onSubmit }: PlanFormProps) => {
   const [category, setCategory] = useState<CareCategory>("physician");
   const [service, setService] = useState("");
-  const [frequency, setFrequency] = useState("");
   const [cptCode, setCptCode] = useState("");
-  const [costResources, setCostResources] = useState<CostResource[]>([
-    { name: "", cost: 0 },
-    { name: "", cost: 0 },
-    { name: "", cost: 0 },
-  ]);
+  const [frequencyDetails, setFrequencyDetails] = useState<FrequencyDetails>({
+    startAge: 0,
+    stopAge: 100,
+    timesPerYear: 1,
+    isOneTime: false,
+    customFrequency: "",
+  });
   const [isModifiedVehicle, setIsModifiedVehicle] = useState(false);
   const [vehicleModifications, setVehicleModifications] = useState<VehicleModification[]>([
     { item: "", cost: 0 }
@@ -456,10 +453,28 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     );
   };
 
+  const handleFrequencyChange = (field: keyof FrequencyDetails, value: number | boolean | string) => {
+    setFrequencyDetails(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const calculateFrequencyString = () => {
+    if (frequencyDetails.isOneTime) {
+      return "One-time";
+    }
+    if (frequencyDetails.customFrequency) {
+      return frequencyDetails.customFrequency;
+    }
+    return `${frequencyDetails.timesPerYear}x per year`;
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     let itemData: Omit<CareItem, "id" | "annualCost">;
+    const frequency = calculateFrequencyString();
     
     if (category === "surgical") {
       const totalProfessional = surgicalProcedure.professionalFees.reduce((sum, fee) => sum + fee.cost, 0);
@@ -514,8 +529,14 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     onSubmit(itemData);
     
     setService("");
-    setFrequency("");
     setCptCode("");
+    setFrequencyDetails({
+      startAge: 0,
+      stopAge: 100,
+      timesPerYear: 1,
+      isOneTime: false,
+      customFrequency: "",
+    });
     setCostRange({ low: 0, average: 0, high: 0 });
     setIsSurgical(false);
     setSurgicalProcedure({
@@ -567,86 +588,137 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Add Care Item</CardTitle>
-        <CardDescription>Add a new item to the life care plan</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select
-                value={category}
-                onValueChange={(value: CareCategory) => setCategory(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="physician">Physician Services</SelectItem>
-                  <SelectItem value="medication">Medication</SelectItem>
-                  <SelectItem value="surgical">Surgical Services</SelectItem>
-                  <SelectItem value="dme">Prosthetics & DME</SelectItem>
-                  <SelectItem value="supplies">Aids & Supplies</SelectItem>
-                  <SelectItem value="homeCare">Home Care</SelectItem>
-                  <SelectItem value="homeModification">Home Modifications</SelectItem>
-                  <SelectItem value="transportation">Transportation</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {category !== "medication" && category !== "surgical" && (
-              <div className="space-y-2">
-                <Label>Service</Label>
-                <Input 
-                  value={service}
-                  onChange={(e) => setService(e.target.value)}
-                  placeholder="Enter service name" 
-                />
-              </div>
-            )}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select
+            value={category}
+            onValueChange={(value: CareCategory) => setCategory(value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="physician">Physician Services</SelectItem>
+              <SelectItem value="medication">Medication</SelectItem>
+              <SelectItem value="surgical">Surgical Services</SelectItem>
+              <SelectItem value="dme">Prosthetics & DME</SelectItem>
+              <SelectItem value="supplies">Aids & Supplies</SelectItem>
+              <SelectItem value="homeCare">Home Care</SelectItem>
+              <SelectItem value="homeModification">Home Modifications</SelectItem>
+              <SelectItem value="transportation">Transportation</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {category !== "medication" && category !== "surgical" && (
+          <div className="space-y-2">
+            <Label>Service</Label>
+            <Input 
+              value={service}
+              onChange={(e) => setService(e.target.value)}
+              placeholder="Enter service name" 
+            />
           </div>
+        )}
+      </div>
 
-          {category !== "medication" && category !== "surgical" && category !== "transportation" && (
+      <Separator className="my-4" />
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Frequency & Duration</h3>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isOneTime"
+            checked={frequencyDetails.isOneTime}
+            onCheckedChange={(checked) => 
+              handleFrequencyChange('isOneTime', checked === true)
+            }
+          />
+          <Label htmlFor="isOneTime">One-time cost</Label>
+        </div>
+
+        {!frequencyDetails.isOneTime && (
+          <>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>CPT/HCPCS Code</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    value={cptCode}
-                    onChange={(e) => setCptCode(e.target.value)}
-                    placeholder="Enter code"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={handleCPTLookup}
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Label>Start Age</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="150"
+                  value={frequencyDetails.startAge}
+                  onChange={(e) => handleFrequencyChange('startAge', parseInt(e.target.value) || 0)}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Frequency</Label>
+                <Label>Stop Age</Label>
                 <Input
-                  value={frequency}
-                  onChange={(e) => setFrequency(e.target.value)}
-                  placeholder="e.g., 2x per week"
+                  type="number"
+                  min="0"
+                  max="150"
+                  value={frequencyDetails.stopAge}
+                  onChange={(e) => handleFrequencyChange('stopAge', parseInt(e.target.value) || 0)}
                 />
               </div>
             </div>
-          )}
 
-          {renderCostInputs()}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Times per Year</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={frequencyDetails.timesPerYear}
+                  onChange={(e) => handleFrequencyChange('timesPerYear', parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Custom Frequency (Optional)</Label>
+                <Input
+                  value={frequencyDetails.customFrequency}
+                  onChange={(e) => handleFrequencyChange('customFrequency', e.target.value)}
+                  placeholder="e.g., Every 3 months"
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
-          <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
-            Add Item
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <Separator className="my-4" />
+
+      {category !== "medication" && category !== "surgical" && category !== "transportation" && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Cost Details</h3>
+          <div className="space-y-2">
+            <Label>CPT/HCPCS Code</Label>
+            <div className="flex gap-2">
+              <Input 
+                value={cptCode}
+                onChange={(e) => setCptCode(e.target.value)}
+                placeholder="Enter code"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleCPTLookup}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {renderCostInputs()}
+
+      <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
+        Add Item
+      </Button>
+    </form>
   );
 };
 
