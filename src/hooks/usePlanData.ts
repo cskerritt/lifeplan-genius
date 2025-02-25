@@ -61,7 +61,7 @@ export const usePlanData = (id: string) => {
       if (entriesError) throw entriesError;
 
       return entriesData?.map(entry => ({
-        id: entry.id,
+        id: entry.id.toString(), // Convert UUID to string
         category: entry.category as CareCategory,
         service: entry.item,
         frequency: entry.frequency || '',
@@ -77,11 +77,37 @@ export const usePlanData = (id: string) => {
     }
   });
 
-  const setItems = useCallback((newItems: any[]) => {
-    // This is a placeholder for the setItems function
-    // In a real implementation, you would use React Query's mutation here
-    console.log('Setting items:', newItems);
-  }, []);
+  const setItems = useCallback(async (newItems: any[]) => {
+    if (id === 'new') return;
+    
+    try {
+      for (const item of newItems) {
+        const { error } = await supabase
+          .from('care_plan_entries')
+          .upsert({
+            id: item.id,
+            plan_id: id,
+            category: item.category,
+            item: item.service,
+            frequency: item.frequency,
+            cpt_code: item.cptCode,
+            min_cost: item.costRange.low,
+            avg_cost: item.costRange.average,
+            max_cost: item.costRange.high,
+            annual_cost: item.annualCost
+          });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error updating items:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update care plan items"
+      });
+    }
+  }, [id, toast]);
 
   return {
     evaluee,

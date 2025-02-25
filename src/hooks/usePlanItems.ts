@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
@@ -108,20 +107,13 @@ export const usePlanItems = (planId: string) => {
 
   const deleteItem = async (itemId: string) => {
     try {
+      console.log('Deleting item with ID:', itemId);
+      
       if (planId !== "new") {
-        const itemToDelete = items.find(item => item.id === itemId);
-        if (!itemToDelete) {
-          throw new Error("Item not found");
-        }
-
         const { error } = await supabase
           .from('care_plan_entries')
           .delete()
-          .match({ 
-            plan_id: planId,
-            category: itemToDelete.category,
-            item: itemToDelete.service 
-          });
+          .eq('id', itemId);
 
         if (error) {
           console.error('Error deleting care plan entry:', error);
@@ -129,7 +121,11 @@ export const usePlanItems = (planId: string) => {
         }
       }
 
-      setItems(prev => prev.filter(item => item.id !== itemId));
+      setItems(prev => {
+        const updatedItems = prev.filter(item => item.id !== itemId);
+        console.log('Updated items after deletion:', updatedItems);
+        return updatedItems;
+      });
       
       toast({
         title: "Success",
