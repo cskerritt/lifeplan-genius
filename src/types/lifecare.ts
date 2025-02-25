@@ -3,10 +3,15 @@ export interface Evaluee {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  dateOfInjury?: string;
   gender: string;
   address: string;
   phone: string;
   email: string;
+  zipCode?: string;
+  city?: string;
+  state?: string;
+  lifeExpectancy?: string;
 }
 
 export interface CostRange {
