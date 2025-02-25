@@ -19,6 +19,7 @@ const PlanDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { items, setItems, addItem, calculateTotals } = usePlanItems(id);
   const { fetchGeoFactors } = useCostCalculations();
+  const [activeTab, setActiveTab] = useState("evaluee");
 
   const handleEvalueeSave = async (newEvaluee: any) => {
     try {
@@ -49,6 +50,9 @@ const PlanDetail = () => {
           title: "Success",
           description: "Life care plan updated successfully"
         });
+        
+        // After successful save, switch to the plan tab
+        setActiveTab("plan");
       }
       setEvaluee(newEvaluee);
     } catch (error) {
@@ -90,10 +94,16 @@ const PlanDetail = () => {
             state: planData.state,
             address: planData.street_address,
             phone: '',
-            email: ''
+            email: '',
+            lifeExpectancy: planData.life_expectancy?.toString() || ''
           };
 
           setEvaluee(evalueeData);
+          
+          // If evaluee data exists, automatically set the active tab to "plan"
+          if (!activeTab || activeTab === "evaluee") {
+            setActiveTab("plan");
+          }
 
           // Fetch geographic factors only if we have a zip code
           if (planData.zip_code) {
@@ -159,7 +169,7 @@ const PlanDetail = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="evaluee" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="evaluee">Evaluee Information</TabsTrigger>
           <TabsTrigger value="plan" disabled={!evaluee}>
