@@ -11,9 +11,13 @@ interface LifeExpectancyInputProps {
 export function LifeExpectancyInput({ value, onChange }: LifeExpectancyInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    // Only allow non-negative numbers
-    if (newValue === '' || (!isNaN(parseFloat(newValue)) && parseFloat(newValue) >= 0)) {
-      onChange(newValue);
+    
+    // Allow empty string or decimal numbers (positive only)
+    if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+      // Only update if it's empty or a valid number
+      if (newValue === '' || !isNaN(parseFloat(newValue))) {
+        onChange(newValue);
+      }
     }
   };
 
@@ -23,8 +27,9 @@ export function LifeExpectancyInput({ value, onChange }: LifeExpectancyInputProp
       <Input
         id="lifeExpectancyInput"
         type="number"
-        step="0.01"
+        step="0.1"
         min="0"
+        placeholder="Enter life expectancy (e.g. 45.5)"
         value={value}
         onChange={handleChange}
         required
