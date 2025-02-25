@@ -13,6 +13,9 @@ interface AddEntryFormProps {
   zipCode: string;
   onClose: () => void;
   onSave: () => void;
+  dateOfBirth: string;
+  dateOfInjury: string;
+  lifeExpectancy: number;
 }
 
 interface FrequencyDetails {
@@ -23,7 +26,7 @@ interface FrequencyDetails {
   customFrequency: string;
 }
 
-export default function AddEntryForm({ planId, category, zipCode, onClose, onSave }: AddEntryFormProps) {
+export default function AddEntryForm({ planId, category, zipCode, onClose, onSave, dateOfBirth, dateOfInjury, lifeExpectancy }: AddEntryFormProps) {
   const [item, setItem] = useState('');
   const [frequencyDetails, setFrequencyDetails] = useState<FrequencyDetails>({
     startAge: 0,
@@ -199,6 +202,9 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
               <FrequencyForm
                 frequencyDetails={frequencyDetails}
                 onFrequencyChange={handleFrequencyChange}
+                dateOfBirth={dateOfBirth}
+                dateOfInjury={dateOfInjury}
+                lifeExpectancy={lifeExpectancy}
               />
             </TabsContent>
           </Tabs>

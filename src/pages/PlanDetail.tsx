@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -41,7 +40,6 @@ const PlanDetail = () => {
 
         if (error) throw error;
 
-        // Fetch geographic factors when zip code changes
         if (newEvaluee.zipCode && (!evaluee || newEvaluee.zipCode !== evaluee.zipCode)) {
           await fetchGeoFactors(newEvaluee.zipCode);
         }
@@ -51,7 +49,6 @@ const PlanDetail = () => {
           description: "Life care plan updated successfully"
         });
         
-        // After successful save, switch to the plan tab
         setActiveTab("plan");
       }
       setEvaluee(newEvaluee);
@@ -100,12 +97,10 @@ const PlanDetail = () => {
 
           setEvaluee(evalueeData);
           
-          // If evaluee data exists, automatically set the active tab to "plan"
           if (!activeTab || activeTab === "evaluee") {
             setActiveTab("plan");
           }
 
-          // Fetch geographic factors only if we have a zip code
           if (planData.zip_code) {
             await fetchGeoFactors(planData.zip_code);
           }
@@ -148,7 +143,7 @@ const PlanDetail = () => {
     };
 
     fetchPlanData();
-  }, [id]); // Remove setItems and fetchGeoFactors from dependencies
+  }, [id]);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -189,14 +184,19 @@ const PlanDetail = () => {
         <TabsContent value="plan">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
+              <PlanForm 
+                onSubmit={addItem} 
+                dateOfBirth={evaluee?.dateOfBirth || ''}
+                dateOfInjury={evaluee?.dateOfInjury || ''}
+                lifeExpectancy={evaluee?.lifeExpectancy || ''}
+              />
+            </div>
+            <div>
               <PlanTable
                 items={items}
                 categoryTotals={categoryTotals}
                 grandTotal={grandTotal}
               />
-            </div>
-            <div>
-              <PlanForm onSubmit={addItem} />
             </div>
           </div>
         </TabsContent>

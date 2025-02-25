@@ -14,9 +14,12 @@ import { PlusCircle } from "lucide-react";
 
 interface AddCareItemDialogProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
+  dateOfBirth: string;
+  dateOfInjury: string;
+  lifeExpectancy: string;
 }
 
-export function AddCareItemDialog({ onSubmit }: AddCareItemDialogProps) {
+export function AddCareItemDialog({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: AddCareItemDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -32,7 +35,12 @@ export function AddCareItemDialog({ onSubmit }: AddCareItemDialogProps) {
             Add a new item to the life care plan. Fill in the frequency and duration details before looking up costs.
           </DialogDescription>
         </DialogHeader>
-        <PlanForm onSubmit={onSubmit} />
+        <PlanForm 
+          onSubmit={onSubmit} 
+          dateOfBirth={dateOfBirth}
+          dateOfInjury={dateOfInjury}
+          lifeExpectancy={lifeExpectancy}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -31,6 +31,14 @@ interface PlanFormProps {
   lifeExpectancy: string;
 }
 
+interface FrequencyDetails {
+  startAge: number;
+  stopAge: number;
+  timesPerYear: number;
+  isOneTime: boolean;
+  customFrequency: string;
+}
+
 const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
   const [category, setCategory] = useState<CareCategory>("physician");
   const [service, setService] = useState("");
