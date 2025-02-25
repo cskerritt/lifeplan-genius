@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,10 @@ interface FrequencyDetails {
   timesPerYear: number;
   isOneTime: boolean;
   customFrequency: string;
+  lowFrequencyPerYear: number;
+  highFrequencyPerYear: number;
+  lowDurationYears: number;
+  highDurationYears: number;
 }
 
 const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
@@ -49,6 +54,10 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     timesPerYear: 1,
     isOneTime: false,
     customFrequency: "",
+    lowFrequencyPerYear: 1,
+    highFrequencyPerYear: 1,
+    lowDurationYears: 1,
+    highDurationYears: 1
   });
   const [medicationDetails, setMedicationDetails] = useState<MedicationDetails>({
     name: "",
@@ -153,6 +162,10 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
       timesPerYear: 1,
       isOneTime: false,
       customFrequency: "",
+      lowFrequencyPerYear: 1,
+      highFrequencyPerYear: 1,
+      lowDurationYears: 1,
+      highDurationYears: 1
     });
     setCostRange({ low: 0, average: 0, high: 0 });
     setMedicationDetails({
