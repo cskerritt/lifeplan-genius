@@ -46,16 +46,16 @@ export function useGafLookup() {
   const lookupGeoFactors = useCallback(async (zipCode: string) => {
     if (!zipCode) return;
     
-    // Format ZIP code - pad with leading zeros
-    const formattedZip = zipCode.padStart(5, '0');
-    console.log('Looking up ZIP:', formattedZip);
+    // Convert ZIP code to number to remove leading zeros
+    const numericZip = parseInt(zipCode, 10).toString();
+    console.log('Looking up ZIP:', numericZip);
     setIsLoading(true);
     
     try {
       const { data, error } = await supabase
         .from('gaf_lookup')
         .select('*')
-        .eq('zip', formattedZip)
+        .eq('zip', numericZip)
         .maybeSingle();
 
       if (error) {
@@ -66,7 +66,7 @@ export function useGafLookup() {
       console.log('Lookup data:', data);
 
       if (!data) {
-        console.log('No data found for ZIP:', formattedZip);
+        console.log('No data found for ZIP:', numericZip);
         setGeoFactors(null);
         toast({
           variant: "destructive",
