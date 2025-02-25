@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,7 +16,7 @@ export function useGafLookup() {
   const [cities, setCities] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const lookupCitiesByState = async (state: string) => {
+  const lookupCitiesByState = useCallback(async (state: string) => {
     console.log('🔍 Looking up cities for state:', state);
     setIsLoading(true);
     try {
@@ -41,12 +41,13 @@ export function useGafLookup() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const lookupGeoFactors = async (zipCode: string) => {
+  const lookupGeoFactors = useCallback(async (zipCode: string) => {
+    if (!zipCode) return;
+    
     console.log('Looking up ZIP:', zipCode);
     setIsLoading(true);
-    setGeoFactors(null); // Reset any previous data
     
     try {
       const paddedZip = zipCode.padStart(5, '0');
@@ -66,6 +67,7 @@ export function useGafLookup() {
 
       if (!data || data.length === 0) {
         console.log('No data found for ZIP:', paddedZip);
+        setGeoFactors(null);
         toast({
           variant: "destructive",
           title: "Location Not Found",
@@ -84,17 +86,11 @@ export function useGafLookup() {
       console.log('Found GAF factors:', factors);
       setGeoFactors(factors);
 
-      // Show success toast with the GAF data
-      toast({
-        title: "Location Found",
-        description: `${factors.city}, ${factors.state_name}\nMFR: ${factors.mfr_code.toFixed(4)}\nPFR: ${factors.pfr_code.toFixed(4)}`,
-        variant: "default"
-      });
-
       return factors;
 
     } catch (error) {
       console.error('Error in lookupGeoFactors:', error);
+      setGeoFactors(null);
       toast({
         variant: "destructive",
         title: "Error",
@@ -104,7 +100,7 @@ export function useGafLookup() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   return { geoFactors, isLoading, cities, lookupGeoFactors, lookupCitiesByState };
 }

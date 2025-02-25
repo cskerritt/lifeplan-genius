@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';  // Added useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card,
@@ -31,18 +30,11 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const { formData, updateFormData } = useEvalueeFormState(initialData);
   const { geoFactors, lookupGeoFactors } = useGafLookup();
   
-  // Add effect to lookup geographic factors when ZIP code changes
   useEffect(() => {
-    if (formData.zipCode) {
+    if (formData.zipCode && formData.zipCode.length === 5) {
       lookupGeoFactors(formData.zipCode);
     }
-  }, [formData.zipCode, lookupGeoFactors]);
-
-  // Add debug logging
-  useEffect(() => {
-    console.log('🔍 Current formData:', formData);
-    console.log('🌍 Current geoFactors:', geoFactors);
-  }, [formData, geoFactors]);
+  }, [formData.zipCode]);
 
   const ageData = useAgeCalculations({
     dateOfBirth: formData.dateOfBirth,
@@ -50,7 +42,7 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
     lifeExpectancy: formData.lifeExpectancy
   });
 
-  const { handleSubmit } = useEvalueeFormSubmit((updatedData) => {
+  const handleSubmit = useEvalueeFormSubmit((updatedData) => {
     updateFormData({
       firstName: updatedData.first_name,
       lastName: updatedData.last_name,
@@ -145,12 +137,16 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
               <h3 className="text-sm font-medium text-gray-500 mb-4">Geographic Adjustment Factors</h3>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">MFR</p>
-                  <p className="text-base">{formatNumber(geoFactors?.mfr_code)}</p>
+                  <p className="text-sm font-medium text-gray-500">MFR Code</p>
+                  <p className="text-base font-medium">
+                    {geoFactors ? formatNumber(geoFactors.mfr_code) : 'Loading...'}
+                  </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">PFR</p>
-                  <p className="text-base">{formatNumber(geoFactors?.pfr_code)}</p>
+                  <p className="text-sm font-medium text-gray-500">PFR Code</p>
+                  <p className="text-base font-medium">
+                    {geoFactors ? formatNumber(geoFactors.pfr_code) : 'Loading...'}
+                  </p>
                 </div>
               </div>
             </div>
