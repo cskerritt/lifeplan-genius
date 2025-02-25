@@ -1,3 +1,4 @@
+
 import { Separator } from "@/components/ui/separator";
 import { CategorySelect } from "./FormSections/CategorySelect";
 import { FrequencyForm } from "./FrequencyForm";
@@ -9,6 +10,7 @@ import { PlanFormProps } from "./types";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
 import { SurgicalForm } from "./SurgicalForm/SurgicalForm";
 import { InterventionalForm } from "./InterventionalForm/InterventionalForm";
+import { FrequencyDetails } from "@/types/lifecare";
 
 const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
   const {
@@ -102,7 +104,7 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
                 onCostRangeChange={(field, value) => 
                   setCostRange(prev => ({ ...prev, [field]: value }))
                 }
-                onCPTLookup={lookupCPTCode}
+                onCPTLookup={() => lookupCPTCode(cptCode)}
               />
             </>
           )}
