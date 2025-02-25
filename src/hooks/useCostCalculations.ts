@@ -27,8 +27,8 @@ export const useCostCalculations = () => {
       if (data && data.length > 0) {
         console.log('Found geographic factors:', data[0]);
         const factors = {
-          mfr_factor: data[0].mfr_code,  // Use mfr_code from the response
-          pfr_factor: data[0].pfr_code   // Use pfr_code from the response
+          mfr_factor: data[0].mfr_code,
+          pfr_factor: data[0].pfr_code
         };
         setGeoFactors(factors);
         return factors;
@@ -54,7 +54,7 @@ export const useCostCalculations = () => {
       }
 
       console.log('CPT code lookup result:', data);
-      return data; // Return the full array response
+      return data;
     } catch (error) {
       console.error('Error looking up CPT code:', error);
       return null;
@@ -119,7 +119,6 @@ export const useCostCalculations = () => {
         console.log('Applying geographic factors:', geoFactors);
         const { mfr_factor, pfr_factor } = geoFactors;
         
-        // Apply geographic factors directly
         low *= pfr_factor;
         average *= pfr_factor;
         high *= pfr_factor;
@@ -136,7 +135,11 @@ export const useCostCalculations = () => {
     }
   };
 
-  const calculateAnnualCost = (frequency: string, costPerUnit: number): number => {
+  const calculateAnnualCost = (frequency: string, costPerUnit: number, isOneTime: boolean = false): number => {
+    if (isOneTime) {
+      return costPerUnit;
+    }
+
     console.log('Calculating annual cost:', { frequency, costPerUnit });
     const frequencyLower = frequency.toLowerCase();
     let multiplier = 1;
@@ -157,12 +160,20 @@ export const useCostCalculations = () => {
     return annualCost;
   };
 
+  const calculateLifetimeCost = (annualCost: number, lifeExpectancy: number, isOneTime: boolean = false): number => {
+    if (isOneTime) {
+      return annualCost;
+    }
+    return Math.round(annualCost * lifeExpectancy * 100) / 100;
+  };
+
   return {
     geoFactors,
     isLoadingGeoFactors,
     fetchGeoFactors,
     calculateAdjustedCosts,
     calculateAnnualCost,
+    calculateLifetimeCost,
     lookupCPTCode
   };
 };

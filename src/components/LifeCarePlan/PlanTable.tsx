@@ -46,6 +46,17 @@ const PlanTable = ({
     }
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  };
+
+  const formatCostRange = (low: number, high: number) => {
+    return `${formatCurrency(low)} - ${formatCurrency(high)}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-end gap-4 mb-4">
@@ -87,13 +98,9 @@ const PlanTable = ({
                 <TableCell>{item.cptCode}</TableCell>
                 <TableCell>{item.frequency}</TableCell>
                 <TableCell>
-                  <div className="text-sm">
-                    <div>Low: ${item.costRange.low.toFixed(2)}</div>
-                    <div>Avg: ${item.costRange.average.toFixed(2)}</div>
-                    <div>High: ${item.costRange.high.toFixed(2)}</div>
-                  </div>
+                  {formatCostRange(item.costRange.low, item.costRange.high)}
                 </TableCell>
-                <TableCell>${item.annualCost.toFixed(2)}</TableCell>
+                <TableCell>{formatCurrency(item.annualCost)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -108,21 +115,21 @@ const PlanTable = ({
               <span className="capitalize">{total.category}:</span>
               <div className="text-right">
                 <div className="text-sm text-gray-600">
-                  Range: ${total.costRange.low.toFixed(2)} - ${total.costRange.high.toFixed(2)}
+                  Range: {formatCostRange(total.costRange.low, total.costRange.high)}
                 </div>
                 <span className="font-semibold">
-                  ${total.total.toFixed(2)}
+                  {formatCurrency(total.total)}
                 </span>
               </div>
             </div>
           ))}
           <div className="border-t pt-2 mt-4 flex justify-between text-lg font-bold">
             <span>Annual Total:</span>
-            <span>${grandTotal.toFixed(2)}</span>
+            <span>{formatCurrency(grandTotal)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold text-medical-600">
             <span>Lifetime Total:</span>
-            <span>${lifetimeTotal.toFixed(2)}</span>
+            <span>{formatCostRange(grandTotal, lifetimeTotal || 0)}</span>
           </div>
         </div>
       </div>
