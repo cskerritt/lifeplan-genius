@@ -11,6 +11,25 @@ import { FrequencyForm } from "../FrequencyForm";
 import { Button } from "@/components/ui/button";
 import { CostRange } from "@/types/lifecare";
 
+interface ProfessionalFee {
+  cptCode: string;
+  description: string;
+  costRange: CostRange;
+}
+
+interface AnesthesiaFee {
+  asaCode: string;
+  feeSource: string;
+  fee: number;
+}
+
+interface FacilityFee {
+  codeType: 'DRG' | 'APC' | 'Outpatient';
+  code: string;
+  feeSource: string;
+  fee: number;
+}
+
 interface SurgicalFormProps {
   onFrequencyChange: (field: string, value: any) => void;
   frequencyDetails: any;
@@ -29,9 +48,9 @@ export function SurgicalForm({
   onSubmit
 }: SurgicalFormProps) {
   const [showFrequency, setShowFrequency] = useState(false);
-  const [professionalFees, setProfessionalFees] = useState([]);
-  const [anesthesiaFees, setAnesthesiaFees] = useState([]);
-  const [facilityFees, setFacilityFees] = useState([]);
+  const [professionalFees, setProfessionalFees] = useState<ProfessionalFee[]>([]);
+  const [anesthesiaFees, setAnesthesiaFees] = useState<AnesthesiaFee[]>([]);
+  const [facilityFees, setFacilityFees] = useState<FacilityFee[]>([]);
   const { lookupCPTCode } = useCostCalculations();
   const [totalCostRange, setTotalCostRange] = useState<CostRange>({
     low: 0,
@@ -44,32 +63,34 @@ export function SurgicalForm({
   }, [professionalFees, anesthesiaFees, facilityFees]);
 
   const calculateTotalCosts = () => {
-    let totalLow = 0;
-    let totalHigh = 0;
-    let totalAverage = 0;
-
-    // Sum professional fees
-    professionalFees.forEach(fee => {
-      totalLow += fee.costRange.low;
-      totalHigh += fee.costRange.high;
-      totalAverage += fee.costRange.average;
+    console.log('Calculating totals with:', {
+      professionalFees,
+      anesthesiaFees,
+      facilityFees
     });
 
-    // Sum anesthesia fees
-    anesthesiaFees.forEach(fee => {
-      const feeAmount = fee.fee;
-      totalLow += feeAmount;
-      totalHigh += feeAmount;
-      totalAverage += feeAmount;
-    });
+    // Start with professional fees
+    let totalLow = professionalFees.reduce((sum, fee) => sum + fee.costRange.low, 0);
+    let totalHigh = professionalFees.reduce((sum, fee) => sum + fee.costRange.high, 0);
+    let totalAverage = professionalFees.reduce((sum, fee) => sum + fee.costRange.average, 0);
 
-    // Sum facility fees
-    facilityFees.forEach(fee => {
-      const feeAmount = fee.fee;
-      totalLow += feeAmount;
-      totalHigh += feeAmount;
-      totalAverage += feeAmount;
-    });
+    console.log('After professional fees:', { totalLow, totalHigh, totalAverage });
+
+    // Add anesthesia fees
+    const anesthesiaTotal = anesthesiaFees.reduce((sum, fee) => sum + fee.fee, 0);
+    totalLow += anesthesiaTotal;
+    totalHigh += anesthesiaTotal;
+    totalAverage += anesthesiaTotal;
+
+    console.log('After anesthesia fees:', { totalLow, totalHigh, totalAverage, anesthesiaTotal });
+
+    // Add facility fees
+    const facilityTotal = facilityFees.reduce((sum, fee) => sum + fee.fee, 0);
+    totalLow += facilityTotal;
+    totalHigh += facilityTotal;
+    totalAverage += facilityTotal;
+
+    console.log('After facility fees:', { totalLow, totalHigh, totalAverage, facilityTotal });
 
     setTotalCostRange({
       low: totalLow,
@@ -80,11 +101,25 @@ export function SurgicalForm({
 
   const handleSubmit = () => {
     if (onSubmit) {
+      const professionalDescriptions = professionalFees.map(f => `${f.cptCode}: ${f.description}`);
+      const anesthesiaDescriptions = anesthesiaFees.map(f => `ASA ${f.asaCode}`);
+      const facilityDescriptions = facilityFees.map(f => `${f.codeType} ${f.code}`);
+
       const description = [
-        professionalFees.map(f => `${f.cptCode}: ${f.description}`).join(', '),
-        anesthesiaFees.map(f => `ASA ${f.asaCode}`).join(', '),
-        facilityFees.map(f => `${f.codeType} ${f.code}`).join(', ')
-      ].filter(Boolean).join(' | ');
+        ...professionalDescriptions,
+        ...anesthesiaDescriptions,
+        ...facilityDescriptions
+      ].join(' | ');
+
+      console.log('Submitting surgical procedure with:', {
+        description,
+        costRange: totalCostRange,
+        fees: {
+          professional: professionalFees,
+          anesthesia: anesthesiaFees,
+          facility: facilityFees
+        }
+      });
 
       onSubmit({
         service: description || "Surgical Procedure",
