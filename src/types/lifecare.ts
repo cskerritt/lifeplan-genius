@@ -52,6 +52,10 @@ export interface CareItem {
   costRange: CostRange;
   costResources?: CostResource[];
   geographicFactor?: GeographicFactor;
+  startAge?: number;
+  endAge?: number;
+  isOneTime?: boolean;
+  notes?: string;
 }
 
 export type CareCategory =

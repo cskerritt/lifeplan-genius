@@ -40,7 +40,6 @@ const createDetailedCategoryTables = (data: ExportData) => {
   const groupedItems = groupItemsByCategory(data.items);
 
   Object.entries(groupedItems).forEach(([category, items]) => {
-    // Add spacing paragraph before each category table
     tables.push(
       new Paragraph({
         text: '',
@@ -48,7 +47,6 @@ const createDetailedCategoryTables = (data: ExportData) => {
       })
     );
 
-    // Add category header
     tables.push(
       new Paragraph({
         text: category.toUpperCase(),
@@ -58,7 +56,6 @@ const createDetailedCategoryTables = (data: ExportData) => {
       })
     );
 
-    // Add detailed table for category
     tables.push(
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -69,7 +66,6 @@ const createDetailedCategoryTables = (data: ExportData) => {
           right: { style: BorderStyle.SINGLE, size: 1, color: '4472C4' },
         },
         rows: [
-          // Header row
           new TableRow({
             tableHeader: true,
             children: [
@@ -110,7 +106,6 @@ const createDetailedCategoryTables = (data: ExportData) => {
               })
             ]
           }),
-          // Item rows
           ...items.map((item, index) => 
             new TableRow({
               children: [
@@ -149,13 +144,14 @@ const createDetailedCategoryTables = (data: ExportData) => {
               ]
             })
           ),
-          // Total row
           new TableRow({
             children: [
               new TableCell({
                 columnSpan: 5,
-                children: [new Paragraph('Total:')],
-                alignment: AlignmentType.RIGHT
+                children: [new Paragraph({
+                  text: 'Total:',
+                  alignment: AlignmentType.RIGHT
+                })]
               }),
               new TableCell({
                 children: [new Paragraph(`$${calculateCategoryTotal(items).toFixed(2)}`)],
@@ -171,7 +167,6 @@ const createDetailedCategoryTables = (data: ExportData) => {
       })
     );
 
-    // Add Notes/Rationale section if available
     if (items.some(item => item.notes)) {
       tables.push(
         new Paragraph({
@@ -216,7 +211,6 @@ const calculateOneTimeTotal = (items: CareItem[]) => {
 };
 
 export const exportToExcel = (data: ExportData) => {
-  // Create a worksheet that matches the lifetime projected costs format
   const lifetimeWorksheet = XLSX.utils.aoa_to_sheet([
     [`LIFETIME PROJECTED COSTS: ${data.evalueeName.toUpperCase()}`],
     [],
@@ -226,7 +220,7 @@ export const exportToExcel = (data: ExportData) => {
       data.lifeExpectancy || '0',
       `$${total.total.toFixed(2)}`,
       `$${(total.total * parseFloat(data.lifeExpectancy || '0')).toFixed(2)}`,
-      '$0.00' // Add actual one-time costs if available
+      '$0.00'
     ]),
     [],
     ['', '', '', 'LIFETIME TOTAL:', `$${data.lifetimeLow.toFixed(2)} - $${data.lifetimeHigh.toFixed(2)}`]
@@ -247,7 +241,6 @@ const createLifetimeProjectedCostsTable = (data: ExportData) => {
       right: { style: BorderStyle.SINGLE, size: 1, color: '4472C4' },
     },
     rows: [
-      // Header row
       new TableRow({
         tableHeader: true,
         children: [
@@ -278,7 +271,6 @@ const createLifetimeProjectedCostsTable = (data: ExportData) => {
           })
         ]
       }),
-      // Category rows
       ...data.categoryTotals.map((total, index) => 
         new TableRow({
           children: [
@@ -299,13 +291,12 @@ const createLifetimeProjectedCostsTable = (data: ExportData) => {
               shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
             }),
             new TableCell({
-              children: [new Paragraph('$0.00')], // Add actual one-time costs if available
+              children: [new Paragraph('$0.00')],
               shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
             })
           ]
         })
       ),
-      // Total row
       new TableRow({
         children: [
           new TableCell({
