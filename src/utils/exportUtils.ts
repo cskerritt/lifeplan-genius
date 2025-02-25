@@ -1,5 +1,5 @@
 
-import { Document, Paragraph, Table, TableRow, TableCell, WidthType, Packer } from 'docx';
+import { Document, Paragraph, Table, TableRow, TableCell, WidthType, Packer, AlignmentType, BorderStyle } from 'docx';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { CategoryTotal, CareItem } from '@/types/lifecare';
@@ -12,6 +12,7 @@ interface ExportData {
   grandTotal: number;
   lifetimeLow: number;
   lifetimeHigh: number;
+  lifeExpectancy?: string;
 }
 
 export const exportToWord = async (data: ExportData) => {
@@ -20,159 +21,125 @@ export const exportToWord = async (data: ExportData) => {
       properties: {},
       children: [
         new Paragraph({
-          text: `Life Care Plan for ${data.evalueeName}`,
-          heading: 'Heading1'
+          text: `LIFETIME PROJECTED COSTS: ${data.evalueeName.toUpperCase()}`,
+          heading: 'Heading1',
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 200, after: 200 }
         }),
-        new Paragraph({ text: '' }),
-        createItemsTable(data.items),
-        new Paragraph({ text: '' }),
-        createTotalsTable(data.categoryTotals, data.grandTotal, data.lifetimeLow, data.lifetimeHigh)
+        createLifetimeProjectedCostsTable(data),
       ]
     }]
   });
 
-  // Use Packer.toBlob() to generate a Blob from the document
   const blob = await Packer.toBlob(doc);
-  
-  // Download the generated file using file-saver
   saveAs(blob, `${data.evalueeName}_LifeCarePlan.docx`);
 };
 
 export const exportToExcel = (data: ExportData) => {
-  const itemsWorksheet = XLSX.utils.json_to_sheet(data.items.map(item => ({
-    Category: item.category,
-    Service: item.service,
-    'CPT Code': item.cptCode,
-    Frequency: item.frequency,
-    'Cost Per Unit': item.costPerUnit,
-    'Annual Cost': item.annualCost,
-    'Low Cost': item.costRange.low,
-    'Average Cost': item.costRange.average,
-    'High Cost': item.costRange.high
-  })));
-
-  const totalsWorksheet = XLSX.utils.json_to_sheet([
-    ...data.categoryTotals.map(total => ({
-      Category: total.category,
-      'Annual Total': total.total,
-      'Low Cost': total.costRange.low,
-      'Average Cost': total.costRange.average,
-      'High Cost': total.costRange.high
-    })),
-    {
-      Category: 'Total',
-      'Annual Total': data.grandTotal,
-      'Lifetime Low': data.lifetimeLow,
-      'Lifetime High': data.lifetimeHigh
-    }
+  // Create a worksheet that matches the lifetime projected costs format
+  const lifetimeWorksheet = XLSX.utils.aoa_to_sheet([
+    [`LIFETIME PROJECTED COSTS: ${data.evalueeName.toUpperCase()}`],
+    [],
+    ['Projected Care:', 'Duration Required (Years):', 'Annual Cost:', 'Annual Cost x Duration Required:', 'Total One-Time Cost:'],
+    ...data.categoryTotals.map(total => [
+      total.category,
+      data.lifeExpectancy || '0',
+      `$${total.total.toFixed(2)}`,
+      `$${(total.total * parseFloat(data.lifeExpectancy || '0')).toFixed(2)}`,
+      '$0.00' // Add actual one-time costs if available
+    ]),
+    [],
+    ['', '', '', 'LIFETIME TOTAL:', `$${data.lifetimeLow.toFixed(2)} - $${data.lifetimeHigh.toFixed(2)}`]
   ]);
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, itemsWorksheet, 'Items');
-  XLSX.utils.book_append_sheet(wb, totalsWorksheet, 'Category Totals');
-
+  XLSX.utils.book_append_sheet(wb, lifetimeWorksheet, 'Lifetime Projected Costs');
   XLSX.writeFile(wb, `${data.evalueeName}_LifeCarePlan.xlsx`);
 };
 
-const createItemsTable = (items: CareItem[]) => {
+const createLifetimeProjectedCostsTable = (data: ExportData) => {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 1, color: '4472C4' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: '4472C4' },
+      left: { style: BorderStyle.SINGLE, size: 1, color: '4472C4' },
+      right: { style: BorderStyle.SINGLE, size: 1, color: '4472C4' },
+    },
     rows: [
+      // Header row
       new TableRow({
+        tableHeader: true,
         children: [
-          'Category',
-          'Service',
-          'CPT Code',
-          'Frequency',
-          'Annual Cost',
-          'Cost Range'
-        ].map(header => 
           new TableCell({
-            children: [new Paragraph({ text: header })],
-            width: { size: 100 / 6, type: WidthType.PERCENTAGE }
+            width: { size: 30, type: WidthType.PERCENTAGE },
+            children: [new Paragraph('Projected Care:')],
+            shading: { fill: 'DBE5F1' }
+          }),
+          new TableCell({
+            width: { size: 15, type: WidthType.PERCENTAGE },
+            children: [new Paragraph('Duration Required (Years):')],
+            shading: { fill: 'DBE5F1' }
+          }),
+          new TableCell({
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            children: [new Paragraph('Annual Cost:')],
+            shading: { fill: 'DBE5F1' }
+          }),
+          new TableCell({
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            children: [new Paragraph('Annual Cost x Duration Required:')],
+            shading: { fill: 'DBE5F1' }
+          }),
+          new TableCell({
+            width: { size: 15, type: WidthType.PERCENTAGE },
+            children: [new Paragraph('Total One-Time Cost:')],
+            shading: { fill: 'DBE5F1' }
           })
-        )
+        ]
       }),
-      ...items.map(item => 
+      // Category rows
+      ...data.categoryTotals.map((total, index) => 
         new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ text: item.category })] }),
-            new TableCell({ children: [new Paragraph({ text: item.service })] }),
-            new TableCell({ children: [new Paragraph({ text: item.cptCode })] }),
-            new TableCell({ children: [new Paragraph({ text: item.frequency })] }),
-            new TableCell({ children: [new Paragraph({ text: `$${item.annualCost.toFixed(2)}` })] }),
-            new TableCell({ 
-              children: [
-                new Paragraph({ 
-                  text: `Low: $${item.costRange.low.toFixed(2)}\n` +
-                        `Avg: $${item.costRange.average.toFixed(2)}\n` +
-                        `High: $${item.costRange.high.toFixed(2)}` 
-                })
-              ]
-            })
-          ]
-        })
-      )
-    ]
-  });
-};
-
-const createTotalsTable = (
-  categoryTotals: CategoryTotal[], 
-  grandTotal: number, 
-  lifetimeLow: number, 
-  lifetimeHigh: number
-) => {
-  return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      new TableRow({
-        children: [
-          'Category',
-          'Annual Total',
-          'Cost Range'
-        ].map(header => 
-          new TableCell({
-            children: [new Paragraph({ text: header })],
-            width: { size: 100 / 3, type: WidthType.PERCENTAGE }
-          })
-        )
-      }),
-      ...categoryTotals.map(total => 
-        new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ text: total.category })] }),
-            new TableCell({ children: [new Paragraph({ text: `$${total.total.toFixed(2)}` })] }),
-            new TableCell({ 
-              children: [
-                new Paragraph({ 
-                  text: `Low: $${total.costRange.low.toFixed(2)}\n` +
-                        `Avg: $${total.costRange.average.toFixed(2)}\n` +
-                        `High: $${total.costRange.high.toFixed(2)}` 
-                })
-              ]
+            new TableCell({
+              children: [new Paragraph(total.category)],
+              shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
+            }),
+            new TableCell({
+              children: [new Paragraph(data.lifeExpectancy || '0')],
+              shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
+            }),
+            new TableCell({
+              children: [new Paragraph(`$${total.total.toFixed(2)}`)],
+              shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
+            }),
+            new TableCell({
+              children: [new Paragraph(`$${(total.total * parseFloat(data.lifeExpectancy || '0')).toFixed(2)}`)],
+              shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
+            }),
+            new TableCell({
+              children: [new Paragraph('$0.00')], // Add actual one-time costs if available
+              shading: { fill: index % 2 === 0 ? 'DBE5F1' : 'FFFFFF' }
             })
           ]
         })
       ),
+      // Total row
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ text: 'Grand Total (Annual)' })] }),
-          new TableCell({ children: [new Paragraph({ text: `$${grandTotal.toFixed(2)}` })] }),
-          new TableCell({ children: [new Paragraph({ text: '' })] })
-        ]
-      }),
-      new TableRow({
-        children: [
-          new TableCell({ children: [new Paragraph({ text: 'Lifetime Total Range' })] }),
-          new TableCell({ 
-            children: [
-              new Paragraph({ 
-                text: `$${lifetimeLow.toFixed(2)} - $${lifetimeHigh.toFixed(2)}` 
-              })
-            ]
+          new TableCell({
+            columnSpan: 3,
+            children: [new Paragraph('')],
           }),
-          new TableCell({ children: [new Paragraph({ text: '' })] })
+          new TableCell({
+            children: [new Paragraph('LIFETIME TOTAL:')],
+            shading: { fill: 'DBE5F1' }
+          }),
+          new TableCell({
+            children: [new Paragraph(`$${data.lifetimeLow.toFixed(2)} - $${data.lifetimeHigh.toFixed(2)}`)],
+            shading: { fill: 'DBE5F1' }
+          })
         ]
       })
     ]
