@@ -24,8 +24,11 @@ const Index = () => {
           id,
           first_name,
           last_name,
+          date_of_birth,
+          date_of_injury,
           city,
           state,
+          zip_code,
           created_at,
           care_plan_entries (*)
         `)
@@ -115,7 +118,21 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlans?.length ? (
             filteredPlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} onDelete={handleDelete} />
+              <PlanCard 
+                key={plan.id} 
+                plan={{
+                  id: plan.id,
+                  first_name: plan.first_name,
+                  last_name: plan.last_name,
+                  date_of_birth: plan.date_of_birth,
+                  date_of_injury: plan.date_of_injury,
+                  city: plan.city,
+                  state: plan.state,
+                  zip_code: plan.zip_code,
+                  care_plan_entries: plan.care_plan_entries
+                }} 
+                onDelete={handleDelete}
+              />
             ))
           ) : (
             <EmptyState />
