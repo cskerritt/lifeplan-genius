@@ -1,4 +1,5 @@
-import { Document, Paragraph, Table, TableRow, TableCell, WidthType } from 'docx';
+
+import { Document as DocxDocument, Paragraph, Table, TableRow, TableCell, WidthType } from 'docx';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { CategoryTotal, CareItem } from '@/types/lifecare';
@@ -13,7 +14,7 @@ interface ExportData {
 }
 
 export const exportToWord = async (data: ExportData) => {
-  const doc = new Document({
+  const doc = new DocxDocument({
     sections: [{
       properties: {},
       children: [
@@ -30,7 +31,7 @@ export const exportToWord = async (data: ExportData) => {
   });
 
   // Generate blob from document
-  const buffer = await doc.save(); // This returns a Promise<Uint8Array>
+  const buffer = await doc.save();
   const blob = new Blob([buffer], { 
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
   });
