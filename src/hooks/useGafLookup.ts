@@ -46,7 +46,9 @@ export function useGafLookup() {
   const lookupGeoFactors = useCallback(async (zipCode: string) => {
     if (!zipCode) return;
     
-    console.log('Looking up ZIP:', zipCode);
+    // Format ZIP code - pad with leading zeros
+    const formattedZip = zipCode.padStart(5, '0');
+    console.log('Looking up ZIP:', formattedZip);
     setIsLoading(true);
     
     try {
@@ -54,7 +56,7 @@ export function useGafLookup() {
       const { data: directData, error: directError } = await supabase
         .from('gaf_lookup')
         .select('*')
-        .eq('zip', zipCode)
+        .eq('zip', formattedZip)
         .maybeSingle();
 
       if (directError) {
@@ -80,7 +82,7 @@ export function useGafLookup() {
       // If no direct match, try the RPC function as backup
       const { data: rpcData, error: rpcError } = await supabase
         .rpc('search_geographic_factors', { 
-          zip_code: zipCode 
+          zip_code: formattedZip 
         });
 
       if (rpcError) {
@@ -91,7 +93,7 @@ export function useGafLookup() {
       console.log('RPC lookup data:', rpcData);
 
       if (!rpcData || rpcData.length === 0) {
-        console.log('No data found for ZIP:', zipCode);
+        console.log('No data found for ZIP:', formattedZip);
         setGeoFactors(null);
         toast({
           variant: "destructive",
