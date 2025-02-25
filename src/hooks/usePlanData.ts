@@ -8,11 +8,14 @@ import { useCostCalculations } from './useCostCalculations';
 export const usePlanData = (id: string) => {
   const [evaluee, setEvaluee] = useState<Evaluee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
   const { fetchGeoFactors } = useCostCalculations();
   const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchPlanData = async () => {
       if (id === "new") {
         setIsLoading(false);
@@ -20,15 +23,25 @@ export const usePlanData = (id: string) => {
       }
 
       try {
+        // Check if we've already had an error to prevent infinite retries
+        if (hasError) {
+          return;
+        }
+
         const { data: planData, error: planError } = await supabase
           .from('life_care_plans')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (planError) throw planError;
 
-        if (planData) {
+        // If plan doesn't exist, handle gracefully
+        if (!planData) {
+          throw new Error('Plan not found');
+        }
+
+        if (isMounted && planData) {
           const evalueeData: Evaluee = {
             id: planData.id,
             firstName: planData.first_name || '',
@@ -58,7 +71,7 @@ export const usePlanData = (id: string) => {
 
           if (entriesError) throw entriesError;
 
-          if (entriesData) {
+          if (isMounted && entriesData) {
             const careItems = entriesData.map(entry => ({
               id: entry.id,
               category: entry.category as CareCategory,
@@ -78,18 +91,28 @@ export const usePlanData = (id: string) => {
         }
       } catch (error) {
         console.error('Error fetching plan:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load the life care plan"
-        });
+        if (isMounted) {
+          setHasError(true);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load the life care plan"
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchPlanData();
-  }, [id, toast, fetchGeoFactors]);
 
-  return { evaluee, setEvaluee, isLoading, items, setItems };
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
+  }, [id, toast, fetchGeoFactors, hasError]);
+
+  return { evaluee, setEvaluee, isLoading, items, setItems, hasError };
 };
