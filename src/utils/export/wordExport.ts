@@ -7,6 +7,8 @@ import { createLifetimeProjectedCostsTable } from './word/summaryTable';
 import { createDetailedTable } from './word/detailedTable';
 
 export const exportToWord = async (data: ExportData) => {
+  console.log('Exporting data:', data); // Debug log to see what data we're working with
+
   const doc = new Document({
     sections: [{
       properties: {},

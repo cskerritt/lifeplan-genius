@@ -10,4 +10,6 @@ export interface ExportData {
   lifetimeLow: number;
   lifetimeHigh: number;
   lifeExpectancy?: string;
+  dateOfBirth?: string;
+  dateOfInjury?: string;
 }
