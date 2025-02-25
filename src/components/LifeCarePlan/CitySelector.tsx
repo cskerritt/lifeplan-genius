@@ -18,22 +18,24 @@ interface CitySelectorProps {
 }
 
 export function CitySelector({ value, cities, isLoading, disabled, onValueChange }: CitySelectorProps) {
+  const placeholder = isLoading 
+    ? "Loading cities..." 
+    : disabled 
+    ? "Select state first" 
+    : "Select city";
+
   return (
     <div className="space-y-2">
       <Label htmlFor="city">City/Town</Label>
       <Select 
-        value={value} 
+        value={value || ""} 
         onValueChange={onValueChange}
         disabled={disabled || isLoading}
       >
         <SelectTrigger className="w-full">
-          <SelectValue 
-            placeholder={
-              isLoading ? "Loading cities..." : 
-              disabled ? "Select state first" : 
-              "Select city"
-            } 
-          />
+          <SelectValue placeholder={placeholder}>
+            {value || placeholder}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-[300px]">
           {cities.map(city => (
