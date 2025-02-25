@@ -1,4 +1,4 @@
-import { Document, Paragraph, Table, TableRow, TableCell, WidthType } from 'docx';
+import { Document, Paragraph, Table, TableRow, TableCell, WidthType, Packer } from 'docx';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { CategoryTotal, CareItem } from '@/types/lifecare';
@@ -29,13 +29,10 @@ export const exportToWord = async (data: ExportData) => {
     }]
   });
 
-  // Generate blob from document using Packer
-  const arrayBuffer = await doc.save();
-  const blob = new Blob([arrayBuffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-  });
+  // Use Packer.toBlob() to generate a Blob from the document
+  const blob = await Packer.toBlob(doc);
   
-  // Use file-saver to download the file
+  // Download the generated file using file-saver
   saveAs(blob, `${data.evalueeName}_LifeCarePlan.docx`);
 };
 
