@@ -61,7 +61,7 @@ export function CostDetails({
           const result = cptData[0];
           console.log('Using CPT result:', result);
           
-          if (result.mfr_50th && result.mfr_75th && result.pfr_50th && result.pfr_75th) {
+          if (result.is_valid) {  // Changed condition to check is_valid flag
             // Get the geographic factors - if not available, default to 1
             const pfrFactor = geoFactors?.pfr_factor || 1;
             const mfrFactor = geoFactors?.mfr_factor || 1;
@@ -71,13 +71,13 @@ export function CostDetails({
               mfrFactor
             });
             
-            // Adjust PFR fees
+            // Adjust PFR fees using pfr values
             const adjustedPFR50 = result.pfr_50th * pfrFactor;
             const adjustedPFR75 = result.pfr_75th * pfrFactor;
             
-            // Adjust MFR fees
-            const adjustedMFR50 = result.mfr_50th * mfrFactor;
-            const adjustedMFR75 = result.mfr_75th * mfrFactor;
+            // Adjust MFR fees using mfu values (since that's what the API returns)
+            const adjustedMFR50 = result.mfu_50th * mfrFactor;
+            const adjustedMFR75 = result.mfu_75th * mfrFactor;
 
             console.log('Adjusted PFR rates:', {
               pfr50: adjustedPFR50,
@@ -109,7 +109,7 @@ export function CostDetails({
             onCostRangeChange('average', Math.round(averageValue * 100) / 100);
             onCostRangeChange('high', Math.round(highValue * 100) / 100);
           } else {
-            console.log('Missing required MFR or PFR values in CPT data:', result);
+            console.log('CPT code is not valid:', result);
           }
         } else {
           console.log('No CPT data found or invalid format');
