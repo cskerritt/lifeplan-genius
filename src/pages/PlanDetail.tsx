@@ -41,7 +41,7 @@ const PlanDetail = () => {
         if (error) throw error;
 
         // Fetch geographic factors when zip code changes
-        if (newEvaluee.zipCode) {
+        if (newEvaluee.zipCode && (!evaluee || newEvaluee.zipCode !== evaluee.zipCode)) {
           await fetchGeoFactors(newEvaluee.zipCode);
         }
 
@@ -83,7 +83,11 @@ const PlanDetail = () => {
             firstName: planData.first_name,
             lastName: planData.last_name,
             dateOfBirth: planData.date_of_birth,
+            dateOfInjury: planData.date_of_injury,
             gender: planData.gender,
+            zipCode: planData.zip_code,
+            city: planData.city,
+            state: planData.state,
             address: planData.street_address,
             phone: '',
             email: ''
@@ -91,7 +95,7 @@ const PlanDetail = () => {
 
           setEvaluee(evalueeData);
 
-          // Fetch geographic factors when loading existing plan
+          // Fetch geographic factors only if we have a zip code
           if (planData.zip_code) {
             await fetchGeoFactors(planData.zip_code);
           }
@@ -106,7 +110,7 @@ const PlanDetail = () => {
           if (entriesData) {
             const careItems = entriesData.map(entry => ({
               id: entry.id,
-              category: entry.category as CareCategory, // Cast the string to CareCategory
+              category: entry.category as CareCategory,
               service: entry.item,
               frequency: entry.frequency || '',
               cptCode: entry.cpt_code || '',
@@ -134,7 +138,7 @@ const PlanDetail = () => {
     };
 
     fetchPlanData();
-  }, [id, setItems, fetchGeoFactors]);
+  }, [id]); // Remove setItems and fetchGeoFactors from dependencies
 
   if (isLoading) {
     return <div>Loading...</div>;
