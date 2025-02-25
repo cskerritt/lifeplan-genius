@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareCategory, CostRange, CostResource, VehicleModification } from "@/types/lifecare";
@@ -170,6 +171,7 @@ export const useCostCalculations = () => {
     geoFactors,
     fetchGeoFactors,
     calculateAdjustedCosts,
-    calculateAnnualCost
+    calculateAnnualCost,
+    lookupCPTCode  // Added this to expose the function
   };
 };
