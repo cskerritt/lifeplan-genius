@@ -35,6 +35,22 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     setFrequencyDetails(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleCPTLookup = async () => {
+    try {
+      const result = await lookupCPTCode(cptCode);
+      if (result && result.length > 0) {
+        const data = result[0];
+        setCostRange({
+          low: data.pfr_50th,
+          average: data.pfr_75th,
+          high: data.pfr_90th
+        });
+      }
+    } catch (error) {
+      console.error('Error looking up CPT code:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <CategorySelect
@@ -104,7 +120,7 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
                 onCostRangeChange={(field, value) => 
                   setCostRange(prev => ({ ...prev, [field]: value }))
                 }
-                onCPTLookup={() => lookupCPTCode(cptCode)}
+                onCPTLookup={handleCPTLookup}
               />
             </>
           )}
