@@ -204,7 +204,7 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
                 onFrequencyChange={handleFrequencyChange}
                 dateOfBirth={dateOfBirth}
                 dateOfInjury={dateOfInjury}
-                lifeExpectancy={lifeExpectancy}
+                lifeExpectancy={lifeExpectancy.toString()}
               />
             </TabsContent>
           </Tabs>
