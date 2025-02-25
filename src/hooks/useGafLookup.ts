@@ -49,71 +49,42 @@ export function useGafLookup() {
     
     // Ensure ZIP code is exactly 5 digits with leading zeros
     const formattedZip = zipCode.toString().padStart(5, '0');
-    console.log('🔍 Starting lookup for ZIP:', formattedZip);
+    console.log('🔍 Looking up ZIP:', formattedZip);
     setIsLoading(true);
     
     try {
-      // Step 1: Try direct lookup first
-      console.log('Step 1: Attempting direct lookup from gaf_lookup table...');
-      const { data: directData, error: directError } = await supabase
+      const { data, error } = await supabase
         .from('gaf_lookup')
-        .select('*')
+        .select('mfr_code, pfr_code, city, state_name')
         .eq('zip', formattedZip)
         .maybeSingle();
 
-      if (directError) {
-        console.error('Direct lookup error:', directError);
-        throw directError;
+      if (error) {
+        console.error('Lookup error:', error);
+        throw error;
       }
 
-      console.log('Direct lookup result:', directData);
+      console.log('Lookup result:', data);
 
-      // Step 2: If direct lookup fails, try RPC function
-      if (!directData) {
-        console.log('Step 2: Direct lookup failed, trying RPC search_geographic_factors...');
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('search_geographic_factors', { zip_code: formattedZip });
-
-        if (rpcError) {
-          console.error('RPC lookup error:', rpcError);
-          throw rpcError;
-        }
-
-        console.log('RPC lookup result:', rpcData);
-
-        if (!rpcData || (Array.isArray(rpcData) && rpcData.length === 0)) {
-          console.log('No data found for ZIP:', formattedZip);
-          setGeoFactors(null);
-          toast({
-            variant: "destructive",
-            title: "Location Not Found",
-            description: "Please try another ZIP code or enter state/city manually"
-          });
-          return null;
-        }
-
-        // Use the first result from RPC if available
-        const rpcResult = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-        const factors: GafFactors = {
-          mfr_code: Number(rpcResult.mfr_code),
-          pfr_code: Number(rpcResult.pfr_code),
-          city: rpcResult.city,
-          state_name: rpcResult.state_name
-        };
-        console.log('Found factors from RPC:', factors);
-        setGeoFactors(factors);
-        return factors;
+      if (!data) {
+        console.log('No data found for ZIP:', formattedZip);
+        setGeoFactors(null);
+        toast({
+          variant: "destructive",
+          title: "Location Not Found",
+          description: "Please try another ZIP code or enter state/city manually"
+        });
+        return null;
       }
 
-      // Use direct lookup data if available
       const factors: GafFactors = {
-        mfr_code: Number(directData.mfr_code),
-        pfr_code: Number(directData.pfr_code),
-        city: directData.city,
-        state_name: directData.state_name
+        mfr_code: Number(data.mfr_code),
+        pfr_code: Number(data.pfr_code),
+        city: data.city,
+        state_name: data.state_name
       };
 
-      console.log('Found factors from direct lookup:', factors);
+      console.log('Found factors:', factors);
       setGeoFactors(factors);
       return factors;
 
