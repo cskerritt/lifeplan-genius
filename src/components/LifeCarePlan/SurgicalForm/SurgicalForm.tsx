@@ -69,28 +69,28 @@ export function SurgicalForm({
       facilityFees
     });
 
-    // Start with professional fees
-    let totalLow = professionalFees.reduce((sum, fee) => sum + fee.costRange.low, 0);
-    let totalHigh = professionalFees.reduce((sum, fee) => sum + fee.costRange.high, 0);
-    let totalAverage = professionalFees.reduce((sum, fee) => sum + fee.costRange.average, 0);
+    // Calculate professional fees totals
+    const profLow = professionalFees.reduce((sum, fee) => sum + fee.costRange.low, 0);
+    const profHigh = professionalFees.reduce((sum, fee) => sum + fee.costRange.high, 0);
+    const profAvg = professionalFees.reduce((sum, fee) => sum + fee.costRange.average, 0);
 
-    console.log('After professional fees:', { totalLow, totalHigh, totalAverage });
-
-    // Add anesthesia fees
+    // Calculate anesthesia fees total (use same value for low/avg/high since it's a fixed fee)
     const anesthesiaTotal = anesthesiaFees.reduce((sum, fee) => sum + fee.fee, 0);
-    totalLow += anesthesiaTotal;
-    totalHigh += anesthesiaTotal;
-    totalAverage += anesthesiaTotal;
 
-    console.log('After anesthesia fees:', { totalLow, totalHigh, totalAverage, anesthesiaTotal });
-
-    // Add facility fees
+    // Calculate facility fees total (use same value for low/avg/high since it's a fixed fee)
     const facilityTotal = facilityFees.reduce((sum, fee) => sum + fee.fee, 0);
-    totalLow += facilityTotal;
-    totalHigh += facilityTotal;
-    totalAverage += facilityTotal;
 
-    console.log('After facility fees:', { totalLow, totalHigh, totalAverage, facilityTotal });
+    // Sum all components
+    const totalLow = profLow + anesthesiaTotal + facilityTotal;
+    const totalHigh = profHigh + anesthesiaTotal + facilityTotal;
+    const totalAverage = profAvg + anesthesiaTotal + facilityTotal;
+
+    console.log('Fee totals:', {
+      professional: { low: profLow, high: profHigh, avg: profAvg },
+      anesthesia: anesthesiaTotal,
+      facility: facilityTotal,
+      final: { low: totalLow, high: totalHigh, average: totalAverage }
+    });
 
     setTotalCostRange({
       low: totalLow,
@@ -109,7 +109,7 @@ export function SurgicalForm({
         ...professionalDescriptions,
         ...anesthesiaDescriptions,
         ...facilityDescriptions
-      ].join(' | ');
+      ].filter(Boolean).join(' | ');
 
       console.log('Submitting surgical procedure with:', {
         description,
@@ -121,14 +121,22 @@ export function SurgicalForm({
         }
       });
 
+      const frequency = showFrequency 
+        ? `${frequencyDetails.lowFrequencyPerYear}-${frequencyDetails.highFrequencyPerYear}x per year` 
+        : "One-time";
+
+      const annualCost = showFrequency
+        ? totalCostRange.average * frequencyDetails.highFrequencyPerYear
+        : totalCostRange.average;
+
       onSubmit({
         service: description || "Surgical Procedure",
         category: "surgical",
-        frequency: showFrequency ? `${frequencyDetails.lowFrequencyPerYear}-${frequencyDetails.highFrequencyPerYear}x per year` : "One-time",
+        frequency,
         cptCode: professionalFees.map(f => f.cptCode).join(', '),
         costRange: totalCostRange,
         costPerUnit: totalCostRange.average,
-        annualCost: totalCostRange.average * (showFrequency ? frequencyDetails.highFrequencyPerYear : 1)
+        annualCost
       });
     }
   };
