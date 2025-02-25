@@ -42,8 +42,8 @@ export function FrequencyForm({
         onFrequencyChange('startAge', Math.floor(ageData.ageToday));
       }
       
-      // Always update stop age based on current ageToday + lifeExpectancy
-      if (ageData.projectedAgeAtDeath !== undefined) {
+      // Only update stop age if it hasn't been manually set (still at default value)
+      if (ageData.projectedAgeAtDeath !== undefined && frequencyDetails.stopAge === 100) {
         onFrequencyChange('stopAge', Math.ceil(ageData.projectedAgeAtDeath));
       }
     }
@@ -84,8 +84,7 @@ export function FrequencyForm({
                 min="0"
                 max="150"
                 value={frequencyDetails.stopAge}
-                readOnly
-                className="bg-gray-100"
+                onChange={(e) => onFrequencyChange('stopAge', parseInt(e.target.value) || 0)}
               />
             </div>
           </div>
