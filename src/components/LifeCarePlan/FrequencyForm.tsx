@@ -2,6 +2,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect } from "react";
+import { useAgeCalculations } from "@/hooks/useAgeCalculations";
 
 interface FrequencyDetails {
   startAge: number;
@@ -14,9 +16,37 @@ interface FrequencyDetails {
 interface FrequencyFormProps {
   frequencyDetails: FrequencyDetails;
   onFrequencyChange: (field: keyof FrequencyDetails, value: number | boolean | string) => void;
+  dateOfBirth: string;
+  dateOfInjury: string;
+  lifeExpectancy: string;
 }
 
-export function FrequencyForm({ frequencyDetails, onFrequencyChange }: FrequencyFormProps) {
+export function FrequencyForm({ 
+  frequencyDetails, 
+  onFrequencyChange,
+  dateOfBirth,
+  dateOfInjury,
+  lifeExpectancy
+}: FrequencyFormProps) {
+  const ageData = useAgeCalculations({
+    dateOfBirth,
+    dateOfInjury,
+    lifeExpectancy
+  });
+
+  // Set default values when ageData changes
+  useEffect(() => {
+    if (ageData.ageToday !== undefined && ageData.projectedAgeAtDeath !== undefined) {
+      // Only update if the values haven't been manually changed
+      if (frequencyDetails.startAge === 0) {
+        onFrequencyChange('startAge', ageData.ageToday);
+      }
+      if (frequencyDetails.stopAge === 100) {
+        onFrequencyChange('stopAge', ageData.projectedAgeAtDeath);
+      }
+    }
+  }, [ageData, onFrequencyChange]);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Frequency & Duration</h3>

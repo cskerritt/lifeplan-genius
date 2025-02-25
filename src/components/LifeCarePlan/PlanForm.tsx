@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,17 +26,12 @@ import { MedicationForm } from "./MedicationForm";
 
 interface PlanFormProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
+  dateOfBirth: string;
+  dateOfInjury: string;
+  lifeExpectancy: string;
 }
 
-interface FrequencyDetails {
-  startAge: number;
-  stopAge: number;
-  timesPerYear: number;
-  isOneTime: boolean;
-  customFrequency: string;
-}
-
-const PlanForm = ({ onSubmit }: PlanFormProps) => {
+const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
   const [category, setCategory] = useState<CareCategory>("physician");
   const [service, setService] = useState("");
   const [cptCode, setCptCode] = useState("");
@@ -208,6 +202,9 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
       <FrequencyForm
         frequencyDetails={frequencyDetails}
         onFrequencyChange={handleFrequencyChange}
+        dateOfBirth={dateOfBirth}
+        dateOfInjury={dateOfInjury}
+        lifeExpectancy={lifeExpectancy}
       />
 
       <Separator className="my-4" />
