@@ -37,14 +37,31 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
     lifeExpectancy: formData.lifeExpectancy
   });
 
-  const { handleSubmit } = useEvalueeFormSubmit(onSave);
+  const { handleSubmit } = useEvalueeFormSubmit((updatedData) => {
+    // Update the local form data with the response from the server
+    updateFormData({
+      firstName: updatedData.first_name,
+      lastName: updatedData.last_name,
+      dateOfBirth: updatedData.date_of_birth,
+      dateOfInjury: updatedData.date_of_injury || '',
+      gender: updatedData.gender,
+      zipCode: updatedData.zip_code || '',
+      city: updatedData.city,
+      state: updatedData.state,
+      lifeExpectancy: updatedData.life_expectancy?.toString() || '',
+    });
+    
+    if (onSave) {
+      onSave(updatedData);
+    }
+  });
 
   const handleLocationChange = (city: string, state: string) => {
     // No changes needed here as form data is already updated
   };
 
-  const onFormSubmit = (e: React.FormEvent) => {
-    handleSubmit(e, formData, ageData, id);
+  const onFormSubmit = async (e: React.FormEvent) => {
+    await handleSubmit(e, formData, ageData, id);
     setIsEditing(false);
   };
 

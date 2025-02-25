@@ -40,22 +40,24 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
         return;
       }
 
+      const planData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        date_of_birth: formData.dateOfBirth,
+        date_of_injury: formData.dateOfInjury,
+        gender: formData.gender,
+        zip_code: formData.zipCode,
+        city: formData.city,
+        state: formData.state,
+        life_expectancy: parseFloat(formData.lifeExpectancy),
+        projected_age_at_death: ageData.projectedAgeAtDeath
+      };
+
       if (planId) {
         // Update existing plan
         const { data, error } = await supabase
           .from('life_care_plans')
-          .update({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            date_of_birth: formData.dateOfBirth,
-            date_of_injury: formData.dateOfInjury,
-            gender: formData.gender,
-            zip_code: formData.zipCode,
-            city: formData.city,
-            state: formData.state,
-            life_expectancy: parseFloat(formData.lifeExpectancy),
-            projected_age_at_death: ageData.projectedAgeAtDeath
-          })
+          .update(planData)
           .eq('id', planId)
           .select()
           .single();
@@ -75,17 +77,8 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
         const { data, error } = await supabase
           .from('life_care_plans')
           .insert([{
-            user_id: user.id,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            date_of_birth: formData.dateOfBirth,
-            date_of_injury: formData.dateOfInjury,
-            gender: formData.gender,
-            zip_code: formData.zipCode,
-            city: formData.city,
-            state: formData.state,
-            life_expectancy: parseFloat(formData.lifeExpectancy),
-            projected_age_at_death: ageData.projectedAgeAtDeath
+            ...planData,
+            user_id: user.id
           }])
           .select()
           .single();
