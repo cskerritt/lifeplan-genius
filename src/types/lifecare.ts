@@ -152,6 +152,27 @@ export interface SurgicalProcedure {
   isRecurring: boolean;
 }
 
+export type FacilityCodeType = 'DRG' | 'APC' | 'ASC' | 'Outpatient';
+
+export interface ProfessionalFee {
+  cptCode: string;
+  description: string;
+  costRange: CostRange;
+}
+
+export interface AnesthesiaFee {
+  asaCode: string;
+  feeSource: string;
+  fee: number;
+}
+
+export interface FacilityFee {
+  codeType: FacilityCodeType;
+  code: string;
+  feeSource: string;
+  fee: number;
+}
+
 export interface FrequencyDetails {
   startAge: number;
   stopAge: number;

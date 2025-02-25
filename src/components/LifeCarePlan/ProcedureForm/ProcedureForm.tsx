@@ -9,7 +9,18 @@ import { FrequencyForm } from "../FrequencyForm";
 import { Button } from "@/components/ui/button";
 import { FrequencyToggle } from "../SurgicalForm/components/FrequencyToggle";
 import { useProcedureCosts } from "./hooks/useProcedureCosts";
-import { ProcedureFormProps, ProfessionalFee, AnesthesiaFee, FacilityFee } from "./types";
+import { ProcedureType } from "./types";
+import { ProfessionalFee, AnesthesiaFee, FacilityFee } from "@/types/lifecare";
+
+interface Props {
+  type: ProcedureType;
+  onFrequencyChange: (field: string, value: any) => void;
+  frequencyDetails: any;
+  dateOfBirth: string;
+  dateOfInjury: string;
+  lifeExpectancy: string;
+  onSubmit?: (data: any) => void;
+}
 
 export function ProcedureForm({
   type,
@@ -19,7 +30,7 @@ export function ProcedureForm({
   dateOfInjury,
   lifeExpectancy,
   onSubmit
-}: ProcedureFormProps) {
+}: Props) {
   const [showFrequency, setShowFrequency] = useState(false);
   const [professionalFees, setProfessionalFees] = useState<ProfessionalFee[]>([]);
   const [anesthesiaFees, setAnesthesiaFees] = useState<AnesthesiaFee[]>([]);

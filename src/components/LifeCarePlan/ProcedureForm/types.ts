@@ -1,28 +1,7 @@
 
-import { CostRange } from "@/types/lifecare";
+import { CostRange, FacilityCodeType, ProfessionalFee, AnesthesiaFee, FacilityFee } from "@/types/lifecare";
 
 export type ProcedureType = 'surgical' | 'interventional';
-
-export type FacilityCodeType = 'DRG' | 'APC' | 'ASC' | 'Outpatient';
-
-export interface ProfessionalFee {
-  cptCode: string;
-  description: string;
-  costRange: CostRange;
-}
-
-export interface AnesthesiaFee {
-  asaCode: string;
-  feeSource: string;
-  fee: number;
-}
-
-export interface FacilityFee {
-  codeType: FacilityCodeType;
-  code: string;
-  feeSource: string;
-  fee: number;
-}
 
 export interface ProcedureFormProps {
   type: ProcedureType;
