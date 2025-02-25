@@ -22,7 +22,7 @@ export function CostDetails({
   onCostRangeChange,
   onCPTLookup,
 }: CostDetailsProps) {
-  const { lookupCPTCode } = useCostCalculations();
+  const { lookupCPTCode, geoFactors } = useCostCalculations();
 
   const handleCPTLookup = async () => {
     if (cptCode.trim()) {
@@ -31,10 +31,30 @@ export function CostDetails({
         if (cptData && Array.isArray(cptData) && cptData.length > 0) {
           const result = cptData[0];
           if (result.pfr_50th && result.pfr_75th && result.pfr_90th) {
-            // Update all three cost values
-            onCostRangeChange('low', result.pfr_50th);
-            onCostRangeChange('average', result.pfr_75th);
-            onCostRangeChange('high', result.pfr_90th);
+            // Apply geographic adjustment if available
+            const pfrFactor = geoFactors?.pfr_factor || 1;
+            
+            // Calculate geographically adjusted rates
+            const adjustedLow = result.pfr_50th * pfrFactor;
+            const adjustedAvg = result.pfr_75th * pfrFactor;
+            const adjustedHigh = result.pfr_90th * pfrFactor;
+
+            console.log('Original CPT rates:', {
+              low: result.pfr_50th,
+              avg: result.pfr_75th,
+              high: result.pfr_90th
+            });
+            console.log('Geographic factor (PFR):', pfrFactor);
+            console.log('Adjusted rates:', {
+              low: adjustedLow,
+              avg: adjustedAvg,
+              high: adjustedHigh
+            });
+
+            // Update all three cost values with adjusted rates
+            onCostRangeChange('low', Math.round(adjustedLow * 100) / 100);
+            onCostRangeChange('average', Math.round(adjustedAvg * 100) / 100);
+            onCostRangeChange('high', Math.round(adjustedHigh * 100) / 100);
           }
         }
       } catch (error) {
