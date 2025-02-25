@@ -15,8 +15,8 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     // Extract frequency numbers from strings like "2-3x per year"
     const frequencyMatch = frequency.match(/(\d+)-(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)year/i);
     
-    // Match year ranges like "5-10 years" or "5-10 yrs"
-    const durationMatch = frequency.match(/for\s+(\d+)-(\d+)\s*(?:years?|yrs?)/i);
+    // Match year ranges like "5-10 years" or "5-10 yrs" with or without "for"
+    const durationMatch = frequency.match(/(?:for\s+)?(\d+)-(\d+)\s*(?:years?|yrs?)/i);
     
     let lowFrequency = 1;
     let highFrequency = 1;
@@ -50,9 +50,9 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       averageAnnualCost
     });
 
-    // Calculate lifetime costs considering duration years
-    const lowLifetimeCost = lowAnnualCost * (durationMatch ? lowDuration : 1);
-    const highLifetimeCost = highAnnualCost * (durationMatch ? highDuration : 1);
+    // Always calculate lifetime costs with duration years
+    const lowLifetimeCost = lowAnnualCost * lowDuration;
+    const highLifetimeCost = highAnnualCost * highDuration;
     const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
 
     console.log('Lifetime cost calculations:', {
