@@ -21,12 +21,12 @@ export function useEvalueeFormState(initialData?: Evaluee | null) {
         firstName: initialData.firstName || "",
         lastName: initialData.lastName || "",
         dateOfBirth: initialData.dateOfBirth || "",
-        dateOfInjury: "",
+        dateOfInjury: initialData.dateOfInjury || "",
         gender: initialData.gender || "",
-        city: "",
-        state: "",
-        zipCode: "",
-        lifeExpectancy: "",
+        city: initialData.city || "",
+        state: initialData.state || "",
+        zipCode: initialData.zipCode || "",
+        lifeExpectancy: initialData.lifeExpectancy || "",
       });
     }
   }, [initialData]);
