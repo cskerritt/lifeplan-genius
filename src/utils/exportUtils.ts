@@ -1,3 +1,4 @@
+
 import { Document, Paragraph, Table, TableRow, TableCell, WidthType, Packer } from 'docx';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -9,7 +10,8 @@ interface ExportData {
   items: CareItem[];
   categoryTotals: CategoryTotal[];
   grandTotal: number;
-  lifetimeTotal: number;
+  lifetimeLow: number;
+  lifetimeHigh: number;
 }
 
 export const exportToWord = async (data: ExportData) => {
@@ -24,7 +26,7 @@ export const exportToWord = async (data: ExportData) => {
         new Paragraph({ text: '' }),
         createItemsTable(data.items),
         new Paragraph({ text: '' }),
-        createTotalsTable(data.categoryTotals, data.grandTotal, data.lifetimeTotal)
+        createTotalsTable(data.categoryTotals, data.grandTotal, data.lifetimeLow, data.lifetimeHigh)
       ]
     }]
   });
@@ -49,13 +51,21 @@ export const exportToExcel = (data: ExportData) => {
     'High Cost': item.costRange.high
   })));
 
-  const totalsWorksheet = XLSX.utils.json_to_sheet(data.categoryTotals.map(total => ({
-    Category: total.category,
-    'Annual Total': total.total,
-    'Low Cost': total.costRange.low,
-    'Average Cost': total.costRange.average,
-    'High Cost': total.costRange.high
-  })));
+  const totalsWorksheet = XLSX.utils.json_to_sheet([
+    ...data.categoryTotals.map(total => ({
+      Category: total.category,
+      'Annual Total': total.total,
+      'Low Cost': total.costRange.low,
+      'Average Cost': total.costRange.average,
+      'High Cost': total.costRange.high
+    })),
+    {
+      Category: 'Total',
+      'Annual Total': data.grandTotal,
+      'Lifetime Low': data.lifetimeLow,
+      'Lifetime High': data.lifetimeHigh
+    }
+  ]);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, itemsWorksheet, 'Items');
@@ -107,7 +117,12 @@ const createItemsTable = (items: CareItem[]) => {
   });
 };
 
-const createTotalsTable = (categoryTotals: CategoryTotal[], grandTotal: number, lifetimeTotal: number) => {
+const createTotalsTable = (
+  categoryTotals: CategoryTotal[], 
+  grandTotal: number, 
+  lifetimeLow: number, 
+  lifetimeHigh: number
+) => {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [
@@ -149,8 +164,14 @@ const createTotalsTable = (categoryTotals: CategoryTotal[], grandTotal: number, 
       }),
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ text: 'Lifetime Total' })] }),
-          new TableCell({ children: [new Paragraph({ text: `$${lifetimeTotal.toFixed(2)}` })] }),
+          new TableCell({ children: [new Paragraph({ text: 'Lifetime Total Range' })] }),
+          new TableCell({ 
+            children: [
+              new Paragraph({ 
+                text: `$${lifetimeLow.toFixed(2)} - $${lifetimeHigh.toFixed(2)}` 
+              })
+            ]
+          }),
           new TableCell({ children: [new Paragraph({ text: '' })] })
         ]
       })
