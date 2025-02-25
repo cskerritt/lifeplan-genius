@@ -25,8 +25,9 @@ import {
   SurgicalComponent
 } from "@/types/lifecare";
 import { useState } from "react";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Search } from "lucide-react";
 import { SurgicalProcedureForm } from "./SurgicalForm/SurgicalProcedureForm";
+import { useCostCalculations } from "@/hooks/useCostCalculations";
 
 interface PlanFormProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
@@ -41,6 +42,9 @@ interface SurgicalFormState {
 
 const PlanForm = ({ onSubmit }: PlanFormProps) => {
   const [category, setCategory] = useState<CareCategory>("physician");
+  const [service, setService] = useState("");
+  const [frequency, setFrequency] = useState("");
+  const [cptCode, setCptCode] = useState("");
   const [costResources, setCostResources] = useState<CostResource[]>([
     { name: "", cost: 0 },
     { name: "", cost: 0 },
@@ -74,6 +78,7 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     anesthesiaFees: [{ id: crypto.randomUUID(), type: 'anesthesia', description: '', cptCodes: [], cost: 0 }],
     facilityFees: [{ id: crypto.randomUUID(), type: 'facility', description: '', cptCodes: [], cost: 0 }],
   });
+  const { lookupCPTCode } = useCostCalculations();
 
   const isMultiSourceCategory = (cat: CareCategory) => {
     return ["transportation", "supplies", "dme"].includes(cat);
@@ -538,6 +543,27 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     });
   };
 
+  const handleCPTLookup = async () => {
+    if (cptCode.trim()) {
+      try {
+        const cptResult = await lookupCPTCode(cptCode);
+        if (cptResult && Array.isArray(cptResult) && cptResult.length > 0) {
+          const cptData = cptResult[0];
+          if (cptData.pfr_75th) {
+            setCostRange({
+              low: cptData.pfr_50th,
+              average: cptData.pfr_75th,
+              high: cptData.pfr_90th
+            });
+            setService(cptData.code_description || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error looking up CPT code:', error);
+      }
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -571,7 +597,11 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
             {category !== "medication" && category !== "surgical" && (
               <div className="space-y-2">
                 <Label>Service</Label>
-                <Input name="service" placeholder="Enter service name" />
+                <Input 
+                  value={service}
+                  onChange={(e) => setService(e.target.value)}
+                  placeholder="Enter service name" 
+                />
               </div>
             )}
           </div>
@@ -580,11 +610,29 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>CPT/HCPCS Code</Label>
-                <Input name="cptCode" placeholder="Enter code" />
+                <div className="flex gap-2">
+                  <Input 
+                    value={cptCode}
+                    onChange={(e) => setCptCode(e.target.value)}
+                    placeholder="Enter code"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCPTLookup}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Frequency</Label>
-                <Input name="frequency" placeholder="e.g., 2x per week" />
+                <Input
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  placeholder="e.g., 2x per week"
+                />
               </div>
             </div>
           )}
