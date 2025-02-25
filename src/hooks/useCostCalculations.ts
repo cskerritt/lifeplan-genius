@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CareCategory, CostRange, CostResource } from "@/types/lifecare";
+import { CareCategory, CostRange, CostResource, VehicleModification } from "@/types/lifecare";
 
 export const useCostCalculations = () => {
   const [geoFactors, setGeoFactors] = useState<{ mfr_factor: number; pfr_factor: number } | null>(null);
@@ -58,7 +57,7 @@ export const useCostCalculations = () => {
       return { low: 0, average: 0, high: 0 };
     }
 
-    const costs = resources.map(r => r.cost);
+    const costs = resources.map(r => r.cost).filter(c => c > 0);
     const low = Math.min(...costs);
     const high = Math.max(...costs);
     const average = (low + high) / 2;
@@ -70,16 +69,27 @@ export const useCostCalculations = () => {
     };
   };
 
+  const calculateVehicleModificationTotal = (modifications: VehicleModification[]): number => {
+    return modifications.reduce((total, mod) => total + mod.cost, 0);
+  };
+
   const calculateAdjustedCosts = async (
     baseRate: number,
     cptCode: string | null = null,
     category: CareCategory,
-    costResources?: CostResource[]
+    costResources?: CostResource[],
+    vehicleModifications?: VehicleModification[]
   ): Promise<CostRange> => {
     console.log('Calculating adjusted costs:', { baseRate, cptCode, category, costResources });
     
+    // Handle vehicle modifications
+    if (category === "transportation" && vehicleModifications?.length) {
+      const total = calculateVehicleModificationTotal(vehicleModifications);
+      return { low: total, average: total, high: total };
+    }
+
     // Handle special categories that use multiple cost sources
-    if (["transportation", "supplies", "dme"].includes(category) && costResources?.length) {
+    if (["transportation", "supplies", "dme", "medication"].includes(category) && costResources?.length) {
       return calculateMultiSourceCosts(costResources);
     }
 

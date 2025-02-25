@@ -1,4 +1,3 @@
-
 export interface Evaluee {
   id: string;
   firstName: string;
@@ -99,4 +98,17 @@ export interface LifeCarePlan {
   statistical_lifespan: number | null;
   created_at: string | null;
   updated_at: string | null;
+}
+
+export interface VehicleModification {
+  item: string;
+  cost: number;
+}
+
+export interface MedicationDetails {
+  name: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  pharmacyPrices: CostResource[];
 }

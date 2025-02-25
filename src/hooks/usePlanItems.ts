@@ -13,7 +13,12 @@ export const usePlanItems = (planId: string) => {
   const addItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
     console.log('Adding new item:', newItem);
     try {
-      const adjustedCosts = await calculateAdjustedCosts(newItem.costPerUnit, newItem.cptCode);
+      const adjustedCosts = await calculateAdjustedCosts(
+        newItem.costPerUnit,
+        newItem.cptCode,
+        newItem.category,
+        newItem.costResources
+      );
       console.log('Adjusted costs calculated:', adjustedCosts);
       
       const annualCost = calculateAnnualCost(

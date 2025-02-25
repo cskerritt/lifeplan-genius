@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CareCategory, CareItem, CostRange, CostResource } from "@/types/lifecare";
+import { CareCategory, CareItem, CostRange, CostResource, VehicleModification, MedicationDetails } from "@/types/lifecare";
 import { useState } from "react";
+import { PlusCircle, Trash2 } from "lucide-react";
 
 interface PlanFormProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
@@ -30,6 +31,22 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     { name: "", cost: 0 },
     { name: "", cost: 0 },
   ]);
+  const [isModifiedVehicle, setIsModifiedVehicle] = useState(false);
+  const [vehicleModifications, setVehicleModifications] = useState<VehicleModification[]>([
+    { item: "", cost: 0 }
+  ]);
+  const [medicationDetails, setMedicationDetails] = useState<MedicationDetails>({
+    name: "",
+    dose: "",
+    frequency: "",
+    duration: "",
+    pharmacyPrices: [
+      { name: "", cost: 0 },
+      { name: "", cost: 0 },
+      { name: "", cost: 0 },
+      { name: "", cost: 0 },
+    ]
+  });
   const [costRange, setCostRange] = useState<CostRange>({
     low: 0,
     average: 0,
@@ -42,14 +59,9 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
 
   const updateCostResource = (index: number, field: keyof CostResource, value: string | number) => {
     const newResources = [...costResources];
-    if (field === 'cost') {
-      newResources[index] = { ...newResources[index], [field]: Number(value) };
-    } else {
-      newResources[index] = { ...newResources[index], [field]: value };
-    }
+    newResources[index] = { ...newResources[index], [field]: value };
     setCostResources(newResources);
 
-    // Auto-calculate cost range for special categories
     if (isMultiSourceCategory(category)) {
       const costs = newResources.map(r => r.cost).filter(c => c > 0);
       if (costs.length > 0) {
@@ -61,33 +73,335 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     }
   };
 
+  const updateVehicleModification = (index: number, field: keyof VehicleModification, value: string | number) => {
+    const newMods = [...vehicleModifications];
+    newMods[index] = { ...newMods[index], [field]: typeof value === 'string' ? value : Number(value) };
+    setVehicleModifications(newMods);
+
+    const total = newMods.reduce((sum, mod) => sum + (mod.cost || 0), 0);
+    setCostRange({ low: total, average: total, high: total });
+  };
+
+  const addVehicleModification = () => {
+    setVehicleModifications([...vehicleModifications, { item: "", cost: 0 }]);
+  };
+
+  const removeVehicleModification = (index: number) => {
+    const newMods = vehicleModifications.filter((_, i) => i !== index);
+    setVehicleModifications(newMods);
+  };
+
+  const updateMedicationDetail = (field: keyof Omit<MedicationDetails, "pharmacyPrices">, value: string) => {
+    setMedicationDetails(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updatePharmacyPrice = (index: number, field: keyof CostResource, value: string | number) => {
+    const newPrices = [...medicationDetails.pharmacyPrices];
+    newPrices[index] = { ...newPrices[index], [field]: typeof value === 'string' ? value : Number(value) };
+    
+    const costs = newPrices.map(p => p.cost).filter(c => c > 0);
+    if (costs.length > 0) {
+      const low = Math.min(...costs);
+      const high = Math.max(...costs);
+      const average = (low + high) / 2;
+      setCostRange({ low, average, high });
+    }
+
+    setMedicationDetails(prev => ({ ...prev, pharmacyPrices: newPrices }));
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
-    const formData = new FormData(form);
     
-    const item = {
-      category: formData.get("category") as CareCategory,
-      service: formData.get("service") as string,
-      frequency: formData.get("frequency") as string,
-      cptCode: formData.get("cptCode") as string,
-      costPerUnit: Number(formData.get("costAverage")),
-      costRange: {
-        low: Number(formData.get("costLow")),
-        average: Number(formData.get("costAverage")),
-        high: Number(formData.get("costHigh")),
-      },
-      costResources: isMultiSourceCategory(category) ? costResources : undefined
-    };
+    let itemData: Omit<CareItem, "id" | "annualCost">;
+    
+    if (category === "medication") {
+      itemData = {
+        category,
+        service: medicationDetails.name,
+        frequency: `${medicationDetails.frequency} - ${medicationDetails.duration}`,
+        cptCode: "",
+        costPerUnit: costRange.average,
+        costRange,
+        costResources: medicationDetails.pharmacyPrices
+      };
+    } else if (category === "transportation" && isModifiedVehicle) {
+      itemData = {
+        category,
+        service: "Modified Vehicle",
+        frequency: "One-time",
+        cptCode: "",
+        costPerUnit: costRange.average,
+        costRange,
+        costResources: vehicleModifications.map(vm => ({ name: vm.item, cost: vm.cost }))
+      };
+    } else {
+      itemData = {
+        category,
+        service: form.service.value,
+        frequency: form.frequency.value,
+        cptCode: form.cptCode.value,
+        costPerUnit: Number(costRange.average),
+        costRange,
+        costResources: isMultiSourceCategory(category) ? costResources : undefined
+      };
+    }
 
-    onSubmit(item);
+    onSubmit(itemData);
     form.reset();
+    setIsModifiedVehicle(false);
+    setVehicleModifications([{ item: "", cost: 0 }]);
+    setMedicationDetails({
+      name: "",
+      dose: "",
+      frequency: "",
+      duration: "",
+      pharmacyPrices: [
+        { name: "", cost: 0 },
+        { name: "", cost: 0 },
+        { name: "", cost: 0 },
+        { name: "", cost: 0 },
+      ]
+    });
     setCostRange({ low: 0, average: 0, high: 0 });
     setCostResources([
       { name: "", cost: 0 },
       { name: "", cost: 0 },
       { name: "", cost: 0 },
     ]);
+  };
+
+  const renderCostInputs = () => {
+    if (category === "medication") {
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Medication Name</Label>
+              <Input
+                value={medicationDetails.name}
+                onChange={(e) => updateMedicationDetail("name", e.target.value)}
+                placeholder="Enter medication name"
+              />
+            </div>
+            <div>
+              <Label>Dose</Label>
+              <Input
+                value={medicationDetails.dose}
+                onChange={(e) => updateMedicationDetail("dose", e.target.value)}
+                placeholder="Enter dose"
+              />
+            </div>
+            <div>
+              <Label>Frequency</Label>
+              <Input
+                value={medicationDetails.frequency}
+                onChange={(e) => updateMedicationDetail("frequency", e.target.value)}
+                placeholder="Enter frequency"
+              />
+            </div>
+            <div>
+              <Label>Duration</Label>
+              <Input
+                value={medicationDetails.duration}
+                onChange={(e) => updateMedicationDetail("duration", e.target.value)}
+                placeholder="Enter duration"
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Label>Pharmacy Prices</Label>
+            {medicationDetails.pharmacyPrices.map((price, index) => (
+              <div key={index} className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Pharmacy Name</Label>
+                  <Input
+                    value={price.name}
+                    onChange={(e) => updatePharmacyPrice(index, "name", e.target.value)}
+                    placeholder="Enter pharmacy name"
+                  />
+                </div>
+                <div>
+                  <Label>Cost per Unit</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={price.cost}
+                    onChange={(e) => updatePharmacyPrice(index, "cost", e.target.value)}
+                    placeholder="Enter cost"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (category === "transportation") {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Label>Modified Vehicle?</Label>
+            <input
+              type="checkbox"
+              checked={isModifiedVehicle}
+              onChange={(e) => setIsModifiedVehicle(e.target.checked)}
+            />
+          </div>
+          
+          {isModifiedVehicle ? (
+            <div className="space-y-4">
+              {vehicleModifications.map((mod, index) => (
+                <div key={index} className="grid grid-cols-8 gap-4">
+                  <div className="col-span-5">
+                    <Label>Item</Label>
+                    <Input
+                      value={mod.item}
+                      onChange={(e) => updateVehicleModification(index, "item", e.target.value)}
+                      placeholder="Enter modification item"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Cost</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={mod.cost}
+                      onChange={(e) => updateVehicleModification(index, "cost", e.target.value)}
+                      placeholder="Enter cost"
+                    />
+                  </div>
+                  <div className="col-span-1 flex items-end justify-center">
+                    {index > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeVehicleModification(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addVehicleModification}
+                className="w-full"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Modification
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Label>Cost Resources</Label>
+              {costResources.map((resource, index) => (
+                <div key={index} className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Source Name</Label>
+                    <Input
+                      value={resource.name}
+                      onChange={(e) => updateCostResource(index, "name", e.target.value)}
+                      placeholder="Enter source name"
+                    />
+                  </div>
+                  <div>
+                    <Label>Cost</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={resource.cost}
+                      onChange={(e) => updateCostResource(index, "cost", e.target.value)}
+                      placeholder="Enter cost"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (isMultiSourceCategory(category)) {
+      return (
+        <div className="space-y-4">
+          <Label>Cost Resources</Label>
+          {costResources.map((resource, index) => (
+            <div key={index} className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Source Name</Label>
+                <Input
+                  value={resource.name}
+                  onChange={(e) => updateCostResource(index, "name", e.target.value)}
+                  placeholder="Enter source name"
+                />
+              </div>
+              <div>
+                <Label>Cost</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={resource.cost}
+                  onChange={(e) => updateCostResource(index, "cost", e.target.value)}
+                  placeholder="Enter cost"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        <Label>Cost Range</Label>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <Label>Low</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={costRange.low}
+              onChange={(e) => setCostRange({ ...costRange, low: Number(e.target.value) })}
+              placeholder="Minimum cost"
+            />
+          </div>
+          <div>
+            <Label>Average</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={costRange.average}
+              onChange={(e) => setCostRange({ ...costRange, average: Number(e.target.value) })}
+              placeholder="Average cost"
+            />
+          </div>
+          <div>
+            <Label>High</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={costRange.high}
+              onChange={(e) => setCostRange({ ...costRange, high: Number(e.target.value) })}
+              placeholder="Maximum cost"
+            />
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -100,9 +414,8 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select 
-                name="category" 
+              <Label>Category</Label>
+              <Select
                 value={category}
                 onValueChange={(value: CareCategory) => setCategory(value)}
               >
@@ -121,105 +434,32 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="service">Service</Label>
-              <Input id="service" name="service" placeholder="Enter service name" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cptCode">CPT/HCPCS Code</Label>
-              <Input id="cptCode" name="cptCode" placeholder="Enter code" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="frequency">Frequency</Label>
-              <Input id="frequency" name="frequency" placeholder="e.g., 2x per week" />
-            </div>
+            {category !== "medication" && (
+              <div className="space-y-2">
+                <Label>Service</Label>
+                <Input name="service" placeholder="Enter service name" />
+              </div>
+            )}
           </div>
-          
-          {isMultiSourceCategory(category) ? (
-            <div className="space-y-4">
-              <Label>Cost Resources</Label>
-              {costResources.map((resource, index) => (
-                <div key={index} className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor={`resourceName${index}`}>Source Name</Label>
-                    <Input
-                      id={`resourceName${index}`}
-                      value={resource.name}
-                      onChange={(e) => updateCostResource(index, 'name', e.target.value)}
-                      placeholder="Enter source name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`resourceCost${index}`}>Cost</Label>
-                    <Input
-                      id={`resourceCost${index}`}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={resource.cost}
-                      onChange={(e) => updateCostResource(index, 'cost', e.target.value)}
-                      placeholder="Enter cost"
-                    />
-                  </div>
-                </div>
-              ))}
-              
-              <input type="hidden" name="costLow" value={costRange.low} />
-              <input type="hidden" name="costAverage" value={costRange.average} />
-              <input type="hidden" name="costHigh" value={costRange.high} />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Cost Range</Label>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="costLow">Low</Label>
-                  <Input
-                    id="costLow"
-                    name="costLow"
-                    type="number"
-                    placeholder="Minimum cost"
-                    min="0"
-                    step="0.01"
-                    value={costRange.low}
-                    onChange={(e) =>
-                      setCostRange({ ...costRange, low: Number(e.target.value) })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="costAverage">Average</Label>
-                  <Input
-                    id="costAverage"
-                    name="costAverage"
-                    type="number"
-                    placeholder="Average cost"
-                    min="0"
-                    step="0.01"
-                    value={costRange.average}
-                    onChange={(e) =>
-                      setCostRange({ ...costRange, average: Number(e.target.value) })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="costHigh">High</Label>
-                  <Input
-                    id="costHigh"
-                    name="costHigh"
-                    type="number"
-                    placeholder="Maximum cost"
-                    min="0"
-                    step="0.01"
-                    value={costRange.high}
-                    onChange={(e) =>
-                      setCostRange({ ...costRange, high: Number(e.target.value) })
-                    }
-                  />
-                </div>
+
+          {category !== "medication" && category !== "transportation" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>CPT/HCPCS Code</Label>
+                <Input name="cptCode" placeholder="Enter code" />
+              </div>
+              <div className="space-y-2">
+                <Label>Frequency</Label>
+                <Input name="frequency" placeholder="e.g., 2x per week" />
               </div>
             </div>
           )}
+
+          {renderCostInputs()}
+
+          <input type="hidden" name="costLow" value={costRange.low} />
+          <input type="hidden" name="costAverage" value={costRange.average} />
+          <input type="hidden" name="costHigh" value={costRange.high} />
 
           <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
             Add Item
