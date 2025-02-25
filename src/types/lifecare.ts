@@ -112,3 +112,16 @@ export interface MedicationDetails {
   duration: string;
   pharmacyPrices: CostResource[];
 }
+
+export interface SurgicalComponent {
+  id: string;
+  type: 'professional' | 'anesthesia' | 'facility';
+  description: string;
+  cptCodes: string[];
+  cost: number;
+}
+
+export interface SurgicalProcedure {
+  name: string;
+  components: SurgicalComponent[];
+}
