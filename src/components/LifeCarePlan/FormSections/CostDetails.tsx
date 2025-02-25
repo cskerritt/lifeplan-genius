@@ -28,23 +28,27 @@ export function CostDetails({
     if (cptCode.trim()) {
       try {
         const cptData = await lookupCPTCode(cptCode);
+        console.log('CPT Data received:', cptData);
+        
         if (cptData && Array.isArray(cptData) && cptData.length > 0) {
           const result = cptData[0];
+          console.log('Using CPT result:', result);
+          
           if (result.pfr_50th && result.pfr_75th && result.pfr_90th) {
-            // Apply geographic adjustment if available
-            const pfrFactor = geoFactors?.pfr_factor || 1;
+            // Get the geographic factor - if not available, default to 1
+            const geoFactor = geoFactors?.pfr_code || 1;
+            console.log('Geographic factor being used:', geoFactor);
             
             // Calculate geographically adjusted rates
-            const adjustedLow = result.pfr_50th * pfrFactor;
-            const adjustedAvg = result.pfr_75th * pfrFactor;
-            const adjustedHigh = result.pfr_90th * pfrFactor;
+            const adjustedLow = result.pfr_50th * geoFactor;
+            const adjustedAvg = result.pfr_75th * geoFactor;
+            const adjustedHigh = result.pfr_90th * geoFactor;
 
             console.log('Original CPT rates:', {
               low: result.pfr_50th,
               avg: result.pfr_75th,
               high: result.pfr_90th
             });
-            console.log('Geographic factor (PFR):', pfrFactor);
             console.log('Adjusted rates:', {
               low: adjustedLow,
               avg: adjustedAvg,
@@ -55,7 +59,11 @@ export function CostDetails({
             onCostRangeChange('low', Math.round(adjustedLow * 100) / 100);
             onCostRangeChange('average', Math.round(adjustedAvg * 100) / 100);
             onCostRangeChange('high', Math.round(adjustedHigh * 100) / 100);
+          } else {
+            console.log('Missing required PFR values in CPT data:', result);
           }
+        } else {
+          console.log('No CPT data found or invalid format');
         }
       } catch (error) {
         console.error('Error looking up CPT code:', error);
