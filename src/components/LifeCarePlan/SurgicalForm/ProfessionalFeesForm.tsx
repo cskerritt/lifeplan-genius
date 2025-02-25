@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Search } from "lucide-react";
 import { CostRange } from "@/types/lifecare";
+import { useCostCalculations } from "@/hooks/useCostCalculations";
 
 interface ProfessionalFee {
   cptCode: string;
@@ -16,7 +17,7 @@ interface ProfessionalFeesFormProps {
   fees: ProfessionalFee[];
   onAddFee: (fee: ProfessionalFee) => void;
   onRemoveFee: (index: number) => void;
-  onCPTLookup: (code: string) => Promise<void>;
+  onCPTLookup: (code: string) => Promise<any>;
 }
 
 export function ProfessionalFeesForm({
@@ -33,12 +34,12 @@ export function ProfessionalFeesForm({
     high: 0
   });
 
+  const { lookupCPTCode } = useCostCalculations();
+
   const handleCPTLookup = async () => {
     if (currentCPT.trim()) {
       try {
-        const { data: cptData } = await supabase
-          .rpc('validate_cpt_code', { code_to_check: currentCPT });
-
+        const cptData = await lookupCPTCode(currentCPT);
         if (cptData && Array.isArray(cptData) && cptData.length > 0) {
           const result = cptData[0];
           if (result.pfr_75th) {

@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
 import { FrequencyForm } from "../FrequencyForm";
-import { supabase } from "@/integrations/supabase/client";
 
 interface SurgicalFormProps {
   onFrequencyChange: (field: string, value: any) => void;
@@ -29,6 +28,7 @@ export function SurgicalForm({
   const [professionalFees, setProfessionalFees] = useState([]);
   const [anesthesiaFees, setAnesthesiaFees] = useState([]);
   const [facilityFees, setFacilityFees] = useState([]);
+  const { lookupCPTCode } = useCostCalculations();
 
   return (
     <div className="space-y-6">
@@ -40,11 +40,7 @@ export function SurgicalForm({
           newFees.splice(index, 1);
           setProfessionalFees(newFees);
         }}
-        onCPTLookup={async (code) => {
-          const { data: cptData } = await supabase
-            .rpc('validate_cpt_code', { code_to_check: code });
-          return cptData;
-        }}
+        onCPTLookup={lookupCPTCode}
       />
 
       <Separator className="my-6" />
