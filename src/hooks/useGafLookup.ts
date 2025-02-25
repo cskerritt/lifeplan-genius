@@ -52,47 +52,20 @@ export function useGafLookup() {
     setIsLoading(true);
     
     try {
-      // First try direct lookup from gaf_lookup table
-      const { data: directData, error: directError } = await supabase
+      const { data, error } = await supabase
         .from('gaf_lookup')
         .select('*')
         .eq('zip', formattedZip)
         .maybeSingle();
 
-      if (directError) {
-        console.error('Direct lookup error:', directError);
-        throw directError;
+      if (error) {
+        console.error('Lookup error:', error);
+        throw error;
       }
 
-      console.log('Direct lookup data:', directData);
+      console.log('Lookup data:', data);
 
-      if (directData) {
-        const factors: GafFactors = {
-          mfr_code: Number(directData.mfr_code),
-          pfr_code: Number(directData.pfr_code),
-          city: directData.city,
-          state_name: directData.state_name
-        };
-
-        console.log('Found GAF factors directly:', factors);
-        setGeoFactors(factors);
-        return factors;
-      }
-
-      // If no direct match, try the RPC function as backup
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('search_geographic_factors', { 
-          zip_code: formattedZip 
-        });
-
-      if (rpcError) {
-        console.error('RPC error:', rpcError);
-        throw rpcError;
-      }
-
-      console.log('RPC lookup data:', rpcData);
-
-      if (!rpcData || rpcData.length === 0) {
+      if (!data) {
         console.log('No data found for ZIP:', formattedZip);
         setGeoFactors(null);
         toast({
@@ -104,13 +77,13 @@ export function useGafLookup() {
       }
 
       const factors: GafFactors = {
-        mfr_code: Number(rpcData[0].mfr_code),
-        pfr_code: Number(rpcData[0].pfr_code),
-        city: rpcData[0].city,
-        state_name: rpcData[0].state_name
+        mfr_code: Number(data.mfr_code),
+        pfr_code: Number(data.pfr_code),
+        city: data.city,
+        state_name: data.state_name
       };
 
-      console.log('Found GAF factors via RPC:', factors);
+      console.log('Found GAF factors:', factors);
       setGeoFactors(factors);
       return factors;
 
