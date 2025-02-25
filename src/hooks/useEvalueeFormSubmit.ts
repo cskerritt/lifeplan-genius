@@ -42,7 +42,7 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
 
       // Ensure life expectancy is properly parsed before sending to the database
       const lifeExpectancy = formData.lifeExpectancy ? parseFloat(formData.lifeExpectancy) : null;
-      console.log('Life expectancy being saved:', lifeExpectancy); // Debug log
+      console.log('Life expectancy being saved:', lifeExpectancy);
 
       const planData = {
         first_name: formData.firstName,
@@ -54,12 +54,13 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
         city: formData.city,
         state: formData.state,
         life_expectancy: lifeExpectancy,
-        projected_age_at_death: ageData.projectedAgeAtDeath
+        projected_age_at_death: ageData.projectedAgeAtDeath,
+        user_id: user.id
       };
 
       let response;
       
-      if (planId) {
+      if (planId && planId !== 'new') {
         // Update existing plan
         response = await supabase
           .from('life_care_plans')
@@ -71,26 +72,23 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
         // Create new plan
         response = await supabase
           .from('life_care_plans')
-          .insert([{
-            ...planData,
-            user_id: user.id
-          }])
+          .insert([planData])
           .select()
           .single();
       }
 
       if (response.error) {
-        console.error('Supabase error:', response.error); // Debug log
+        console.error('Supabase error:', response.error);
         throw response.error;
       }
 
       toast({
         title: "Success",
-        description: planId ? "Life care plan updated successfully" : "Life care plan created successfully"
+        description: planId && planId !== 'new' ? "Life care plan updated successfully" : "Life care plan created successfully"
       });
 
       if (response.data) {
-        console.log('Response data:', response.data); // Debug log
+        console.log('Response data:', response.data);
         
         // Transform the response data back to our Evaluee format
         const transformedData = {
@@ -114,7 +112,7 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
           onSave(transformedData);
         }
 
-        if (!planId) {
+        if (!planId || planId === 'new') {
           navigate('/');
         }
       }
