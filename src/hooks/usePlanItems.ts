@@ -47,7 +47,9 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     });
 
     // Calculate lifetime costs
+    // Low lifetime cost = low annual cost × low duration
     const lowLifetimeCost = lowAnnualCost * lowDuration;
+    // High lifetime cost = high annual cost × high duration
     const highLifetimeCost = highAnnualCost * highDuration;
     const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
 
@@ -70,12 +72,14 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       };
     }
 
+    // For annual costs, use the frequency-based calculations
+    // For lifetime costs, use the duration-based calculations
     return {
       annual: averageAnnualCost,
       lifetime: averageLifetimeCost,
-      low: lowAnnualCost,
-      high: highAnnualCost,
-      average: averageAnnualCost
+      low: lowLifetimeCost,      // Now using lifetime low cost
+      high: highLifetimeCost,    // Now using lifetime high cost
+      average: averageLifetimeCost
     };
   };
 
