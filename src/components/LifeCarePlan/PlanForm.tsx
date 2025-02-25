@@ -8,6 +8,7 @@ import { FormActions } from "./FormActions";
 import { usePlanFormState } from "./hooks/usePlanFormState";
 import { PlanFormProps } from "./types";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
+import { SurgicalForm } from "./SurgicalForm/SurgicalForm";
 
 const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
   const {
@@ -49,14 +50,12 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     }
   };
 
-  // Extract the cost from the service name if it's a vehicle modification
   const extractCostFromService = (serviceName: string) => {
     if (category === 'transportation' && serviceName.includes('$')) {
       const match = serviceName.match(/\$(\d+(\.\d{2})?)/);
       if (match) {
         const cost = parseFloat(match[1]);
         console.log('Extracted cost:', cost);
-        // Set the same cost for low, average, and high
         setCostRange({
           low: cost,
           average: cost,
@@ -66,7 +65,6 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     }
   };
 
-  // Update the service handler to include cost extraction
   const handleServiceChange = (newService: string) => {
     console.log('Service changed:', newService);
     setService(newService);
@@ -84,15 +82,17 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
 
       <Separator className="my-4" />
 
-      <FrequencyForm
-        frequencyDetails={frequencyDetails}
-        onFrequencyChange={(field, value) => 
-          setFrequencyDetails(prev => ({ ...prev, [field]: value }))
-        }
-        dateOfBirth={dateOfBirth}
-        dateOfInjury={dateOfInjury}
-        lifeExpectancy={lifeExpectancy}
-      />
+      {category !== "surgical" && (
+        <FrequencyForm
+          frequencyDetails={frequencyDetails}
+          onFrequencyChange={(field, value) => 
+            setFrequencyDetails(prev => ({ ...prev, [field]: value }))
+          }
+          dateOfBirth={dateOfBirth}
+          dateOfInjury={dateOfInjury}
+          lifeExpectancy={lifeExpectancy}
+        />
+      )}
 
       <Separator className="my-4" />
 
@@ -110,7 +110,17 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
             });
           }}
         />
-      ) : category !== "surgical" && category !== "transportation" && (
+      ) : category === "surgical" ? (
+        <SurgicalForm
+          onFrequencyChange={(field, value) => 
+            setFrequencyDetails(prev => ({ ...prev, [field]: value }))
+          }
+          frequencyDetails={frequencyDetails}
+          dateOfBirth={dateOfBirth}
+          dateOfInjury={dateOfInjury}
+          lifeExpectancy={lifeExpectancy}
+        />
+      ) : category !== "transportation" && (
         <CostDetails
           cptCode={cptCode}
           costRange={costRange}
