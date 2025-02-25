@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ProfessionalFeesForm } from "../SurgicalForm/ProfessionalFeesForm";
 import { AnesthesiaFeesForm } from "../SurgicalForm/AnesthesiaFeesForm";
@@ -79,22 +80,6 @@ export function ProcedureForm({
       />
 
       <Separator className="my-6" />
-
-      {type === 'surgical' && (
-        <>
-          <AnesthesiaFeesForm
-            fees={anesthesiaFees}
-            onAddFee={(fee) => setAnesthesiaFees([...anesthesiaFees, fee])}
-            onRemoveFee={(index) => {
-              const newFees = [...anesthesiaFees];
-              newFees.splice(index, 1);
-              setAnesthesiaFees(newFees);
-            }}
-          />
-
-          <Separator className="my-6" />
-        </>
-      )}
 
       <FacilityFeesForm
         fees={facilityFees}
