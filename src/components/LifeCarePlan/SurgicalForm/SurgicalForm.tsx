@@ -127,7 +127,8 @@ export function SurgicalForm({
         frequency: showFrequency ? `${frequencyDetails.lowFrequencyPerYear}-${frequencyDetails.highFrequencyPerYear}x per year` : "One-time",
         cptCode: professionalFees.map(f => f.cptCode).join(', '),
         costRange: totalCostRange,
-        costPerUnit: totalCostRange.average
+        costPerUnit: totalCostRange.average,
+        annualCost: totalCostRange.average * (showFrequency ? frequencyDetails.highFrequencyPerYear : 1)
       });
     }
   };
