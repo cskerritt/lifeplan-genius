@@ -31,12 +31,10 @@ export const exportToWord = async (data: ExportData) => {
   });
 
   // Generate blob from document
-  const blob = await Blob.createObjectURL(
-    new Blob(
-      [await doc.save()], 
-      { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
-    )
-  );
+  const buffer = await doc.save();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+  });
   
   // Use file-saver to download the file
   saveAs(blob, `${data.evalueeName}_LifeCarePlan.docx`);
