@@ -1,138 +1,82 @@
-interface FrequencyFormProps {
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+
+interface FrequencyDetails {
+  startAge: number;
+  stopAge: number;
+  timesPerYear: number;
   isOneTime: boolean;
-  onIsOneTimeChange: (value: boolean) => void;
-  minFrequency: string;
-  maxFrequency: string;
-  minDuration: string;
-  maxDuration: string;
-  onMinFrequencyChange: (value: string) => void;
-  onMaxFrequencyChange: (value: string) => void;
-  onMinDurationChange: (value: string) => void;
-  onMaxDurationChange: (value: string) => void;
-  costs: any | null;
+  customFrequency: string;
 }
 
-export function FrequencyForm({
-  isOneTime,
-  onIsOneTimeChange,
-  minFrequency,
-  maxFrequency,
-  minDuration,
-  maxDuration,
-  onMinFrequencyChange,
-  onMaxFrequencyChange,
-  onMinDurationChange,
-  onMaxDurationChange,
-  costs
-}: FrequencyFormProps) {
+interface FrequencyFormProps {
+  frequencyDetails: FrequencyDetails;
+  onFrequencyChange: (field: keyof FrequencyDetails, value: number | boolean | string) => void;
+}
+
+export function FrequencyForm({ frequencyDetails, onFrequencyChange }: FrequencyFormProps) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center">
-        <input
-          type="checkbox"
-          id="oneTime"
-          checked={isOneTime}
-          onChange={(e) => onIsOneTimeChange(e.target.checked)}
-          className="h-4 w-4 text-blue-600 rounded border-gray-300"
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Frequency & Duration</h3>
+      
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="isOneTime"
+          checked={frequencyDetails.isOneTime}
+          onCheckedChange={(checked) => 
+            onFrequencyChange('isOneTime', checked === true)
+          }
         />
-        <label htmlFor="oneTime" className="ml-2 text-sm font-medium text-gray-700">
-          One-time cost
-        </label>
+        <Label htmlFor="isOneTime">One-time cost</Label>
       </div>
 
-      {!isOneTime && (
+      {!frequencyDetails.isOneTime && (
         <>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Minimum Frequency
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label>Start Age</Label>
+              <Input
                 type="number"
-                value={minFrequency}
-                onChange={(e) => onMinFrequencyChange(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required={!isOneTime}
                 min="0"
-                step="0.01"
+                max="150"
+                value={frequencyDetails.startAge}
+                onChange={(e) => onFrequencyChange('startAge', parseInt(e.target.value) || 0)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Maximum Frequency
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label>Stop Age</Label>
+              <Input
                 type="number"
-                value={maxFrequency}
-                onChange={(e) => onMaxFrequencyChange(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                min={parseFloat(minFrequency) || 0}
-                step="0.01"
+                min="0"
+                max="150"
+                value={frequencyDetails.stopAge}
+                onChange={(e) => onFrequencyChange('stopAge', parseInt(e.target.value) || 0)}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Minimum Duration (years)
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label>Times per Year</Label>
+              <Input
                 type="number"
-                value={minDuration}
-                onChange={(e) => onMinDurationChange(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required={!isOneTime}
-                min="0.1"
-                step="0.1"
+                min="1"
+                value={frequencyDetails.timesPerYear}
+                onChange={(e) => onFrequencyChange('timesPerYear', parseInt(e.target.value) || 1)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Maximum Duration (years)
-              </label>
-              <input
-                type="number"
-                value={maxDuration}
-                onChange={(e) => onMaxDurationChange(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                min={parseFloat(minDuration) || 0.1}
-                step="0.1"
+            <div className="space-y-2">
+              <Label>Custom Frequency (Optional)</Label>
+              <Input
+                value={frequencyDetails.customFrequency}
+                onChange={(e) => onFrequencyChange('customFrequency', e.target.value)}
+                placeholder="e.g., Every 3 months"
               />
             </div>
           </div>
         </>
-      )}
-
-      {costs && (
-        <div className="bg-indigo-50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-indigo-900 mb-4">
-            {isOneTime ? 'One-Time Cost' : 'Cost Summary'}
-          </h4>
-          {isOneTime ? (
-            <p className="text-lg font-semibold">
-              ${costs.avg_cost.toFixed(2)}
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-indigo-700">Annual Cost Range</p>
-                <div className="mt-1 text-lg font-semibold">
-                  <div>${costs.min_annual_cost?.toFixed(2)}</div>
-                  <div className="border-t border-indigo-200 mt-1 pt-1">
-                    ${costs.max_annual_cost?.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-indigo-700">Average Annual Cost</p>
-                <p className="mt-1 text-lg font-semibold">
-                  ${costs.avg_annual_cost?.toFixed(2)}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
       )}
     </div>
   );
