@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CostRange } from "@/types/lifecare";
+import { CareCategory, CostRange, CostResource } from "@/types/lifecare";
 
 export const useCostCalculations = () => {
   const [geoFactors, setGeoFactors] = useState<{ mfr_factor: number; pfr_factor: number } | null>(null);
@@ -53,11 +53,36 @@ export const useCostCalculations = () => {
     }
   };
 
+  const calculateMultiSourceCosts = (resources: CostResource[]): CostRange => {
+    if (!resources.length) {
+      return { low: 0, average: 0, high: 0 };
+    }
+
+    const costs = resources.map(r => r.cost);
+    const low = Math.min(...costs);
+    const high = Math.max(...costs);
+    const average = (low + high) / 2;
+
+    return {
+      low: Math.round(low * 100) / 100,
+      average: Math.round(average * 100) / 100,
+      high: Math.round(high * 100) / 100
+    };
+  };
+
   const calculateAdjustedCosts = async (
     baseRate: number,
-    cptCode: string | null = null
+    cptCode: string | null = null,
+    category: CareCategory,
+    costResources?: CostResource[]
   ): Promise<CostRange> => {
-    console.log('Calculating adjusted costs:', { baseRate, cptCode });
+    console.log('Calculating adjusted costs:', { baseRate, cptCode, category, costResources });
+    
+    // Handle special categories that use multiple cost sources
+    if (["transportation", "supplies", "dme"].includes(category) && costResources?.length) {
+      return calculateMultiSourceCosts(costResources);
+    }
+
     try {
       let low = baseRate;
       let average = baseRate;

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CareCategory, CareItem, CostRange } from "@/types/lifecare";
+import { CareCategory, CareItem, CostRange, CostResource } from "@/types/lifecare";
 import { useState } from "react";
 
 interface PlanFormProps {
@@ -24,11 +25,41 @@ interface PlanFormProps {
 
 const PlanForm = ({ onSubmit }: PlanFormProps) => {
   const [category, setCategory] = useState<CareCategory>("physician");
+  const [costResources, setCostResources] = useState<CostResource[]>([
+    { name: "", cost: 0 },
+    { name: "", cost: 0 },
+    { name: "", cost: 0 },
+  ]);
   const [costRange, setCostRange] = useState<CostRange>({
     low: 0,
     average: 0,
     high: 0,
   });
+
+  const isMultiSourceCategory = (cat: CareCategory) => {
+    return ["transportation", "supplies", "dme"].includes(cat);
+  };
+
+  const updateCostResource = (index: number, field: keyof CostResource, value: string | number) => {
+    const newResources = [...costResources];
+    if (field === 'cost') {
+      newResources[index] = { ...newResources[index], [field]: Number(value) };
+    } else {
+      newResources[index] = { ...newResources[index], [field]: value };
+    }
+    setCostResources(newResources);
+
+    // Auto-calculate cost range for special categories
+    if (isMultiSourceCategory(category)) {
+      const costs = newResources.map(r => r.cost).filter(c => c > 0);
+      if (costs.length > 0) {
+        const low = Math.min(...costs);
+        const high = Math.max(...costs);
+        const average = (low + high) / 2;
+        setCostRange({ low, average, high });
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -46,11 +77,17 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
         average: Number(formData.get("costAverage")),
         high: Number(formData.get("costHigh")),
       },
+      costResources: isMultiSourceCategory(category) ? costResources : undefined
     };
 
     onSubmit(item);
     form.reset();
     setCostRange({ low: 0, average: 0, high: 0 });
+    setCostResources([
+      { name: "", cost: 0 },
+      { name: "", cost: 0 },
+      { name: "", cost: 0 },
+    ]);
   };
 
   return (
@@ -98,56 +135,91 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label>Cost Range</Label>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="costLow">Low</Label>
-                <Input
-                  id="costLow"
-                  name="costLow"
-                  type="number"
-                  placeholder="Minimum cost"
-                  min="0"
-                  step="0.01"
-                  value={costRange.low}
-                  onChange={(e) =>
-                    setCostRange({ ...costRange, low: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="costAverage">Average</Label>
-                <Input
-                  id="costAverage"
-                  name="costAverage"
-                  type="number"
-                  placeholder="Average cost"
-                  min="0"
-                  step="0.01"
-                  value={costRange.average}
-                  onChange={(e) =>
-                    setCostRange({ ...costRange, average: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="costHigh">High</Label>
-                <Input
-                  id="costHigh"
-                  name="costHigh"
-                  type="number"
-                  placeholder="Maximum cost"
-                  min="0"
-                  step="0.01"
-                  value={costRange.high}
-                  onChange={(e) =>
-                    setCostRange({ ...costRange, high: Number(e.target.value) })
-                  }
-                />
+          {isMultiSourceCategory(category) ? (
+            <div className="space-y-4">
+              <Label>Cost Resources</Label>
+              {costResources.map((resource, index) => (
+                <div key={index} className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor={`resourceName${index}`}>Source Name</Label>
+                    <Input
+                      id={`resourceName${index}`}
+                      value={resource.name}
+                      onChange={(e) => updateCostResource(index, 'name', e.target.value)}
+                      placeholder="Enter source name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`resourceCost${index}`}>Cost</Label>
+                    <Input
+                      id={`resourceCost${index}`}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={resource.cost}
+                      onChange={(e) => updateCostResource(index, 'cost', e.target.value)}
+                      placeholder="Enter cost"
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              <input type="hidden" name="costLow" value={costRange.low} />
+              <input type="hidden" name="costAverage" value={costRange.average} />
+              <input type="hidden" name="costHigh" value={costRange.high} />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Cost Range</Label>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="costLow">Low</Label>
+                  <Input
+                    id="costLow"
+                    name="costLow"
+                    type="number"
+                    placeholder="Minimum cost"
+                    min="0"
+                    step="0.01"
+                    value={costRange.low}
+                    onChange={(e) =>
+                      setCostRange({ ...costRange, low: Number(e.target.value) })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="costAverage">Average</Label>
+                  <Input
+                    id="costAverage"
+                    name="costAverage"
+                    type="number"
+                    placeholder="Average cost"
+                    min="0"
+                    step="0.01"
+                    value={costRange.average}
+                    onChange={(e) =>
+                      setCostRange({ ...costRange, average: Number(e.target.value) })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="costHigh">High</Label>
+                  <Input
+                    id="costHigh"
+                    name="costHigh"
+                    type="number"
+                    placeholder="Maximum cost"
+                    min="0"
+                    step="0.01"
+                    value={costRange.high}
+                    onChange={(e) =>
+                      setCostRange({ ...costRange, high: Number(e.target.value) })
+                    }
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
             Add Item

@@ -1,3 +1,4 @@
+
 export interface Evaluee {
   id: string;
   firstName: string;
@@ -13,6 +14,11 @@ export interface CostRange {
   low: number;
   average: number;
   high: number;
+}
+
+export interface CostResource {
+  name: string;
+  cost: number;
 }
 
 export interface GeographicFactor {
@@ -40,6 +46,7 @@ export interface CareItem {
   costPerUnit: number;
   annualCost: number;
   costRange: CostRange;
+  costResources?: CostResource[];
   geographicFactor?: GeographicFactor;
 }
 
