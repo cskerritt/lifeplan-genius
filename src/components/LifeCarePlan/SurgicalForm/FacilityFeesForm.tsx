@@ -17,15 +17,17 @@ interface FacilityFeesFormProps {
   fees: FacilityFee[];
   onAddFee: (fee: FacilityFee) => void;
   onRemoveFee: (index: number) => void;
+  procedureType?: 'surgical' | 'interventional';
 }
 
 export function FacilityFeesForm({
   fees,
   onAddFee,
-  onRemoveFee
+  onRemoveFee,
+  procedureType = 'surgical'
 }: FacilityFeesFormProps) {
   const [currentFee, setCurrentFee] = useState<FacilityFee>({
-    codeType: 'DRG',
+    codeType: procedureType === 'interventional' ? 'ASC' : 'DRG',
     code: "",
     feeSource: "",
     fee: 0
@@ -34,7 +36,12 @@ export function FacilityFeesForm({
   const handleAdd = () => {
     if (currentFee.code && currentFee.feeSource && fees.length < 3) {
       onAddFee(currentFee);
-      setCurrentFee({ codeType: 'DRG', code: "", feeSource: "", fee: 0 });
+      setCurrentFee({ 
+        codeType: procedureType === 'interventional' ? 'ASC' : 'DRG', 
+        code: "", 
+        feeSource: "", 
+        fee: 0 
+      });
     }
   };
 
@@ -54,9 +61,18 @@ export function FacilityFeesForm({
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="DRG">DRG</SelectItem>
-              <SelectItem value="APC">APC</SelectItem>
-              <SelectItem value="Outpatient">Outpatient</SelectItem>
+              {procedureType === 'surgical' ? (
+                <>
+                  <SelectItem value="DRG">DRG</SelectItem>
+                  <SelectItem value="APC">APC</SelectItem>
+                  <SelectItem value="Outpatient">Outpatient</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="ASC">ASC</SelectItem>
+                  <SelectItem value="APC">APC</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

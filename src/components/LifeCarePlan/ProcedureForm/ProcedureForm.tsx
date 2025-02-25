@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ProfessionalFeesForm } from "../SurgicalForm/ProfessionalFeesForm";
 import { AnesthesiaFeesForm } from "../SurgicalForm/AnesthesiaFeesForm";
@@ -105,6 +104,7 @@ export function ProcedureForm({
           newFees.splice(index, 1);
           setFacilityFees(newFees);
         }}
+        procedureType={type}
       />
 
       <Separator className="my-6" />
