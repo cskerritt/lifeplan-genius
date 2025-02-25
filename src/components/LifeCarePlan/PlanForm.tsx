@@ -49,13 +49,34 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     }
   };
 
+  // Extract the cost from the service name if it's a vehicle modification
+  const extractCostFromService = (serviceName: string) => {
+    if (category === 'transportation' && serviceName.includes('$')) {
+      const match = serviceName.match(/\$(\d+(\.\d{2})?)/);
+      if (match) {
+        const cost = parseFloat(match[1]);
+        setCostRange({
+          low: cost,
+          average: cost,
+          high: cost
+        });
+      }
+    }
+  };
+
+  // Update the service handler to include cost extraction
+  const handleServiceChange = (newService: string) => {
+    setService(newService);
+    extractCostFromService(newService);
+  };
+
   return (
     <div className="space-y-6">
       <CategorySelect
         category={category}
         service={service}
         onCategoryChange={setCategory}
-        onServiceChange={setService}
+        onServiceChange={handleServiceChange}
       />
 
       <Separator className="my-4" />
@@ -86,7 +107,7 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
             });
           }}
         />
-      ) : category !== "surgical" && (
+      ) : category !== "surgical" && category !== "transportation" && (
         <CostDetails
           cptCode={cptCode}
           costRange={costRange}
@@ -115,3 +136,4 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
 };
 
 export default PlanForm;
+

@@ -91,8 +91,9 @@ export const useCostCalculations = () => {
   ): Promise<CostRange> => {
     console.log('Calculating adjusted costs:', { baseRate, cptCode, category, costResources });
     
-    if (category === "transportation" && vehicleModifications?.length) {
-      const total = calculateVehicleModificationTotal(vehicleModifications);
+    // Special handling for vehicle modifications in transportation category
+    if (category === "transportation" && baseRate > 0) {
+      const total = baseRate;
       return { low: total, average: total, high: total };
     }
 
@@ -177,3 +178,4 @@ export const useCostCalculations = () => {
     lookupCPTCode
   };
 };
+
