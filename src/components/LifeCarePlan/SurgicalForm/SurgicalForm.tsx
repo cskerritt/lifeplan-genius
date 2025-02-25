@@ -1,43 +1,15 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ProfessionalFeesForm } from "./ProfessionalFeesForm";
 import { AnesthesiaFeesForm } from "./AnesthesiaFeesForm";
 import { FacilityFeesForm } from "./FacilityFeesForm";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
 import { FrequencyForm } from "../FrequencyForm";
 import { Button } from "@/components/ui/button";
-import { CostRange } from "@/types/lifecare";
-
-interface ProfessionalFee {
-  cptCode: string;
-  description: string;
-  costRange: CostRange;
-}
-
-interface AnesthesiaFee {
-  asaCode: string;
-  feeSource: string;
-  fee: number;
-}
-
-interface FacilityFee {
-  codeType: 'DRG' | 'APC' | 'Outpatient';
-  code: string;
-  feeSource: string;
-  fee: number;
-}
-
-interface SurgicalFormProps {
-  onFrequencyChange: (field: string, value: any) => void;
-  frequencyDetails: any;
-  dateOfBirth: string;
-  dateOfInjury: string;
-  lifeExpectancy: string;
-  onSubmit?: (data: any) => void;
-}
+import { FrequencyToggle } from "./components/FrequencyToggle";
+import { useSurgicalCosts } from "./hooks/useSurgicalCosts";
+import { SurgicalFormProps, ProfessionalFee, AnesthesiaFee, FacilityFee } from "./types";
 
 export function SurgicalForm({
   onFrequencyChange,
@@ -52,52 +24,7 @@ export function SurgicalForm({
   const [anesthesiaFees, setAnesthesiaFees] = useState<AnesthesiaFee[]>([]);
   const [facilityFees, setFacilityFees] = useState<FacilityFee[]>([]);
   const { lookupCPTCode } = useCostCalculations();
-  const [totalCostRange, setTotalCostRange] = useState<CostRange>({
-    low: 0,
-    average: 0,
-    high: 0
-  });
-
-  useEffect(() => {
-    calculateTotalCosts();
-  }, [professionalFees, anesthesiaFees, facilityFees]);
-
-  const calculateTotalCosts = () => {
-    console.log('Calculating totals with:', {
-      professionalFees,
-      anesthesiaFees,
-      facilityFees
-    });
-
-    // Calculate professional fees totals
-    const profLow = professionalFees.reduce((sum, fee) => sum + fee.costRange.low, 0);
-    const profHigh = professionalFees.reduce((sum, fee) => sum + fee.costRange.high, 0);
-    const profAvg = professionalFees.reduce((sum, fee) => sum + fee.costRange.average, 0);
-
-    // Calculate anesthesia fees total (use same value for low/avg/high since it's a fixed fee)
-    const anesthesiaTotal = anesthesiaFees.reduce((sum, fee) => sum + fee.fee, 0);
-
-    // Calculate facility fees total (use same value for low/avg/high since it's a fixed fee)
-    const facilityTotal = facilityFees.reduce((sum, fee) => sum + fee.fee, 0);
-
-    // Sum all components
-    const totalLow = profLow + anesthesiaTotal + facilityTotal;
-    const totalHigh = profHigh + anesthesiaTotal + facilityTotal;
-    const totalAverage = profAvg + anesthesiaTotal + facilityTotal;
-
-    console.log('Fee totals:', {
-      professional: { low: profLow, high: profHigh, avg: profAvg },
-      anesthesia: anesthesiaTotal,
-      facility: facilityTotal,
-      final: { low: totalLow, high: totalHigh, average: totalAverage }
-    });
-
-    setTotalCostRange({
-      low: totalLow,
-      average: totalAverage,
-      high: totalHigh
-    });
-  };
+  const { totalCostRange } = useSurgicalCosts(professionalFees, anesthesiaFees, facilityFees);
 
   const handleSubmit = () => {
     if (onSubmit) {
@@ -110,16 +37,6 @@ export function SurgicalForm({
         ...anesthesiaDescriptions,
         ...facilityDescriptions
       ].filter(Boolean).join(' | ');
-
-      console.log('Submitting surgical procedure with:', {
-        description,
-        costRange: totalCostRange,
-        fees: {
-          professional: professionalFees,
-          anesthesia: anesthesiaFees,
-          facility: facilityFees
-        }
-      });
 
       const frequency = showFrequency 
         ? `${frequencyDetails.lowFrequencyPerYear}-${frequencyDetails.highFrequencyPerYear}x per year` 
@@ -180,14 +97,10 @@ export function SurgicalForm({
 
       <Separator className="my-6" />
 
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={showFrequency}
-          onCheckedChange={setShowFrequency}
-          id="frequency-switch"
-        />
-        <Label htmlFor="frequency-switch">Multiple Occurrences Expected</Label>
-      </div>
+      <FrequencyToggle
+        showFrequency={showFrequency}
+        onToggle={setShowFrequency}
+      />
 
       {showFrequency && (
         <FrequencyForm
