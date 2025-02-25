@@ -26,8 +26,10 @@ export function FacilityFeesForm({
   onRemoveFee,
   procedureType = 'surgical'
 }: FacilityFeesFormProps) {
+  const initialCodeType = procedureType === 'interventional' ? 'ASC' : 'DRG';
+  
   const [currentFee, setCurrentFee] = useState<FacilityFee>({
-    codeType: procedureType === 'interventional' ? 'ASC' : 'DRG',
+    codeType: initialCodeType,
     code: "",
     feeSource: "",
     fee: 0
@@ -37,7 +39,7 @@ export function FacilityFeesForm({
     if (currentFee.code && currentFee.feeSource && fees.length < 3) {
       onAddFee(currentFee);
       setCurrentFee({ 
-        codeType: procedureType === 'interventional' ? 'ASC' : 'DRG', 
+        codeType: initialCodeType, 
         code: "", 
         feeSource: "", 
         fee: 0 
@@ -61,16 +63,16 @@ export function FacilityFeesForm({
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              {procedureType === 'surgical' ? (
+              {procedureType === 'interventional' ? (
+                <>
+                  <SelectItem value="ASC">ASC</SelectItem>
+                  <SelectItem value="APC">APC</SelectItem>
+                </>
+              ) : (
                 <>
                   <SelectItem value="DRG">DRG</SelectItem>
                   <SelectItem value="APC">APC</SelectItem>
                   <SelectItem value="Outpatient">Outpatient</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="ASC">ASC</SelectItem>
-                  <SelectItem value="APC">APC</SelectItem>
                 </>
               )}
             </SelectContent>
