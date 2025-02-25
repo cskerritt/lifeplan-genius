@@ -11,7 +11,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
 
   const calculateCosts = (baseRate: number, frequency: string) => {
     // Extract frequency numbers from strings like "2-3 times per year"
-    const frequencyMatch = frequency.match(/(\d+)-(\d+)\s+times?\s+per\s+year/i);
+    const frequencyMatch = frequency.match(/(\d+)-(\d+)x?\s+(?:times?\s+)?per\s+year/i);
     const durationMatch = frequency.match(/(\d+)-(\d+)\s+years?/i);
     
     let lowFrequency = 1;
@@ -23,13 +23,13 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     if (frequencyMatch) {
       lowFrequency = parseInt(frequencyMatch[1]);
       highFrequency = parseInt(frequencyMatch[2]);
-      console.log('Frequency range:', lowFrequency, 'to', highFrequency, 'times per year');
+      console.log('Parsed frequency range:', { lowFrequency, highFrequency }, 'from:', frequency);
     }
 
     if (durationMatch) {
       lowDuration = parseInt(durationMatch[1]);
       highDuration = parseInt(durationMatch[2]);
-      console.log('Duration range:', lowDuration, 'to', highDuration, 'years');
+      console.log('Parsed duration range:', { lowDuration, highDuration }, 'from:', frequency);
     }
 
     // Calculate costs with frequency
@@ -37,12 +37,30 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     const highAnnualCost = baseRate * highFrequency;
     const averageAnnualCost = (lowAnnualCost + highAnnualCost) / 2;
 
+    console.log('Annual cost calculations:', {
+      baseRate,
+      lowFrequency,
+      highFrequency,
+      lowAnnualCost,
+      highAnnualCost,
+      averageAnnualCost
+    });
+
     // Calculate lifetime costs
     const lowLifetimeCost = lowAnnualCost * lowDuration;
     const highLifetimeCost = highAnnualCost * highDuration;
     const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
 
+    console.log('Lifetime cost calculations:', {
+      lowDuration,
+      highDuration,
+      lowLifetimeCost,
+      highLifetimeCost,
+      averageLifetimeCost
+    });
+
     if (isOneTime) {
+      console.log('One-time cost, using base rate:', baseRate);
       return {
         annual: baseRate,
         lifetime: baseRate,
@@ -65,6 +83,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     console.log('Adding new item:', newItem);
     try {
       let unitCost = newItem.costPerUnit;
+      let cptDescription = null;
       
       if (newItem.cptCode && newItem.cptCode.trim() !== '') {
         const cptResult = await lookupCPTCode(newItem.cptCode);
@@ -75,6 +94,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
           if (cptData.pfr_75th) {
             console.log('Using CPT code pricing:', cptData.pfr_75th);
             unitCost = cptData.pfr_75th;
+            cptDescription = cptData.code_description;
           }
         }
       }
@@ -98,7 +118,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
           item: newItem.service,
           frequency: newItem.frequency,
           cpt_code: newItem.cptCode,
-          cpt_description: null,
+          cpt_description: cptDescription,
           min_cost: costs.low,
           avg_cost: costs.average,
           max_cost: costs.high,
