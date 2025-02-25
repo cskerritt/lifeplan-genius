@@ -52,7 +52,11 @@ export function FrequencyForm({
       if (!isNaN(lifeExpectancyYears)) {
         // Use the current start age plus life expectancy
         const calculatedStopAge = frequencyDetails.startAge + lifeExpectancyYears;
-        onFrequencyChange('stopAge', calculatedStopAge);
+        // Only update stop age if it hasn't been manually set (is 0 or matches previous calculation)
+        if (frequencyDetails.stopAge === 0 || 
+            frequencyDetails.stopAge === (frequencyDetails.startAge + parseFloat(lifeExpectancy))) {
+          onFrequencyChange('stopAge', calculatedStopAge);
+        }
       }
     }
   }, [ageData, onFrequencyChange, frequencyDetails.startAge, lifeExpectancy]);
@@ -91,9 +95,10 @@ export function FrequencyForm({
                 type="number"
                 min="0"
                 max="150"
-                value={frequencyDetails.stopAge.toFixed(1) || ''}
-                readOnly
-                className="bg-gray-100"
+                step="0.1"
+                value={frequencyDetails.stopAge.toFixed(1)}
+                onChange={(e) => onFrequencyChange('stopAge', parseFloat(e.target.value) || 0)}
+                className="bg-white"
               />
             </div>
           </div>
