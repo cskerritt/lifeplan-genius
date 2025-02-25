@@ -1,21 +1,50 @@
 
-import React from 'react';
 import { Button } from "@/components/ui/button";
+import { CareCategory, CareItem, CostRange } from "@/types/lifecare";
+import { FormState } from "./types";
 
 interface FormActionsProps {
-  onCancel: () => void;
-  isEditing?: boolean;
+  category: CareCategory;
+  costRange: CostRange;
+  formState: FormState;
+  onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
+  onReset: () => void;
 }
 
-export function FormActions({ onCancel, isEditing }: FormActionsProps) {
+export function FormActions({ category, costRange, formState, onSubmit, onReset }: FormActionsProps) {
+  const calculateFrequencyString = () => {
+    if (formState.frequencyDetails.isOneTime) {
+      return "One-time";
+    }
+    if (formState.frequencyDetails.customFrequency) {
+      return formState.frequencyDetails.customFrequency;
+    }
+    return `${formState.frequencyDetails.lowFrequencyPerYear}-${formState.frequencyDetails.highFrequencyPerYear}x per year`;
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const frequency = calculateFrequencyString();
+    const itemData: Omit<CareItem, "id" | "annualCost"> = {
+      category,
+      service: category === "medication" ? formState.medicationDetails.name : formState.service,
+      frequency,
+      cptCode: formState.cptCode,
+      costPerUnit: costRange.average,
+      costRange,
+      costResources: category === "medication" ? formState.medicationDetails.pharmacyPrices : undefined
+    };
+
+    onSubmit(itemData);
+    onReset();
+  };
+
   return (
-    <div className="flex justify-end space-x-4 mt-6">
-      <Button variant="outline" onClick={onCancel}>
-        Cancel
+    <form onSubmit={handleSubmit}>
+      <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
+        Add Item
       </Button>
-      <Button type="submit">
-        {isEditing ? "Update Plan" : "Create Plan"}
-      </Button>
-    </div>
+    </form>
   );
 }
