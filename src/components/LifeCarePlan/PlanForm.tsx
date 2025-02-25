@@ -35,7 +35,7 @@ interface FrequencyDetails {
 }
 
 const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
-  const [category, setCategory] = useState<CareCategory>("physician");
+  const [category, setCategory] = useState<CareCategory>("physicianEvaluation");
   const [service, setService] = useState("");
   const [cptCode, setCptCode] = useState("");
   const [frequencyDetails, setFrequencyDetails] = useState<FrequencyDetails>({
