@@ -35,7 +35,10 @@ export function CategorySelect({
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="physician">Physician Services</SelectItem>
+            <SelectItem value="physicianEvaluation">Physician Evaluation</SelectItem>
+            <SelectItem value="physicianFollowUp">Physician Follow Up</SelectItem>
+            <SelectItem value="therapyEvaluation">Therapy Evaluation</SelectItem>
+            <SelectItem value="therapyFollowUp">Therapy Follow Up</SelectItem>
             <SelectItem value="medication">Medication</SelectItem>
             <SelectItem value="surgical">Surgical Services</SelectItem>
             <SelectItem value="dme">Prosthetics & DME</SelectItem>

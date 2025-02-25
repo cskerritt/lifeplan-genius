@@ -55,7 +55,10 @@ export interface CareItem {
 }
 
 export type CareCategory =
-  | "physician"
+  | "physicianEvaluation"
+  | "physicianFollowUp"
+  | "therapyEvaluation"
+  | "therapyFollowUp"
   | "medication"
   | "surgical"
   | "dme"
