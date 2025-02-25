@@ -11,7 +11,6 @@ interface FrequencyDetails {
   timesPerYear: number;
   isOneTime: boolean;
   customFrequency: string;
-  // Add new fields for ranges
   lowFrequencyPerYear: number;
   highFrequencyPerYear: number;
   lowDurationYears: number;
@@ -48,15 +47,23 @@ export function FrequencyForm({
         onFrequencyChange('startAge', startAge);
       }
       
-      // Update stop age based on start age plus duration range
-      if (ageData.ageToday !== undefined && frequencyDetails.lowDurationYears > 0) {
-        const newStopAge = frequencyDetails.startAge + frequencyDetails.highDurationYears;
-        if (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100) {
-          onFrequencyChange('stopAge', newStopAge);
-        }
+      // Calculate projected age at death
+      const projectedAgeAtDeath = Math.floor(ageData.projectedAgeAtDeath);
+      
+      // Only update stop age if it hasn't been set or if it was the default value
+      if (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100) {
+        onFrequencyChange('stopAge', projectedAgeAtDeath);
       }
     }
-  }, [ageData, onFrequencyChange, frequencyDetails.startAge, frequencyDetails.lowDurationYears, frequencyDetails.highDurationYears]);
+  }, [ageData, onFrequencyChange, frequencyDetails.startAge, frequencyDetails.stopAge]);
+
+  // Effect to update stop age when duration changes
+  useEffect(() => {
+    if (frequencyDetails.startAge > 0 && frequencyDetails.highDurationYears > 0) {
+      const newStopAge = frequencyDetails.startAge + frequencyDetails.highDurationYears;
+      onFrequencyChange('stopAge', newStopAge);
+    }
+  }, [frequencyDetails.startAge, frequencyDetails.highDurationYears, onFrequencyChange]);
 
   return (
     <div className="space-y-4">
@@ -107,7 +114,7 @@ export function FrequencyForm({
                 <Input
                   type="number"
                   min="1"
-                  value={frequencyDetails.lowFrequencyPerYear || 1}
+                  value={frequencyDetails.lowFrequencyPerYear}
                   onChange={(e) => onFrequencyChange('lowFrequencyPerYear', parseInt(e.target.value) || 1)}
                 />
               </div>
@@ -116,7 +123,7 @@ export function FrequencyForm({
                 <Input
                   type="number"
                   min="1"
-                  value={frequencyDetails.highFrequencyPerYear || 1}
+                  value={frequencyDetails.highFrequencyPerYear}
                   onChange={(e) => onFrequencyChange('highFrequencyPerYear', parseInt(e.target.value) || 1)}
                 />
               </div>
@@ -131,13 +138,10 @@ export function FrequencyForm({
                 <Input
                   type="number"
                   min="1"
-                  value={frequencyDetails.lowDurationYears || 1}
+                  value={frequencyDetails.lowDurationYears}
                   onChange={(e) => {
                     const value = parseInt(e.target.value) || 1;
                     onFrequencyChange('lowDurationYears', value);
-                    // Update stop age when duration changes
-                    const newStopAge = frequencyDetails.startAge + value;
-                    onFrequencyChange('stopAge', newStopAge);
                   }}
                 />
               </div>
@@ -146,13 +150,10 @@ export function FrequencyForm({
                 <Input
                   type="number"
                   min="1"
-                  value={frequencyDetails.highDurationYears || 1}
+                  value={frequencyDetails.highDurationYears}
                   onChange={(e) => {
                     const value = parseInt(e.target.value) || 1;
                     onFrequencyChange('highDurationYears', value);
-                    // Update stop age when duration changes
-                    const newStopAge = frequencyDetails.startAge + value;
-                    onFrequencyChange('stopAge', newStopAge);
                   }}
                 />
               </div>
