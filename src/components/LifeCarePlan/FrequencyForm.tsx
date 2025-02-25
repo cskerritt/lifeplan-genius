@@ -11,6 +11,11 @@ interface FrequencyDetails {
   timesPerYear: number;
   isOneTime: boolean;
   customFrequency: string;
+  // Add new fields for ranges
+  lowFrequencyPerYear: number;
+  highFrequencyPerYear: number;
+  lowDurationYears: number;
+  highDurationYears: number;
 }
 
 interface FrequencyFormProps {
@@ -39,18 +44,19 @@ export function FrequencyForm({
     if (ageData.ageToday !== undefined) {
       // Only update start age if it hasn't been set yet
       if (frequencyDetails.startAge === 0) {
-        onFrequencyChange('startAge', Math.floor(ageData.ageToday));
+        const startAge = Math.floor(ageData.ageToday);
+        onFrequencyChange('startAge', startAge);
       }
       
-      // Update stop age if ageData is available and either:
-      // 1. Stop age is 0 (initial load)
-      // 2. Stop age is at default value (100)
-      if (ageData.projectedAgeAtDeath !== undefined && 
-          (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100)) {
-        onFrequencyChange('stopAge', Math.ceil(ageData.projectedAgeAtDeath));
+      // Update stop age based on start age plus duration range
+      if (ageData.ageToday !== undefined && frequencyDetails.lowDurationYears > 0) {
+        const newStopAge = frequencyDetails.startAge + frequencyDetails.highDurationYears;
+        if (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100) {
+          onFrequencyChange('stopAge', newStopAge);
+        }
       }
     }
-  }, [ageData, onFrequencyChange, frequencyDetails.stopAge]);
+  }, [ageData, onFrequencyChange, frequencyDetails.startAge, frequencyDetails.lowDurationYears, frequencyDetails.highDurationYears]);
 
   return (
     <div className="space-y-4">
@@ -87,29 +93,79 @@ export function FrequencyForm({
                 min="0"
                 max="150"
                 value={frequencyDetails.stopAge || ''}
-                onChange={(e) => onFrequencyChange('stopAge', parseInt(e.target.value) || 0)}
+                readOnly
+                className="bg-gray-100"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Times per Year</Label>
-              <Input
-                type="number"
-                min="1"
-                value={frequencyDetails.timesPerYear}
-                onChange={(e) => onFrequencyChange('timesPerYear', parseInt(e.target.value) || 1)}
-              />
+          <div className="space-y-4">
+            <Label>Frequency Range (Times per Year)</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Low</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={frequencyDetails.lowFrequencyPerYear || 1}
+                  onChange={(e) => onFrequencyChange('lowFrequencyPerYear', parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>High</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={frequencyDetails.highFrequencyPerYear || 1}
+                  onChange={(e) => onFrequencyChange('highFrequencyPerYear', parseInt(e.target.value) || 1)}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Custom Frequency (Optional)</Label>
-              <Input
-                value={frequencyDetails.customFrequency}
-                onChange={(e) => onFrequencyChange('customFrequency', e.target.value)}
-                placeholder="e.g., Every 3 months"
-              />
+          </div>
+
+          <div className="space-y-4">
+            <Label>Duration Range (Years)</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Low</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={frequencyDetails.lowDurationYears || 1}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    onFrequencyChange('lowDurationYears', value);
+                    // Update stop age when duration changes
+                    const newStopAge = frequencyDetails.startAge + value;
+                    onFrequencyChange('stopAge', newStopAge);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>High</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={frequencyDetails.highDurationYears || 1}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    onFrequencyChange('highDurationYears', value);
+                    // Update stop age when duration changes
+                    const newStopAge = frequencyDetails.startAge + value;
+                    onFrequencyChange('stopAge', newStopAge);
+                  }}
+                />
+              </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Custom Frequency (Optional)</Label>
+            <Input
+              value={frequencyDetails.customFrequency}
+              onChange={(e) => onFrequencyChange('customFrequency', e.target.value)}
+              placeholder="e.g., 3-5 times per year"
+            />
           </div>
         </>
       )}
