@@ -8,11 +8,21 @@ import { useCostCalculations } from "./useCostCalculations";
 export const usePlanItems = (planId: string) => {
   const [items, setItems] = useState<CareItem[]>([]);
   const { toast } = useToast();
-  const { calculateAdjustedCosts, calculateAnnualCost } = useCostCalculations();
+  const { calculateAdjustedCosts, calculateAnnualCost, lookupCPTCode } = useCostCalculations();
 
   const addItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
     console.log('Adding new item:', newItem);
     try {
+      let cptData = null;
+      if (newItem.cptCode) {
+        cptData = await lookupCPTCode(newItem.cptCode);
+        console.log('CPT code data found:', cptData);
+        if (cptData && cptData[0].is_valid) {
+          // Use the CPT code pricing if available
+          newItem.costPerUnit = cptData[0].pfr_75th; // Using 75th percentile as default
+        }
+      }
+
       const adjustedCosts = await calculateAdjustedCosts(
         newItem.costPerUnit,
         newItem.cptCode,
@@ -44,6 +54,9 @@ export const usePlanItems = (planId: string) => {
         const lifeExpectancy = planData?.life_expectancy || 1;
         const lifetimeCost = annualCost * lifeExpectancy;
 
+        // Include CPT description if available
+        const cptDescription = cptData?.[0]?.code_description;
+
         const { error } = await supabase
           .from('care_plan_entries')
           .insert({
@@ -52,14 +65,17 @@ export const usePlanItems = (planId: string) => {
             item: item.service,
             frequency: item.frequency,
             cpt_code: item.cptCode,
+            cpt_description: cptDescription,
             min_cost: adjustedCosts.low,
             avg_cost: adjustedCosts.average,
             max_cost: adjustedCosts.high,
             annual_cost: annualCost,
+            lifetime_cost: lifetimeCost,
             start_age: 0,
             end_age: 100,
-            lifetime_cost: lifetimeCost,
-            is_one_time: false
+            is_one_time: item.frequency.toLowerCase().includes('one-time'),
+            mfr_adjusted: adjustedCosts.average,
+            pfr_adjusted: adjustedCosts.average
           });
 
         if (error) {
