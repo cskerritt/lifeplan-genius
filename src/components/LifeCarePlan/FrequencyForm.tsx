@@ -38,7 +38,7 @@ export function FrequencyForm({
     lifeExpectancy
   });
 
-  // Effect to update ages when ageData changes
+  // Effect to update ages when ageData or start age changes
   useEffect(() => {
     if (ageData.ageToday !== undefined) {
       // Only update start age if it hasn't been set yet
@@ -47,17 +47,15 @@ export function FrequencyForm({
         onFrequencyChange('startAge', startAge);
       }
 
-      // Calculate stop age based on current age plus life expectancy
+      // Calculate stop age based on start age plus life expectancy
       const lifeExpectancyYears = parseFloat(lifeExpectancy);
       if (!isNaN(lifeExpectancyYears)) {
-        const calculatedStopAge = Math.floor(ageData.ageToday + lifeExpectancyYears);
-        // Only update stop age if it hasn't been set or if it was the default value
-        if (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100) {
-          onFrequencyChange('stopAge', calculatedStopAge);
-        }
+        // Use the current start age plus life expectancy
+        const calculatedStopAge = frequencyDetails.startAge + lifeExpectancyYears;
+        onFrequencyChange('stopAge', calculatedStopAge);
       }
     }
-  }, [ageData, onFrequencyChange, frequencyDetails.startAge, frequencyDetails.stopAge, lifeExpectancy]);
+  }, [ageData, onFrequencyChange, frequencyDetails.startAge, lifeExpectancy]);
 
   return (
     <div className="space-y-4">
@@ -93,7 +91,7 @@ export function FrequencyForm({
                 type="number"
                 min="0"
                 max="150"
-                value={frequencyDetails.stopAge || ''}
+                value={frequencyDetails.stopAge.toFixed(1) || ''}
                 readOnly
                 className="bg-gray-100"
               />
