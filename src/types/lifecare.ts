@@ -154,7 +154,7 @@ export interface SurgicalProcedure {
 
 export type CPTFee = ProfessionalFee;
 
-export type FacilityCodeType = 'DRG' | 'APC' | 'ASC' | 'Outpatient';
+export type FacilityCodeType = 'DRG' | 'APC' | 'Outpatient';
 
 export interface ProfessionalFee {
   cptCode: string;

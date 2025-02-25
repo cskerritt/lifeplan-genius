@@ -11,15 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
-
-type FacilityCodeType = 'DRG' | 'APC' | 'Outpatient';
-
-interface FacilityFee {
-  codeType: FacilityCodeType;
-  code: string;
-  feeSource: string;
-  fee: number;
-}
+import { FacilityFee, FacilityCodeType } from "@/types/lifecare";
 
 interface FacilityFeesFormProps {
   fees: FacilityFee[];
