@@ -65,7 +65,9 @@ export type CareCategory =
   | "supplies"
   | "homeCare"
   | "homeModification"
-  | "transportation";
+  | "transportation"
+  | "interventional"
+  | "diagnostics";
 
 export interface CategoryTotal {
   category: CareCategory;

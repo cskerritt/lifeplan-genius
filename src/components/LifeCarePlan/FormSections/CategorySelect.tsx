@@ -46,6 +46,8 @@ export function CategorySelect({
             <SelectItem value="homeCare">Home Care</SelectItem>
             <SelectItem value="homeModification">Home Modifications</SelectItem>
             <SelectItem value="transportation">Transportation</SelectItem>
+            <SelectItem value="interventional">Interventional</SelectItem>
+            <SelectItem value="diagnostics">Diagnostics</SelectItem>
           </SelectContent>
         </Select>
       </div>
