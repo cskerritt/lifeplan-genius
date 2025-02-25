@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -26,6 +26,7 @@ interface EvalueeFormProps {
 export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { id } = useParams();
   const [isEditing, setIsEditing] = useState(!initialData);
   const { formData, updateFormData } = useEvalueeFormState(initialData);
   const { geoFactors, lookupGeoFactors } = useGafLookup();
@@ -43,7 +44,7 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   };
 
   const onFormSubmit = (e: React.FormEvent) => {
-    handleSubmit(e, formData, ageData);
+    handleSubmit(e, formData, ageData, id);
     setIsEditing(false);
   };
 
@@ -90,6 +91,7 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
             onSubmit={onFormSubmit}
             ageData={ageData}
             geoFactors={geoFactors}
+            isEditing={!!initialData}
           />
         ) : (
           <div className="grid grid-cols-2 gap-6">

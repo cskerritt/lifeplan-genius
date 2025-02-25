@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EvalueeInfoForm from './EvalueeInfoForm';
 import DemographicsDisplay from './DemographicsDisplay';
@@ -10,6 +11,7 @@ interface EvalueeTabsProps {
   onSubmit: (e: React.FormEvent) => void;
   ageData: any;
   geoFactors: any;
+  isEditing?: boolean;
 }
 
 export default function EvalueeTabs({
@@ -19,7 +21,8 @@ export default function EvalueeTabs({
   onCancel,
   onSubmit,
   ageData,
-  geoFactors
+  geoFactors,
+  isEditing
 }: EvalueeTabsProps) {
   return (
     <Tabs defaultValue="evaluee">
@@ -35,6 +38,7 @@ export default function EvalueeTabs({
           onLocationChange={onLocationChange}
           onCancel={onCancel}
           onSubmit={onSubmit}
+          isEditing={isEditing}
         />
       </TabsContent>
 
