@@ -103,9 +103,9 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       let unitCost = newItem.costPerUnit;
       let cptDescription = null;
       
-      // For surgical items, use the provided cost range directly
-      if (newItem.category === 'surgical') {
-        console.log('Using provided surgical costs:', newItem.costRange);
+      // For surgical and interventional items, use the provided cost range directly
+      if (newItem.category === 'surgical' || newItem.category === 'interventional') {
+        console.log('Using provided procedure costs:', newItem.costRange);
         const costs = calculateCosts(newItem.costRange.average, newItem.frequency);
 
         if (planId !== "new") {
@@ -126,7 +126,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
             is_one_time: newItem.frequency.toLowerCase().includes('one-time')
           };
 
-          console.log('Inserting surgical data:', insertData);
+          console.log('Inserting procedure data:', insertData);
 
           const { error } = await supabase
             .from('care_plan_entries')
