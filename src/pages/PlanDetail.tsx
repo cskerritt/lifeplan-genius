@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import EvalueeForm from "@/components/LifeCarePlan/EvalueeForm";
 import PlanForm from "@/components/LifeCarePlan/PlanForm";
 import PlanTable from "@/components/LifeCarePlan/PlanTable";
-import { Evaluee } from "@/types/lifecare";
+import { Evaluee, CareCategory } from "@/types/lifecare";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePlanItems } from "@/hooks/usePlanItems";
@@ -106,7 +106,7 @@ const PlanDetail = () => {
           if (entriesData) {
             const careItems = entriesData.map(entry => ({
               id: entry.id,
-              category: entry.category,
+              category: entry.category as CareCategory, // Cast the string to CareCategory
               service: entry.item,
               frequency: entry.frequency || '',
               cptCode: entry.cpt_code || '',
