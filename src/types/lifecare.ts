@@ -132,8 +132,24 @@ export interface SurgicalComponent {
 }
 
 export interface SurgicalProcedure {
-  name: string;
-  components: SurgicalComponent[];
+  professionalFees: {
+    cptCode: string;
+    description: string;
+    costRange: CostRange;
+  }[];
+  anesthesiaFees: {
+    asaCode: string;
+    feeSource: string;
+    fee: number;
+  }[];
+  facilityFees: {
+    codeType: 'DRG' | 'APC' | 'Outpatient';
+    code: string;
+    feeSource: string;
+    fee: number;
+  }[];
+  frequency?: string;
+  isRecurring: boolean;
 }
 
 export interface FrequencyDetails {
