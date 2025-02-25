@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Calendar, MapPin, User, Trash2, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
+import { format, parseISO } from 'date-fns';
 
 interface PlanCardProps {
   plan: {
@@ -30,6 +32,9 @@ interface PlanCardProps {
 }
 
 const PlanCard = ({ plan, onDelete }: PlanCardProps) => {
+  const formattedDateOfBirth = plan.date_of_birth ? format(parseISO(plan.date_of_birth), 'MM/dd/yyyy') : '';
+  const formattedDateOfInjury = plan.date_of_injury ? format(parseISO(plan.date_of_injury), 'MM/dd/yyyy') : '';
+
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 bg-white/50 backdrop-blur-sm border border-gray-200">
       <CardHeader className="pb-2">
@@ -84,12 +89,12 @@ const PlanCard = ({ plan, onDelete }: PlanCardProps) => {
           </div>
           <div className="flex items-center text-gray-600">
             <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-            Born: {new Date(plan.date_of_birth).toLocaleDateString()}
+            Born: {formattedDateOfBirth}
           </div>
           {plan.date_of_injury && (
             <div className="flex items-center text-gray-600">
               <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-              Injury Date: {new Date(plan.date_of_injury).toLocaleDateString()}
+              Injury Date: {formattedDateOfInjury}
             </div>
           )}
         </div>

@@ -1,9 +1,13 @@
+
 import { useState, useEffect } from 'react';
+import { format, parseISO } from 'date-fns';
 
 interface AgeData {
   ageToday: number;
   ageAtInjury: number;
   projectedAgeAtDeath: number;
+  formattedDateOfBirth?: string;
+  formattedDateOfInjury?: string;
 }
 
 interface AgeCalculationInputs {
@@ -23,16 +27,18 @@ export function useAgeCalculations(inputs: AgeCalculationInputs): AgeData {
     if (!inputs.dateOfBirth) return;
 
     const today = new Date();
-    const birth = new Date(inputs.dateOfBirth);
-    const injury = inputs.dateOfInjury ? new Date(inputs.dateOfInjury) : null;
+    const birth = parseISO(inputs.dateOfBirth);
+    const injury = inputs.dateOfInjury ? parseISO(inputs.dateOfInjury) : null;
     const le = parseFloat(inputs.lifeExpectancy) || 0;
 
+    // Calculate age today
     let ageToday = today.getFullYear() - birth.getFullYear();
     const m = today.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
       ageToday--;
     }
 
+    // Calculate age at injury
     let ageAtInjury = 0;
     if (injury) {
       ageAtInjury = injury.getFullYear() - birth.getFullYear();
@@ -44,10 +50,16 @@ export function useAgeCalculations(inputs: AgeCalculationInputs): AgeData {
 
     const projectedAgeAtDeath = ageToday + le;
 
+    // Format dates consistently
+    const formattedDateOfBirth = format(birth, 'MM/dd/yyyy');
+    const formattedDateOfInjury = injury ? format(injury, 'MM/dd/yyyy') : undefined;
+
     setAgeData({
       ageToday,
       ageAtInjury,
-      projectedAgeAtDeath
+      projectedAgeAtDeath,
+      formattedDateOfBirth,
+      formattedDateOfInjury
     });
   }, [inputs.dateOfBirth, inputs.dateOfInjury, inputs.lifeExpectancy]);
 
