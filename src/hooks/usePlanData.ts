@@ -103,7 +103,7 @@ export const usePlanData = (id: string) => {
 
         if (error) throw error;
       }
-      await queryClient.invalidateQuery({ queryKey: ['plan-data', id] });
+      await queryClient.invalidateQueries({ queryKey: ['plan-data', id] });
     } catch (error) {
       console.error('Error updating items:', error);
       toast({
@@ -121,6 +121,6 @@ export const usePlanData = (id: string) => {
     items,
     setItems,
     hasError: !!error,
-    refetch: () => queryClient.invalidateQuery({ queryKey: ['plan-data', id] })
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['plan-data', id] })
   };
 };
