@@ -38,7 +38,6 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   });
 
   const { handleSubmit } = useEvalueeFormSubmit((updatedData) => {
-    // Update the local form data with the response from the server
     updateFormData({
       firstName: updatedData.first_name,
       lastName: updatedData.last_name,
@@ -63,6 +62,11 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const onFormSubmit = async (e: React.FormEvent) => {
     await handleSubmit(e, formData, ageData, id);
     setIsEditing(false);
+  };
+
+  const formatNumber = (value: number | undefined | null) => {
+    if (value === null || value === undefined) return 'N/A';
+    return value.toFixed(4);
   };
 
   const renderReadOnlyField = (label: string, value: string) => (
@@ -111,16 +115,34 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
             isEditing={!!initialData}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-6">
-            {renderReadOnlyField("First Name", formData.firstName)}
-            {renderReadOnlyField("Last Name", formData.lastName)}
-            {renderReadOnlyField("Date of Birth", formData.dateOfBirth)}
-            {renderReadOnlyField("Date of Injury", formData.dateOfInjury)}
-            {renderReadOnlyField("Gender", formData.gender)}
-            {renderReadOnlyField("State", formData.state)}
-            {renderReadOnlyField("City", formData.city)}
-            {renderReadOnlyField("ZIP Code", formData.zipCode)}
-            {renderReadOnlyField("Life Expectancy (years)", formData.lifeExpectancy)}
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              {renderReadOnlyField("First Name", formData.firstName)}
+              {renderReadOnlyField("Last Name", formData.lastName)}
+              {renderReadOnlyField("Date of Birth", formData.dateOfBirth)}
+              {renderReadOnlyField("Date of Injury", formData.dateOfInjury)}
+              {renderReadOnlyField("Gender", formData.gender)}
+              {renderReadOnlyField("State", formData.state)}
+              {renderReadOnlyField("City", formData.city)}
+              {renderReadOnlyField("ZIP Code", formData.zipCode)}
+              {renderReadOnlyField("Life Expectancy (years)", formData.lifeExpectancy)}
+            </div>
+            
+            {geoFactors && (
+              <div className="mt-6 border-t pt-6">
+                <h3 className="text-sm font-medium text-gray-500 mb-4">Geographic Adjustment Factors</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-500">MFR</p>
+                    <p className="text-base">{formatNumber(geoFactors.mfr_code)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-500">PFR</p>
+                    <p className="text-base">{formatNumber(geoFactors.pfr_code)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
