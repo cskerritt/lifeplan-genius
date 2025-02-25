@@ -37,9 +37,9 @@ export function useSurgicalCosts(
     const facilityTotal = facilityFees.reduce((sum, fee) => sum + fee.fee, 0);
 
     // Sum all components
-    const totalLow = profLow + anesthesiaTotal + facilityTotal;
-    const totalHigh = profHigh + anesthesiaTotal + facilityTotal;
-    const totalAverage = profAvg + anesthesiaTotal + facilityTotal;
+    const totalLow = Math.round((profLow + anesthesiaTotal + facilityTotal) * 100) / 100;
+    const totalHigh = Math.round((profHigh + anesthesiaTotal + facilityTotal) * 100) / 100;
+    const totalAverage = Math.round((profAvg + anesthesiaTotal + facilityTotal) * 100) / 100;
 
     console.log('Fee totals:', {
       professional: { low: profLow, high: profHigh, avg: profAvg },
