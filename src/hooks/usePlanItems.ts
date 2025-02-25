@@ -10,11 +10,13 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
   const { calculateAdjustedCosts, calculateAnnualCost, lookupCPTCode } = useCostCalculations();
 
   const calculateCosts = (baseRate: number, frequency: string) => {
-    // Extract frequency numbers from strings like "2-3 times per year"
-    // Also handle formats like "2-3x/year" or "2-3 times/year"
+    console.log('Calculating costs for:', { baseRate, frequency });
+    
+    // Extract frequency numbers from strings like "2-3x per year"
     const frequencyMatch = frequency.match(/(\d+)-(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)year/i);
+    
     // Match year ranges like "5-10 years" or "5-10 yrs"
-    const durationMatch = frequency.match(/(\d+)-(\d+)\s*(?:years?|yrs?)/i);
+    const durationMatch = frequency.match(/for\s+(\d+)-(\d+)\s*(?:years?|yrs?)/i);
     
     let lowFrequency = 1;
     let highFrequency = 1;
@@ -25,13 +27,13 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     if (frequencyMatch) {
       lowFrequency = parseInt(frequencyMatch[1]);
       highFrequency = parseInt(frequencyMatch[2]);
-      console.log('Parsed frequency range:', { lowFrequency, highFrequency }, 'from:', frequency);
+      console.log('Parsed frequency range:', { lowFrequency, highFrequency });
     }
 
     if (durationMatch) {
       lowDuration = parseInt(durationMatch[1]);
       highDuration = parseInt(durationMatch[2]);
-      console.log('Parsed duration range:', { lowDuration, highDuration }, 'from:', frequency);
+      console.log('Parsed duration range:', { lowDuration, highDuration });
     }
 
     // Calculate annual costs (per year costs)
@@ -48,9 +50,9 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       averageAnnualCost
     });
 
-    // Calculate lifetime costs
-    const lowLifetimeCost = lowAnnualCost * lowDuration;
-    const highLifetimeCost = highAnnualCost * highDuration;
+    // Calculate lifetime costs considering duration years
+    const lowLifetimeCost = lowAnnualCost * (durationMatch ? lowDuration : 1);
+    const highLifetimeCost = highAnnualCost * (durationMatch ? highDuration : 1);
     const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
 
     console.log('Lifetime cost calculations:', {
@@ -60,7 +62,8 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       highAnnualCost,
       lowLifetimeCost,
       highLifetimeCost,
-      averageLifetimeCost
+      averageLifetimeCost,
+      durationMatch: !!durationMatch
     });
 
     if (isOneTime) {
@@ -74,27 +77,13 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       };
     }
 
-    if (durationMatch) {
-      // If we have a duration, calculate full lifetime ranges
-      console.log('Using lifetime costs for ranges due to duration specification');
-      return {
-        annual: averageAnnualCost,
-        lifetime: highLifetimeCost, // Set lifetime to the maximum potential cost
-        low: lowLifetimeCost,
-        high: highLifetimeCost,
-        average: averageLifetimeCost
-      };
-    } else {
-      // If no duration specified, use annual costs for the ranges
-      console.log('Using annual costs for ranges (no duration specified)');
-      return {
-        annual: averageAnnualCost,
-        lifetime: highAnnualCost, // Set lifetime to the maximum annual cost
-        low: lowAnnualCost,
-        high: highAnnualCost,
-        average: averageAnnualCost
-      };
-    }
+    return {
+      annual: averageAnnualCost,
+      lifetime: highLifetimeCost,
+      low: lowLifetimeCost,
+      high: highLifetimeCost,
+      average: averageLifetimeCost
+    };
   };
 
   const addItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
