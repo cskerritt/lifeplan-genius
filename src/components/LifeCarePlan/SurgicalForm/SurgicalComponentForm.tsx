@@ -31,9 +31,11 @@ export const SurgicalComponentForm = ({
     setIsLookingUp(true);
     try {
       const cptData = await lookupCPTCode(cptCode);
-      if (cptData) {
+      if (cptData && Array.isArray(cptData) && cptData.length > 0) {
+        // Access the first element of the array for the fee data
+        const feeData = cptData[0];
         // Update the component with the looked up cost
-        const cost = type === 'facility' ? cptData.mfu_75th : cptData.pfr_75th;
+        const cost = type === 'facility' ? feeData.mfu_75th : feeData.pfr_75th;
         onUpdate(type, index, 'cost', cost);
         
         // If it's a facility fee, automatically add the description
