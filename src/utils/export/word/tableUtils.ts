@@ -14,7 +14,7 @@ export const createStyledCell = (
   fill: string,
   options: {
     columnSpan?: number,
-    alignment?: keyof typeof AlignmentType
+    alignment?: 'start' | 'center' | 'end' | 'both' | 'mediumKashida' | 'distribute' | 'numTab' | 'highKashida' | 'lowKashida' | 'thaiDistribute' | 'left' | 'right'
   } = {}
 ) => {
   const cell = new TableCell({

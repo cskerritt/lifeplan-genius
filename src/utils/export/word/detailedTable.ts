@@ -48,7 +48,7 @@ export const createDetailedItemRows = (items: CareItem[]) =>
 export const createDetailedTotalRow = (items: CareItem[]) =>
   new TableRow({
     children: [
-      createStyledCell('Total:', 75, 'FFFFFF', { columnSpan: 5, alignment: 'RIGHT' }),
+      createStyledCell('Total:', 75, 'FFFFFF', { columnSpan: 5, alignment: 'right' }),
       createStyledCell(`$${calculateCategoryTotal(items).toFixed(2)}`, 15, 'DBE5F1'),
       createStyledCell(`$${calculateOneTimeTotal(items).toFixed(2)}`, 10, 'DBE5F1')
     ]
