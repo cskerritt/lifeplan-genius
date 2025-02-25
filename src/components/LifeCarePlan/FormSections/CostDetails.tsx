@@ -36,7 +36,7 @@ export function CostDetails({
           
           if (result.pfr_50th && result.pfr_75th && result.pfr_90th) {
             // Get the geographic factor - if not available, default to 1
-            const geoFactor = geoFactors?.pfr_code || 1;
+            const geoFactor = geoFactors?.pfr_factor || 1;
             console.log('Geographic factor being used:', geoFactor);
             
             // Calculate geographically adjusted rates
