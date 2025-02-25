@@ -40,6 +40,10 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
         return;
       }
 
+      // Ensure life expectancy is properly parsed before sending to the database
+      const lifeExpectancy = formData.lifeExpectancy ? parseFloat(formData.lifeExpectancy) : null;
+      console.log('Life expectancy being saved:', lifeExpectancy); // Debug log
+
       const planData = {
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -49,7 +53,7 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
         zip_code: formData.zipCode,
         city: formData.city,
         state: formData.state,
-        life_expectancy: formData.lifeExpectancy ? parseFloat(formData.lifeExpectancy) : null,
+        life_expectancy: lifeExpectancy,
         projected_age_at_death: ageData.projectedAgeAtDeath
       };
 
@@ -75,7 +79,10 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
           .single();
       }
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        console.error('Supabase error:', response.error); // Debug log
+        throw response.error;
+      }
 
       toast({
         title: "Success",
@@ -83,6 +90,8 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
       });
 
       if (response.data) {
+        console.log('Response data:', response.data); // Debug log
+        
         // Transform the response data back to our Evaluee format
         const transformedData = {
           id: response.data.id,
@@ -94,6 +103,7 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
           zipCode: response.data.zip_code || '',
           city: response.data.city,
           state: response.data.state,
+          // Ensure life expectancy is converted to string
           lifeExpectancy: response.data.life_expectancy?.toString() || '',
           address: response.data.street_address || '',
           phone: '',
