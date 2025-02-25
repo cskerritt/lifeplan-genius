@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';  // Added useEffect
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Card,
@@ -31,6 +31,19 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const { formData, updateFormData } = useEvalueeFormState(initialData);
   const { geoFactors, lookupGeoFactors } = useGafLookup();
   
+  // Add effect to lookup geographic factors when ZIP code changes
+  useEffect(() => {
+    if (formData.zipCode) {
+      lookupGeoFactors(formData.zipCode);
+    }
+  }, [formData.zipCode, lookupGeoFactors]);
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('🔍 Current formData:', formData);
+    console.log('🌍 Current geoFactors:', geoFactors);
+  }, [formData, geoFactors]);
+
   const ageData = useAgeCalculations({
     dateOfBirth: formData.dateOfBirth,
     dateOfInjury: formData.dateOfInjury,
@@ -128,21 +141,19 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
               {renderReadOnlyField("Life Expectancy (years)", formData.lifeExpectancy)}
             </div>
             
-            {geoFactors && (
-              <div className="mt-6 border-t pt-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-4">Geographic Adjustment Factors</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-500">MFR</p>
-                    <p className="text-base">{formatNumber(geoFactors.mfr_code)}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-500">PFR</p>
-                    <p className="text-base">{formatNumber(geoFactors.pfr_code)}</p>
-                  </div>
+            <div className="mt-6 border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-4">Geographic Adjustment Factors</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-500">MFR</p>
+                  <p className="text-base">{formatNumber(geoFactors?.mfr_code)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-500">PFR</p>
+                  <p className="text-base">{formatNumber(geoFactors?.pfr_code)}</p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         )}
       </CardContent>
