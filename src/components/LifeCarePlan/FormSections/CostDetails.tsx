@@ -13,6 +13,14 @@ interface CostDetailsProps {
   onCPTCodeChange: (value: string) => void;
   onCostRangeChange: (field: keyof CostRange, value: number) => void;
   onCPTLookup: () => Promise<void>;
+  frequencyDetails?: {
+    isOneTime: boolean;
+    lowFrequencyPerYear: number;
+    highFrequencyPerYear: number;
+    lowDurationYears: number;
+    highDurationYears: number;
+    customFrequency?: string;
+  };
 }
 
 export function CostDetails({
@@ -21,8 +29,27 @@ export function CostDetails({
   onCPTCodeChange,
   onCostRangeChange,
   onCPTLookup,
+  frequencyDetails
 }: CostDetailsProps) {
   const { lookupCPTCode, geoFactors } = useCostCalculations();
+
+  const calculateFrequencyAdjustedCost = (baseCost: number, frequencyType: 'low' | 'high') => {
+    if (!frequencyDetails) return baseCost;
+
+    if (frequencyDetails.isOneTime) {
+      return baseCost; // One-time costs don't get multiplied by frequency
+    }
+
+    const frequency = frequencyType === 'low' ? 
+      frequencyDetails.lowFrequencyPerYear : 
+      frequencyDetails.highFrequencyPerYear;
+
+    const duration = frequencyType === 'low' ? 
+      frequencyDetails.lowDurationYears : 
+      frequencyDetails.highDurationYears;
+
+    return baseCost * frequency * duration;
+  };
 
   const handleCPTLookup = async () => {
     if (cptCode.trim()) {
@@ -62,15 +89,19 @@ export function CostDetails({
               mfr75: adjustedMFR75
             });
 
-            // Calculate final ranges
-            const lowValue = (adjustedMFR50 + adjustedPFR50) / 2;
-            const highValue = (adjustedMFR75 + adjustedPFR75) / 2;
+            // Calculate base ranges (before frequency adjustment)
+            const baseLowValue = (adjustedMFR50 + adjustedPFR50) / 2;
+            const baseHighValue = (adjustedMFR75 + adjustedPFR75) / 2;
+
+            // Apply frequency and duration adjustments
+            const lowValue = calculateFrequencyAdjustedCost(baseLowValue, 'low');
+            const highValue = calculateFrequencyAdjustedCost(baseHighValue, 'high');
             const averageValue = (lowValue + highValue) / 2;
 
-            console.log('Final calculated values:', {
-              low: lowValue,
-              average: averageValue,
-              high: highValue
+            console.log('Final calculated values with frequency:', {
+              base: { low: baseLowValue, high: baseHighValue },
+              adjusted: { low: lowValue, average: averageValue, high: highValue },
+              frequency: frequencyDetails
             });
 
             // Update all three cost values with calculated rates
