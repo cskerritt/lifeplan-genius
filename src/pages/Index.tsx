@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,13 +15,18 @@ const Index = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: plans, isLoading, error, refetch } = useQuery({
+  const { data: plans = [], isLoading, error } = useQuery({
     queryKey: ["life-care-plans"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("life_care_plans")
         .select(`
-          *,
+          id,
+          first_name,
+          last_name,
+          city,
+          state,
+          created_at,
           care_plan_entries (*)
         `)
         .order('created_at', { ascending: false });
@@ -34,55 +40,41 @@ const Index = () => {
         throw error;
       }
 
-      return data;
+      return data || [];
     },
   });
 
   const handleDelete = async (planId: string) => {
-    const { error } = await supabase
-      .from('life_care_plans')
-      .delete()
-      .eq('id', planId);
+    try {
+      const { error } = await supabase
+        .from('life_care_plans')
+        .delete()
+        .eq('id', planId);
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Life care plan deleted successfully",
+      });
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error deleting plan",
         description: error.message,
       });
-      return;
     }
-
-    toast({
-      title: "Success",
-      description: "Life care plan deleted successfully",
-    });
-    refetch();
   };
 
-  const filteredPlans = plans?.filter(plan => {
+  const filteredPlans = plans.filter(plan => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      plan.first_name.toLowerCase().includes(searchLower) ||
-      plan.last_name.toLowerCase().includes(searchLower) ||
-      plan.city.toLowerCase().includes(searchLower) ||
-      plan.state.toLowerCase().includes(searchLower)
+      plan.first_name?.toLowerCase().includes(searchLower) ||
+      plan.last_name?.toLowerCase().includes(searchLower) ||
+      plan.city?.toLowerCase().includes(searchLower) ||
+      plan.state?.toLowerCase().includes(searchLower)
     );
   });
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] p-6">
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Unable to Load Plans</h2>
-          <p className="text-gray-600">There was an error loading your life care plans.</p>
-          <Button onClick={() => refetch()} className="bg-medical-500 hover:bg-medical-600">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8 p-6">
