@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from "@/components/ui/card";
 
@@ -47,11 +48,11 @@ export default function DemographicsDisplay({ ageData, geoFactors }: Demographic
         <h3 className="text-lg font-medium mb-4">Geographic Adjustment Factors</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-500">MFR (Medicare Fee Relative)</p>
+            <p className="text-sm text-gray-500">MFR</p>
             <p className="text-2xl font-bold">{formatNumber(geoFactors?.mfr_code)}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">PFR (Private Fee Relative)</p>
+            <p className="text-sm text-gray-500">PFR</p>
             <p className="text-2xl font-bold">{formatNumber(geoFactors?.pfr_code)}</p>
           </div>
           {geoFactors?.city && geoFactors?.state_name && (
