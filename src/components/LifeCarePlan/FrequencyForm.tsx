@@ -46,24 +46,18 @@ export function FrequencyForm({
         const startAge = Math.floor(ageData.ageToday);
         onFrequencyChange('startAge', startAge);
       }
-      
-      // Calculate projected age at death
-      const projectedAgeAtDeath = Math.floor(ageData.projectedAgeAtDeath);
-      
-      // Only update stop age if it hasn't been set or if it was the default value
-      if (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100) {
-        onFrequencyChange('stopAge', projectedAgeAtDeath);
+
+      // Calculate stop age based on current age plus life expectancy
+      const lifeExpectancyYears = parseFloat(lifeExpectancy);
+      if (!isNaN(lifeExpectancyYears)) {
+        const calculatedStopAge = Math.floor(ageData.ageToday + lifeExpectancyYears);
+        // Only update stop age if it hasn't been set or if it was the default value
+        if (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100) {
+          onFrequencyChange('stopAge', calculatedStopAge);
+        }
       }
     }
-  }, [ageData, onFrequencyChange, frequencyDetails.startAge, frequencyDetails.stopAge]);
-
-  // Effect to update stop age when duration changes
-  useEffect(() => {
-    if (frequencyDetails.startAge > 0 && frequencyDetails.highDurationYears > 0) {
-      const newStopAge = frequencyDetails.startAge + frequencyDetails.highDurationYears;
-      onFrequencyChange('stopAge', newStopAge);
-    }
-  }, [frequencyDetails.startAge, frequencyDetails.highDurationYears, onFrequencyChange]);
+  }, [ageData, onFrequencyChange, frequencyDetails.startAge, frequencyDetails.stopAge, lifeExpectancy]);
 
   return (
     <div className="space-y-4">
