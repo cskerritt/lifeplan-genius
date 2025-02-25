@@ -9,32 +9,44 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
   const { toast } = useToast();
   const { calculateAdjustedCosts, calculateAnnualCost, lookupCPTCode } = useCostCalculations();
 
-  const calculateCosts = (baseRate: number, frequency: string) => {
-    console.log('Calculating costs for:', { baseRate, frequency });
-    
-    // Extract frequency numbers from strings like "2-3x per year"
+  const parseFrequency = (frequency: string) => {
     const frequencyMatch = frequency.match(/(\d+)-(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)year/i);
-    
-    // Match year ranges like "5-10 years" or "5-10 yrs" with or without "for"
-    const durationMatch = frequency.match(/(?:for\s+)?(\d+)-(\d+)\s*(?:years?|yrs?)/i);
-    
     let lowFrequency = 1;
     let highFrequency = 1;
-    let lowDuration = 1;
-    let highDuration = 1;
-    let isOneTime = frequency.toLowerCase().includes('one-time');
 
     if (frequencyMatch) {
       lowFrequency = parseInt(frequencyMatch[1]);
       highFrequency = parseInt(frequencyMatch[2]);
-      console.log('Parsed frequency range:', { lowFrequency, highFrequency });
+      console.log('Parsed frequency:', { lowFrequency, highFrequency });
     }
+
+    return { lowFrequency, highFrequency };
+  };
+
+  const parseDuration = (frequency: string) => {
+    // First try to match "5-10 years" format
+    const durationMatch = frequency.match(/(\d+)-(\d+)\s*(?:years?|yrs?)/i) ||
+                         // Then try to match "for 5-10 years" format
+                         frequency.match(/for\s+(\d+)-(\d+)\s*(?:years?|yrs?)/i);
+
+    let lowDuration = 5; // Default to 5 years if not specified
+    let highDuration = 10; // Default to 10 years if not specified
 
     if (durationMatch) {
       lowDuration = parseInt(durationMatch[1]);
       highDuration = parseInt(durationMatch[2]);
-      console.log('Parsed duration range:', { lowDuration, highDuration });
+      console.log('Parsed duration:', { lowDuration, highDuration });
     }
+
+    return { lowDuration, highDuration };
+  };
+
+  const calculateCosts = (baseRate: number, frequency: string) => {
+    console.log('Calculating costs for:', { baseRate, frequency });
+    
+    const { lowFrequency, highFrequency } = parseFrequency(frequency);
+    const { lowDuration, highDuration } = parseDuration(frequency);
+    const isOneTime = frequency.toLowerCase().includes('one-time');
 
     // Calculate annual costs (per year costs)
     const lowAnnualCost = baseRate * lowFrequency;
@@ -50,7 +62,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       averageAnnualCost
     });
 
-    // Always calculate lifetime costs with duration years
+    // Calculate lifetime costs with duration
     const lowLifetimeCost = lowAnnualCost * lowDuration;
     const highLifetimeCost = highAnnualCost * highDuration;
     const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
@@ -62,8 +74,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       highAnnualCost,
       lowLifetimeCost,
       highLifetimeCost,
-      averageLifetimeCost,
-      durationMatch: !!durationMatch
+      averageLifetimeCost
     });
 
     if (isOneTime) {
