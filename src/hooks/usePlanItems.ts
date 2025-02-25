@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
@@ -11,8 +10,10 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
 
   const calculateCosts = (baseRate: number, frequency: string) => {
     // Extract frequency numbers from strings like "2-3 times per year"
-    const frequencyMatch = frequency.match(/(\d+)-(\d+)x?\s+(?:times?\s+)?per\s+year/i);
-    const durationMatch = frequency.match(/(\d+)-(\d+)\s+years?/i);
+    // Also handle formats like "2-3x/year" or "2-3 times/year"
+    const frequencyMatch = frequency.match(/(\d+)-(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)year/i);
+    // Match year ranges like "5-10 years" or "5-10 yrs"
+    const durationMatch = frequency.match(/(\d+)-(\d+)\s*(?:years?|yrs?)/i);
     
     let lowFrequency = 1;
     let highFrequency = 1;
@@ -32,7 +33,7 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       console.log('Parsed duration range:', { lowDuration, highDuration }, 'from:', frequency);
     }
 
-    // Calculate costs with frequency
+    // Calculate annual costs (per year costs)
     const lowAnnualCost = baseRate * lowFrequency;
     const highAnnualCost = baseRate * highFrequency;
     const averageAnnualCost = (lowAnnualCost + highAnnualCost) / 2;
@@ -47,15 +48,15 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
     });
 
     // Calculate lifetime costs
-    // Low lifetime cost = low annual cost × low duration
     const lowLifetimeCost = lowAnnualCost * lowDuration;
-    // High lifetime cost = high annual cost × high duration
     const highLifetimeCost = highAnnualCost * highDuration;
     const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
 
     console.log('Lifetime cost calculations:', {
       lowDuration,
       highDuration,
+      lowAnnualCost,
+      highAnnualCost,
       lowLifetimeCost,
       highLifetimeCost,
       averageLifetimeCost
@@ -72,15 +73,27 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       };
     }
 
-    // For annual costs, use the frequency-based calculations
-    // For lifetime costs, use the duration-based calculations
-    return {
-      annual: averageAnnualCost,
-      lifetime: averageLifetimeCost,
-      low: lowLifetimeCost,      // Now using lifetime low cost
-      high: highLifetimeCost,    // Now using lifetime high cost
-      average: averageLifetimeCost
-    };
+    // If we have a duration specified, use lifetime costs for the range
+    if (durationMatch) {
+      console.log('Using lifetime costs for ranges due to duration specification');
+      return {
+        annual: averageAnnualCost,
+        lifetime: averageLifetimeCost,
+        low: lowLifetimeCost,
+        high: highLifetimeCost,
+        average: averageLifetimeCost
+      };
+    } else {
+      // If no duration specified, use annual costs for the range
+      console.log('Using annual costs for ranges (no duration specified)');
+      return {
+        annual: averageAnnualCost,
+        lifetime: averageLifetimeCost,
+        low: lowAnnualCost,
+        high: highAnnualCost,
+        average: averageAnnualCost
+      };
+    }
   };
 
   const addItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
