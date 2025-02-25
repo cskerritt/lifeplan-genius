@@ -1,13 +1,19 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareCategory, CostRange, CostResource, VehicleModification } from "@/types/lifecare";
 
 export const useCostCalculations = () => {
   const [geoFactors, setGeoFactors] = useState<{ mfr_factor: number; pfr_factor: number } | null>(null);
+  const [isLoadingGeoFactors, setIsLoadingGeoFactors] = useState(false);
 
   const fetchGeoFactors = async (zipCode: string) => {
+    if (isLoadingGeoFactors || (geoFactors && geoFactors.mfr_factor)) {
+      return geoFactors;
+    }
+
     console.log('Fetching geographic factors for ZIP:', zipCode);
+    setIsLoadingGeoFactors(true);
+
     try {
       const { data, error } = await supabase
         .rpc('search_geographic_factors', { zip_code: zipCode });
@@ -19,13 +25,19 @@ export const useCostCalculations = () => {
 
       if (data && data.length > 0) {
         console.log('Found geographic factors:', data[0]);
-        setGeoFactors({
+        const factors = {
           mfr_factor: data[0].mfr_code,
           pfr_factor: data[0].pfr_code
-        });
+        };
+        setGeoFactors(factors);
+        return factors;
       }
+      return null;
     } catch (error) {
       console.error('Error fetching geographic factors:', error);
+      return null;
+    } finally {
+      setIsLoadingGeoFactors(false);
     }
   };
 
@@ -83,13 +95,11 @@ export const useCostCalculations = () => {
   ): Promise<CostRange> => {
     console.log('Calculating adjusted costs:', { baseRate, cptCode, category, costResources });
     
-    // Handle vehicle modifications
     if (category === "transportation" && vehicleModifications?.length) {
       const total = calculateVehicleModificationTotal(vehicleModifications);
       return { low: total, average: total, high: total };
     }
 
-    // Handle special categories that use multiple cost sources
     if (["transportation", "supplies", "dme", "medication"].includes(category) && costResources?.length) {
       return calculateMultiSourceCosts(costResources);
     }
@@ -169,9 +179,10 @@ export const useCostCalculations = () => {
 
   return {
     geoFactors,
+    isLoadingGeoFactors,
     fetchGeoFactors,
     calculateAdjustedCosts,
     calculateAnnualCost,
-    lookupCPTCode  // Added this to expose the function
+    lookupCPTCode
   };
 };
