@@ -34,15 +34,17 @@ export function FrequencyForm({
     lifeExpectancy
   });
 
-  // Set default values when ageData changes
+  // Effect to update ages when ageData changes
   useEffect(() => {
-    if (ageData.ageToday !== undefined && ageData.projectedAgeAtDeath !== undefined) {
-      // Only update if the values haven't been manually changed
+    if (ageData.ageToday !== undefined) {
+      // Only update start age if it hasn't been set yet
       if (frequencyDetails.startAge === 0) {
-        onFrequencyChange('startAge', ageData.ageToday);
+        onFrequencyChange('startAge', Math.floor(ageData.ageToday));
       }
-      if (frequencyDetails.stopAge === 100) {
-        onFrequencyChange('stopAge', ageData.projectedAgeAtDeath);
+      
+      // Always update stop age based on current ageToday + lifeExpectancy
+      if (ageData.projectedAgeAtDeath !== undefined) {
+        onFrequencyChange('stopAge', Math.ceil(ageData.projectedAgeAtDeath));
       }
     }
   }, [ageData, onFrequencyChange]);
@@ -82,7 +84,8 @@ export function FrequencyForm({
                 min="0"
                 max="150"
                 value={frequencyDetails.stopAge}
-                onChange={(e) => onFrequencyChange('stopAge', parseInt(e.target.value) || 0)}
+                readOnly
+                className="bg-gray-100"
               />
             </div>
           </div>
