@@ -38,34 +38,24 @@ export function FrequencyForm({
     lifeExpectancy
   });
 
-  // Effect to update ages when ageData or start age changes
+  // Effect to handle age calculations and updates
   useEffect(() => {
     if (ageData.ageToday !== undefined) {
-      // Only update start age if it hasn't been set yet
+      const currentAge = Math.floor(ageData.ageToday);
+      const lifeExpectancyYears = parseFloat(lifeExpectancy);
+
+      // Only update start age if it's 0 (initial state)
       if (frequencyDetails.startAge === 0) {
-        const startAge = Math.floor(ageData.ageToday);
-        onFrequencyChange('startAge', startAge);
+        onFrequencyChange('startAge', currentAge);
       }
 
-      // Calculate stop age based on start age plus life expectancy
-      const lifeExpectancyYears = parseFloat(lifeExpectancy);
+      // Always calculate the expected stop age based on current start age
       if (!isNaN(lifeExpectancyYears)) {
-        // Calculate the expected stop age
         const calculatedStopAge = frequencyDetails.startAge + lifeExpectancyYears;
-        
-        // Update stop age if:
-        // 1. It's currently 0 (initial state)
-        // 2. It's currently 100 (default state)
-        // 3. It was previously set to start age + life expectancy (auto-calculated)
-        const previousCalculation = frequencyDetails.startAge + parseFloat(lifeExpectancy);
-        if (frequencyDetails.stopAge === 0 || 
-            frequencyDetails.stopAge === 100 || 
-            Math.abs(frequencyDetails.stopAge - previousCalculation) < 0.01) {
-          onFrequencyChange('stopAge', calculatedStopAge);
-        }
+        onFrequencyChange('stopAge', calculatedStopAge);
       }
     }
-  }, [ageData, onFrequencyChange, frequencyDetails.startAge, lifeExpectancy, frequencyDetails.stopAge]);
+  }, [ageData.ageToday, frequencyDetails.startAge, lifeExpectancy, onFrequencyChange]);
 
   return (
     <div className="space-y-4">
@@ -92,7 +82,17 @@ export function FrequencyForm({
                 min="0"
                 max="150"
                 value={frequencyDetails.startAge}
-                onChange={(e) => onFrequencyChange('startAge', parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const newStartAge = parseInt(e.target.value) || 0;
+                  onFrequencyChange('startAge', newStartAge);
+                  
+                  // Recalculate stop age when start age changes
+                  const lifeExpectancyYears = parseFloat(lifeExpectancy);
+                  if (!isNaN(lifeExpectancyYears)) {
+                    const calculatedStopAge = newStartAge + lifeExpectancyYears;
+                    onFrequencyChange('stopAge', calculatedStopAge);
+                  }
+                }}
               />
             </div>
             <div className="space-y-2">
