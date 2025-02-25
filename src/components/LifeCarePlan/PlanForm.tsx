@@ -458,7 +458,6 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.currentTarget;
     
     let itemData: Omit<CareItem, "id" | "annualCost">;
     
@@ -503,9 +502,9 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     } else {
       itemData = {
         category,
-        service: form.service.value,
-        frequency: form.frequency.value,
-        cptCode: form.cptCode.value,
+        service,
+        frequency,
+        cptCode,
         costPerUnit: Number(costRange.average),
         costRange,
         costResources: isMultiSourceCategory(category) ? costResources : undefined
@@ -513,7 +512,11 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     }
 
     onSubmit(itemData);
-    form.reset();
+    
+    setService("");
+    setFrequency("");
+    setCptCode("");
+    setCostRange({ low: 0, average: 0, high: 0 });
     setIsSurgical(false);
     setSurgicalProcedure({
       name: "",
@@ -521,7 +524,6 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
       anesthesiaFees: [{ id: crypto.randomUUID(), type: 'anesthesia', description: '', cptCodes: [], cost: 0 }],
       facilityFees: [{ id: crypto.randomUUID(), type: 'facility', description: '', cptCodes: [], cost: 0 }]
     });
-    setCostRange({ low: 0, average: 0, high: 0 });
     setCostResources([
       { name: "", cost: 0 },
       { name: "", cost: 0 },
@@ -638,10 +640,6 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
           )}
 
           {renderCostInputs()}
-
-          <input type="hidden" name="costLow" value={costRange.low} />
-          <input type="hidden" name="costAverage" value={costRange.average} />
-          <input type="hidden" name="costHigh" value={costRange.high} />
 
           <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
             Add Item
