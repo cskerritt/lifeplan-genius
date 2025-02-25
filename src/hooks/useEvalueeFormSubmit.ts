@@ -44,37 +44,28 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
         first_name: formData.firstName,
         last_name: formData.lastName,
         date_of_birth: formData.dateOfBirth,
-        date_of_injury: formData.dateOfInjury,
+        date_of_injury: formData.dateOfInjury || null,
         gender: formData.gender,
         zip_code: formData.zipCode,
         city: formData.city,
         state: formData.state,
-        life_expectancy: parseFloat(formData.lifeExpectancy),
+        life_expectancy: formData.lifeExpectancy ? parseFloat(formData.lifeExpectancy) : null,
         projected_age_at_death: ageData.projectedAgeAtDeath
       };
 
+      let response;
+      
       if (planId) {
         // Update existing plan
-        const { data, error } = await supabase
+        response = await supabase
           .from('life_care_plans')
           .update(planData)
           .eq('id', planId)
           .select()
           .single();
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Life care plan updated successfully"
-        });
-
-        if (onSave && data) {
-          onSave(data);
-        }
       } else {
         // Create new plan
-        const { data, error } = await supabase
+        response = await supabase
           .from('life_care_plans')
           .insert([{
             ...planData,
@@ -82,19 +73,40 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
           }])
           .select()
           .single();
+      }
 
-        if (error) throw error;
+      if (response.error) throw response.error;
 
-        toast({
-          title: "Success",
-          description: "Life care plan created successfully"
-        });
+      toast({
+        title: "Success",
+        description: planId ? "Life care plan updated successfully" : "Life care plan created successfully"
+      });
 
-        if (onSave && data) {
-          onSave(data);
+      if (response.data) {
+        // Transform the response data back to our Evaluee format
+        const transformedData = {
+          id: response.data.id,
+          firstName: response.data.first_name,
+          lastName: response.data.last_name,
+          dateOfBirth: response.data.date_of_birth,
+          dateOfInjury: response.data.date_of_injury || '',
+          gender: response.data.gender,
+          zipCode: response.data.zip_code || '',
+          city: response.data.city,
+          state: response.data.state,
+          lifeExpectancy: response.data.life_expectancy?.toString() || '',
+          address: response.data.street_address || '',
+          phone: '',
+          email: ''
+        };
+
+        if (onSave) {
+          onSave(transformedData);
         }
-        
-        navigate('/');
+
+        if (!planId) {
+          navigate('/');
+        }
       }
     } catch (error) {
       console.error("Error:", error);

@@ -49,9 +49,9 @@ const PlanDetail = () => {
           description: "Life care plan updated successfully"
         });
         
+        setEvaluee(newEvaluee);
         setActiveTab("plan");
       }
-      setEvaluee(newEvaluee);
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -79,17 +79,17 @@ const PlanDetail = () => {
         if (planError) throw planError;
 
         if (planData) {
-          const evalueeData = {
+          const evalueeData: Evaluee = {
             id: planData.id,
-            firstName: planData.first_name,
-            lastName: planData.last_name,
-            dateOfBirth: planData.date_of_birth,
-            dateOfInjury: planData.date_of_injury,
-            gender: planData.gender,
-            zipCode: planData.zip_code,
-            city: planData.city,
-            state: planData.state,
-            address: planData.street_address,
+            firstName: planData.first_name || '',
+            lastName: planData.last_name || '',
+            dateOfBirth: planData.date_of_birth || '',
+            dateOfInjury: planData.date_of_injury || '',
+            gender: planData.gender || '',
+            zipCode: planData.zip_code || '',
+            city: planData.city || '',
+            state: planData.state || '',
+            address: planData.street_address || '',
             phone: '',
             email: '',
             lifeExpectancy: planData.life_expectancy?.toString() || ''
