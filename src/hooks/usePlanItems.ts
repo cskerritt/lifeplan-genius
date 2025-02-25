@@ -103,6 +103,51 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       let unitCost = newItem.costPerUnit;
       let cptDescription = null;
       
+      // For surgical items, use the provided cost range directly
+      if (newItem.category === 'surgical') {
+        console.log('Using provided surgical costs:', newItem.costRange);
+        const costs = calculateCosts(newItem.costRange.average, newItem.frequency);
+
+        if (planId !== "new") {
+          const insertData = {
+            plan_id: planId,
+            category: newItem.category,
+            item: newItem.service,
+            frequency: newItem.frequency,
+            cpt_code: newItem.cptCode,
+            cpt_description: cptDescription,
+            min_cost: newItem.costRange.low,
+            avg_cost: newItem.costRange.average,
+            max_cost: newItem.costRange.high,
+            annual_cost: costs.annual,
+            lifetime_cost: costs.lifetime,
+            start_age: 0,
+            end_age: 100,
+            is_one_time: newItem.frequency.toLowerCase().includes('one-time')
+          };
+
+          console.log('Inserting surgical data:', insertData);
+
+          const { error } = await supabase
+            .from('care_plan_entries')
+            .insert(insertData);
+
+          if (error) {
+            console.error('Error inserting care plan entry:', error);
+            throw error;
+          }
+
+          onItemsChange();
+          
+          toast({
+            title: "Success",
+            description: "Care item added successfully"
+          });
+        }
+        return;
+      }
+      
+      // For non-surgical items, continue with existing logic
       if (newItem.cptCode && newItem.cptCode.trim() !== '') {
         const cptResult = await lookupCPTCode(newItem.cptCode);
         console.log('CPT code data found:', cptResult);
