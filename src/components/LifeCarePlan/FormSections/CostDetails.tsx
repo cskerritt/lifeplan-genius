@@ -34,33 +34,51 @@ export function CostDetails({
           const result = cptData[0];
           console.log('Using CPT result:', result);
           
-          if (result.pfr_50th && result.pfr_75th && result.pfr_90th) {
-            // Get the geographic factor - if not available, default to 1
-            const geoFactor = geoFactors?.pfr_factor || 1;
-            console.log('Geographic factor being used:', geoFactor);
+          if (result.mfr_50th && result.mfr_75th && result.pfr_50th && result.pfr_75th) {
+            // Get the geographic factors - if not available, default to 1
+            const pfrFactor = geoFactors?.pfr_factor || 1;
+            const mfrFactor = geoFactors?.mfr_factor || 1;
             
-            // Calculate geographically adjusted rates
-            const adjustedLow = result.pfr_50th * geoFactor;
-            const adjustedAvg = result.pfr_75th * geoFactor;
-            const adjustedHigh = result.pfr_90th * geoFactor;
-
-            console.log('Original CPT rates:', {
-              low: result.pfr_50th,
-              avg: result.pfr_75th,
-              high: result.pfr_90th
+            console.log('Geographic factors being used:', {
+              pfrFactor,
+              mfrFactor
             });
-            console.log('Adjusted rates:', {
-              low: adjustedLow,
-              avg: adjustedAvg,
-              high: adjustedHigh
+            
+            // Adjust PFR fees
+            const adjustedPFR50 = result.pfr_50th * pfrFactor;
+            const adjustedPFR75 = result.pfr_75th * pfrFactor;
+            
+            // Adjust MFR fees
+            const adjustedMFR50 = result.mfr_50th * mfrFactor;
+            const adjustedMFR75 = result.mfr_75th * mfrFactor;
+
+            console.log('Adjusted PFR rates:', {
+              pfr50: adjustedPFR50,
+              pfr75: adjustedPFR75
+            });
+            
+            console.log('Adjusted MFR rates:', {
+              mfr50: adjustedMFR50,
+              mfr75: adjustedMFR75
             });
 
-            // Update all three cost values with adjusted rates
-            onCostRangeChange('low', Math.round(adjustedLow * 100) / 100);
-            onCostRangeChange('average', Math.round(adjustedAvg * 100) / 100);
-            onCostRangeChange('high', Math.round(adjustedHigh * 100) / 100);
+            // Calculate final ranges
+            const lowValue = (adjustedMFR50 + adjustedPFR50) / 2;
+            const highValue = (adjustedMFR75 + adjustedPFR75) / 2;
+            const averageValue = (lowValue + highValue) / 2;
+
+            console.log('Final calculated values:', {
+              low: lowValue,
+              average: averageValue,
+              high: highValue
+            });
+
+            // Update all three cost values with calculated rates
+            onCostRangeChange('low', Math.round(lowValue * 100) / 100);
+            onCostRangeChange('average', Math.round(averageValue * 100) / 100);
+            onCostRangeChange('high', Math.round(highValue * 100) / 100);
           } else {
-            console.log('Missing required PFR values in CPT data:', result);
+            console.log('Missing required MFR or PFR values in CPT data:', result);
           }
         } else {
           console.log('No CPT data found or invalid format');
