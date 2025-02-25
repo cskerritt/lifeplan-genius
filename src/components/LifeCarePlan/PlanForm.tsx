@@ -55,6 +55,8 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
       const match = serviceName.match(/\$(\d+(\.\d{2})?)/);
       if (match) {
         const cost = parseFloat(match[1]);
+        console.log('Extracted cost:', cost);
+        // Set the same cost for low, average, and high
         setCostRange({
           low: cost,
           average: cost,
@@ -66,6 +68,7 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
 
   // Update the service handler to include cost extraction
   const handleServiceChange = (newService: string) => {
+    console.log('Service changed:', newService);
     setService(newService);
     extractCostFromService(newService);
   };
@@ -136,4 +139,3 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
 };
 
 export default PlanForm;
-

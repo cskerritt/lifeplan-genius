@@ -25,6 +25,7 @@ export function CategorySelect({
   onServiceChange,
 }: CategorySelectProps) {
   const handleVehicleModificationCost = (cost: number) => {
+    console.log('Vehicle modification cost:', cost);
     // Update the service name to include the cost
     onServiceChange(`Vehicle Modifications - $${cost.toFixed(2)}`);
   };

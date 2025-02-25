@@ -71,12 +71,23 @@ export function CustomFrequencyInput({ frequencyDetails, onFrequencyChange }: Cu
           <Calendar className="mr-2 h-4 w-4" />
           X Times for Y Years
         </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => applyCustomPattern(`${frequencyDetails.lowFrequencyPerYear}x every ${frequencyDetails.lowDurationYears} years`)}
+          className="text-sm col-span-2"
+        >
+          <Calendar className="mr-2 h-4 w-4" />
+          X Times Every Y Years
+        </Button>
       </div>
 
       <div className="text-sm text-gray-500 space-y-1">
         <p>Example patterns:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>1x every 10 years</li>
+          <li>2x every 5 years</li>
           <li>2-3x per year</li>
           <li>4x per year for 5 years</li>
           <li>1x per year</li>
