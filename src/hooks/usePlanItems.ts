@@ -1,12 +1,11 @@
 
-import { useState } from "react";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
 import { useToast } from "@/hooks/use-toast";
 import { useCostCalculations } from "./useCostCalculations";
 
-export const usePlanItems = (planId: string, onItemDeleted?: () => void) => {
-  const [items, setItems] = useState<CareItem[]>([]);
+export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: () => void) => {
   const { toast } = useToast();
   const { calculateAdjustedCosts, calculateAnnualCost, lookupCPTCode } = useCostCalculations();
 
@@ -42,60 +41,38 @@ export const usePlanItems = (planId: string, onItemDeleted?: () => void) => {
         isOneTime
       );
       console.log('Annual cost calculated:', annualCost);
-      
-      const item: CareItem = {
-        ...newItem,
-        id: crypto.randomUUID(),
-        annualCost,
-        costRange: adjustedCosts
-      };
 
       if (planId !== "new") {
-        console.log('Adding item to existing plan:', planId);
-        const { data: planData } = await supabase
-          .from('life_care_plans')
-          .select('life_expectancy')
-          .eq('id', planId)
-          .single();
-        
-        const lifeExpectancy = planData?.life_expectancy || 1;
-        const lifetimeCost = annualCost * lifeExpectancy;
-
-        const cptDescription = cptData?.code_description;
-
         const { error } = await supabase
           .from('care_plan_entries')
           .insert({
             plan_id: planId,
-            category: item.category,
-            item: item.service,
-            frequency: item.frequency,
-            cpt_code: item.cptCode,
-            cpt_description: cptDescription,
+            category: newItem.category,
+            item: newItem.service,
+            frequency: newItem.frequency,
+            cpt_code: newItem.cptCode,
+            cpt_description: cptData?.code_description,
             min_cost: adjustedCosts.low,
             avg_cost: adjustedCosts.average,
             max_cost: adjustedCosts.high,
             annual_cost: annualCost,
-            lifetime_cost: lifetimeCost,
             start_age: 0,
             end_age: 100,
-            is_one_time: isOneTime,
-            mfr_adjusted: adjustedCosts.average,
-            pfr_adjusted: adjustedCosts.average
+            is_one_time: isOneTime
           });
 
         if (error) {
           console.error('Error inserting care plan entry:', error);
           throw error;
         }
-      }
 
-      setItems(prev => [...prev, item]);
-      
-      toast({
-        title: "Success",
-        description: "Care item added successfully"
-      });
+        onItemsChange();
+        
+        toast({
+          title: "Success",
+          description: "Care item added successfully"
+        });
+      }
     } catch (error) {
       console.error("Error adding item:", error);
       toast({
@@ -120,23 +97,14 @@ export const usePlanItems = (planId: string, onItemDeleted?: () => void) => {
           console.error('Error deleting care plan entry:', error);
           throw error;
         }
-      }
 
-      setItems(prev => {
-        const updatedItems = prev.filter(item => item.id !== itemId);
-        console.log('Updated items after deletion:', updatedItems);
-        return updatedItems;
-      });
-
-      // Call the callback to trigger a refetch
-      if (onItemDeleted) {
-        onItemDeleted();
+        onItemsChange();
+        
+        toast({
+          title: "Success",
+          description: "Care item deleted successfully"
+        });
       }
-      
-      toast({
-        title: "Success",
-        description: "Care item deleted successfully"
-      });
     } catch (error) {
       console.error("Error deleting item:", error);
       toast({
@@ -147,7 +115,7 @@ export const usePlanItems = (planId: string, onItemDeleted?: () => void) => {
     }
   };
 
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     const totals: CategoryTotal[] = items.reduce((acc, item) => {
       const existingCategory = acc.find((t) => t.category === item.category);
       if (existingCategory) {
@@ -172,11 +140,9 @@ export const usePlanItems = (planId: string, onItemDeleted?: () => void) => {
     const grandTotal = totals.reduce((sum, category) => sum + category.total, 0);
 
     return { categoryTotals: totals, grandTotal };
-  };
+  }, [items]);
 
   return {
-    items,
-    setItems,
     addItem,
     deleteItem,
     calculateTotals

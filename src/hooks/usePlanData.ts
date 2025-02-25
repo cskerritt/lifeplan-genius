@@ -15,7 +15,8 @@ export const usePlanData = (id: string) => {
   const {
     data: items = [],
     isLoading,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ['plan-data', id],
     enabled: id !== 'new',
@@ -57,7 +58,8 @@ export const usePlanData = (id: string) => {
       const { data: entriesData, error: entriesError } = await supabase
         .from('care_plan_entries')
         .select('*')
-        .eq('plan_id', id);
+        .eq('plan_id', id)
+        .order('category');
 
       if (entriesError) throw entriesError;
 
@@ -78,49 +80,12 @@ export const usePlanData = (id: string) => {
     }
   });
 
-  const setItems = useCallback(async (newItems: any[]) => {
-    if (id === 'new') return;
-    
-    try {
-      for (const item of newItems) {
-        const { error } = await supabase
-          .from('care_plan_entries')
-          .upsert({
-            plan_id: id,
-            category: item.category,
-            item: item.service,
-            frequency: item.frequency || '',
-            cpt_code: item.cptCode || '',
-            min_cost: item.costRange.low,
-            avg_cost: item.costRange.average,
-            max_cost: item.costRange.high,
-            annual_cost: item.annualCost,
-            lifetime_cost: item.annualCost * (Number(evaluee?.lifeExpectancy) || 1),
-            start_age: 0,
-            end_age: 100,
-            is_one_time: item.frequency.toLowerCase().includes('one-time')
-          });
-
-        if (error) throw error;
-      }
-      await queryClient.invalidateQueries({ queryKey: ['plan-data', id] });
-    } catch (error) {
-      console.error('Error updating items:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update care plan items"
-      });
-    }
-  }, [id, toast, evaluee?.lifeExpectancy, queryClient]);
-
   return {
     evaluee,
     setEvaluee,
     isLoading,
     items,
-    setItems,
     hasError: !!error,
-    refetch: () => queryClient.invalidateQueries({ queryKey: ['plan-data', id] })
+    refetch
   };
 };

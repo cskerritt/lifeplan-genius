@@ -16,8 +16,8 @@ const PlanDetail = () => {
   const { id = "new" } = useParams();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("evaluee");
-  const { evaluee, setEvaluee, isLoading, items, setItems, refetch } = usePlanData(id);
-  const { addItem, deleteItem, calculateTotals } = usePlanItems(id, refetch);
+  const { evaluee, setEvaluee, isLoading, items, refetch } = usePlanData(id);
+  const { addItem, deleteItem, calculateTotals } = usePlanItems(id, items, refetch);
   const { fetchGeoFactors } = useCostCalculations();
 
   const handleEvalueeSave = async (newEvaluee: any) => {
