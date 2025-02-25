@@ -12,11 +12,29 @@ export const groupItemsByCategory = (items: CareItem[]) => {
 };
 
 export const calculateCategoryTotal = (items: CareItem[]) => {
-  return items.reduce((sum, item) => sum + item.annualCost, 0);
+  return items.reduce((sum, item) => {
+    // If it's a one-time cost, don't include it in the annual total
+    if (item.isOneTime || item.frequency.toLowerCase().includes('one-time')) {
+      return sum;
+    }
+    return sum + item.annualCost;
+  }, 0);
 };
 
 export const calculateOneTimeTotal = (items: CareItem[]) => {
-  return items
-    .filter(item => item.isOneTime)
-    .reduce((sum, item) => sum + item.costRange.average, 0);
+  return items.reduce((sum, item) => {
+    if (item.isOneTime || item.frequency.toLowerCase().includes('one-time')) {
+      return sum + item.costRange.average;
+    }
+    return sum;
+  }, 0);
+};
+
+export const calculateCategoryOneTimeTotal = (items: CareItem[]) => {
+  return items.reduce((sum, item) => {
+    if (item.isOneTime || item.frequency.toLowerCase().includes('one-time')) {
+      return sum + item.costRange.average;
+    }
+    return sum;
+  }, 0);
 };

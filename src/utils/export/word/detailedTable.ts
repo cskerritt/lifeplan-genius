@@ -1,4 +1,3 @@
-
 import { TableRow, Table, WidthType, Paragraph, AlignmentType, TableCell } from 'docx';
 import { CareItem } from '@/types/lifecare';
 import { createTableBorders, createStyledCell } from './tableUtils';
@@ -45,14 +44,18 @@ export const createDetailedItemRows = (items: CareItem[]) =>
     })
   );
 
-export const createDetailedTotalRow = (items: CareItem[]) =>
-  new TableRow({
+export const createDetailedTotalRow = (items: CareItem[]) => {
+  const annualTotal = calculateCategoryTotal(items);
+  const oneTimeTotal = calculateOneTimeTotal(items);
+  
+  return new TableRow({
     children: [
       createStyledCell('Total:', 75, 'FFFFFF', { columnSpan: 5, alignment: 'right' }),
-      createStyledCell(`$${calculateCategoryTotal(items).toFixed(2)}`, 15, 'DBE5F1'),
-      createStyledCell(`$${calculateOneTimeTotal(items).toFixed(2)}`, 10, 'DBE5F1')
+      createStyledCell(`$${annualTotal.toFixed(2)}`, 15, 'DBE5F1'),
+      createStyledCell(`$${oneTimeTotal.toFixed(2)}`, 10, 'DBE5F1')
     ]
   });
+};
 
 export const createDetailedTable = (items: CareItem[]) =>
   new Table({
