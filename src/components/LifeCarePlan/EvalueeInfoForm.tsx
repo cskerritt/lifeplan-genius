@@ -3,7 +3,7 @@ import React from 'react';
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
 import { LifeExpectancyInput } from './LifeExpectancyInput';
-import { FormActions } from './FormActions';
+import { FormActions } from './EvalueeFormActions';
 import { useGafLookup } from '@/hooks/useGafLookup';
 
 interface EvalueeInfoFormProps {
