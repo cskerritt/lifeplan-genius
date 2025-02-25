@@ -1,5 +1,5 @@
 
-import { TableRow, Table, WidthType, Paragraph, AlignmentType } from 'docx';
+import { TableRow, Table, WidthType, Paragraph, AlignmentType, TableCell } from 'docx';
 import { CareItem } from '@/types/lifecare';
 import { createTableBorders, createStyledCell } from './tableUtils';
 import { calculateCategoryTotal, calculateOneTimeTotal } from '../utils';

@@ -1,5 +1,5 @@
 
-import { Document, Paragraph, AlignmentType, HeadingLevel } from 'docx';
+import { Document, Paragraph, AlignmentType, HeadingLevel, Table, Packer } from 'docx';
 import { saveAs } from 'file-saver';
 import { ExportData } from './types';
 import { groupItemsByCategory } from './utils';

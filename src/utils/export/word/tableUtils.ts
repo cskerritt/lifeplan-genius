@@ -14,7 +14,7 @@ export const createStyledCell = (
   fill: string,
   options: {
     columnSpan?: number,
-    alignment?: AlignmentType
+    alignment?: typeof AlignmentType
   } = {}
 ) => {
   const cell = new TableCell({
