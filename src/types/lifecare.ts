@@ -152,6 +152,8 @@ export interface SurgicalProcedure {
   isRecurring: boolean;
 }
 
+export type CPTFee = ProfessionalFee;
+
 export type FacilityCodeType = 'DRG' | 'APC' | 'ASC' | 'Outpatient';
 
 export interface ProfessionalFee {

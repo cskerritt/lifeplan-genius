@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { ProfessionalFee, AnesthesiaFee, FacilityFee } from "../types";
-import { CostRange } from "@/types/lifecare";
+import { ProfessionalFee, AnesthesiaFee, FacilityFee, CostRange } from "@/types/lifecare";
 
 export function useSurgicalCosts(
   professionalFees: ProfessionalFee[],

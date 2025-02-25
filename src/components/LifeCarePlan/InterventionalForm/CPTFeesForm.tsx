@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Search } from "lucide-react";
-import { CPTFee } from "./types";
+import { CPTFee, CostRange } from "@/types/lifecare";
 
 interface CPTFeesFormProps {
   fees: CPTFee[];
@@ -21,7 +21,7 @@ export function CPTFeesForm({
 }: CPTFeesFormProps) {
   const [currentCPT, setCurrentCPT] = useState("");
   const [currentDescription, setCurrentDescription] = useState("");
-  const [currentCostRange, setCurrentCostRange] = useState({
+  const [currentCostRange, setCurrentCostRange] = useState<CostRange>({
     low: 0,
     average: 0,
     high: 0
@@ -49,7 +49,7 @@ export function CPTFeesForm({
   };
 
   const handleAdd = () => {
-    if (currentCPT && fees.length < 5) {
+    if (currentCPT && fees.length < 15) {
       onAddFee({
         cptCode: currentCPT,
         description: currentDescription,
@@ -63,7 +63,7 @@ export function CPTFeesForm({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">CPT Codes</h3>
+      <h3 className="text-lg font-semibold">CPT Fees</h3>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>CPT Code</Label>
@@ -122,11 +122,11 @@ export function CPTFeesForm({
 
       <Button 
         onClick={handleAdd}
-        disabled={fees.length >= 5}
+        disabled={fees.length >= 15}
         className="w-full"
       >
         <Plus className="mr-2 h-4 w-4" />
-        Add CPT Code
+        Add CPT Fee
       </Button>
 
       <div className="space-y-2">
