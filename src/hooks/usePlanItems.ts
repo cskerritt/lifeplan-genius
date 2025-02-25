@@ -14,12 +14,17 @@ export const usePlanItems = (planId: string) => {
     console.log('Adding new item:', newItem);
     try {
       let cptData = null;
-      if (newItem.cptCode) {
-        cptData = await lookupCPTCode(newItem.cptCode);
-        console.log('CPT code data found:', cptData);
-        if (cptData && cptData[0].is_valid) {
-          // Use the CPT code pricing if available
-          newItem.costPerUnit = cptData[0].pfr_75th; // Using 75th percentile as default
+      if (newItem.cptCode && newItem.cptCode.trim() !== '') {
+        const cptResult = await lookupCPTCode(newItem.cptCode);
+        console.log('CPT code data found:', cptResult);
+        
+        // Check if we have valid CPT data
+        if (cptResult && Array.isArray(cptResult) && cptResult.length > 0) {
+          cptData = cptResult[0];
+          if (cptData.pfr_75th) {
+            console.log('Using CPT code pricing:', cptData.pfr_75th);
+            newItem.costPerUnit = cptData.pfr_75th; // Using 75th percentile as default
+          }
         }
       }
 
@@ -35,6 +40,7 @@ export const usePlanItems = (planId: string) => {
         newItem.frequency,
         adjustedCosts.average
       );
+      console.log('Annual cost calculated:', annualCost);
       
       const item: CareItem = {
         ...newItem,
@@ -55,7 +61,7 @@ export const usePlanItems = (planId: string) => {
         const lifetimeCost = annualCost * lifeExpectancy;
 
         // Include CPT description if available
-        const cptDescription = cptData?.[0]?.code_description;
+        const cptDescription = cptData?.code_description;
 
         const { error } = await supabase
           .from('care_plan_entries')
