@@ -50,42 +50,66 @@ export function useGafLookup() {
     setIsLoading(true);
     
     try {
-      const paddedZip = zipCode.padStart(5, '0');
-      console.log('Querying with ZIP:', paddedZip);
+      // First try direct lookup from gaf_lookup table
+      const { data: directData, error: directError } = await supabase
+        .from('gaf_lookup')
+        .select('*')
+        .eq('zip', zipCode)
+        .maybeSingle();
 
-      const { data, error } = await supabase
-        .rpc('search_geographic_factors', { 
-          zip_code: paddedZip 
-        });
-
-      if (error) {
-        console.error('RPC error:', error);
-        throw error;
+      if (directError) {
+        console.error('Direct lookup error:', directError);
+        throw directError;
       }
 
-      console.log('Received data:', data);
+      console.log('Direct lookup data:', directData);
 
-      if (!data || data.length === 0) {
-        console.log('No data found for ZIP:', paddedZip);
+      if (directData) {
+        const factors: GafFactors = {
+          mfr_code: Number(directData.mfr_code),
+          pfr_code: Number(directData.pfr_code),
+          city: directData.city,
+          state_name: directData.state_name
+        };
+
+        console.log('Found GAF factors directly:', factors);
+        setGeoFactors(factors);
+        return factors;
+      }
+
+      // If no direct match, try the RPC function as backup
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('search_geographic_factors', { 
+          zip_code: zipCode 
+        });
+
+      if (rpcError) {
+        console.error('RPC error:', rpcError);
+        throw rpcError;
+      }
+
+      console.log('RPC lookup data:', rpcData);
+
+      if (!rpcData || rpcData.length === 0) {
+        console.log('No data found for ZIP:', zipCode);
         setGeoFactors(null);
         toast({
           variant: "destructive",
           title: "Location Not Found",
-          description: "No location data found for this ZIP code"
+          description: "Please try another ZIP code or enter state/city manually"
         });
         return null;
       }
 
       const factors: GafFactors = {
-        mfr_code: Number(data[0].mfr_code),
-        pfr_code: Number(data[0].pfr_code),
-        city: data[0].city,
-        state_name: data[0].state_name
+        mfr_code: Number(rpcData[0].mfr_code),
+        pfr_code: Number(rpcData[0].pfr_code),
+        city: rpcData[0].city,
+        state_name: rpcData[0].state_name
       };
 
-      console.log('Found GAF factors:', factors);
+      console.log('Found GAF factors via RPC:', factors);
       setGeoFactors(factors);
-
       return factors;
 
     } catch (error) {
