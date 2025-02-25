@@ -119,6 +119,7 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
           dateOfBirth={dateOfBirth}
           dateOfInjury={dateOfInjury}
           lifeExpectancy={lifeExpectancy}
+          onSubmit={onSubmit}
         />
       ) : category !== "transportation" && (
         <CostDetails
@@ -132,18 +133,20 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
         />
       )}
 
-      <FormActions
-        category={category}
-        costRange={costRange}
-        formState={{
-          service,
-          cptCode,
-          frequencyDetails,
-          medicationDetails
-        }}
-        onSubmit={onSubmit}
-        onReset={resetForm}
-      />
+      {category !== "surgical" && (
+        <FormActions
+          category={category}
+          costRange={costRange}
+          formState={{
+            service,
+            cptCode,
+            frequencyDetails,
+            medicationDetails
+          }}
+          onSubmit={onSubmit}
+          onReset={resetForm}
+        />
+      )}
     </div>
   );
 };
