@@ -42,24 +42,30 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       );
       console.log('Annual cost calculated:', annualCost);
 
+      // Calculate lifetime_cost based on whether it's one-time or annual
+      const lifetime_cost = isOneTime ? annualCost : (annualCost * 1); // Multiply by years if needed
+
       if (planId !== "new") {
+        const insertData = {
+          plan_id: planId,
+          category: newItem.category,
+          item: newItem.service,
+          frequency: newItem.frequency,
+          cpt_code: newItem.cptCode,
+          cpt_description: cptData?.code_description || null,
+          min_cost: adjustedCosts.low,
+          avg_cost: adjustedCosts.average,
+          max_cost: adjustedCosts.high,
+          annual_cost: annualCost,
+          lifetime_cost: lifetime_cost, // Add the lifetime_cost field
+          start_age: 0,
+          end_age: 100,
+          is_one_time: isOneTime
+        };
+
         const { error } = await supabase
           .from('care_plan_entries')
-          .insert({
-            plan_id: planId,
-            category: newItem.category,
-            item: newItem.service,
-            frequency: newItem.frequency,
-            cpt_code: newItem.cptCode,
-            cpt_description: cptData?.code_description,
-            min_cost: adjustedCosts.low,
-            avg_cost: adjustedCosts.average,
-            max_cost: adjustedCosts.high,
-            annual_cost: annualCost,
-            start_age: 0,
-            end_age: 100,
-            is_one_time: isOneTime
-          });
+          .insert(insertData);
 
         if (error) {
           console.error('Error inserting care plan entry:', error);
