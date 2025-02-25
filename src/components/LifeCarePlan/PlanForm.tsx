@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,6 +26,7 @@ import {
 } from "@/types/lifecare";
 import { useState } from "react";
 import { PlusCircle, Trash2 } from "lucide-react";
+import { SurgicalProcedureForm } from "./SurgicalForm/SurgicalProcedureForm";
 
 interface PlanFormProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
@@ -132,6 +132,10 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
     setMedicationDetails(prev => ({ ...prev, pharmacyPrices: newPrices }));
   };
 
+  const handleSurgicalNameChange = (name: string) => {
+    setSurgicalProcedure(prev => ({ ...prev, name }));
+  };
+
   const addSurgicalComponent = (type: 'professional' | 'anesthesia' | 'facility') => {
     setSurgicalProcedure(prev => {
       const newComponent = {
@@ -204,6 +208,18 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
   };
 
   const renderCostInputs = () => {
+    if (category === "surgical") {
+      return (
+        <SurgicalProcedureForm
+          surgicalProcedure={surgicalProcedure}
+          onNameChange={handleSurgicalNameChange}
+          onAddComponent={addSurgicalComponent}
+          onUpdateComponent={updateSurgicalComponent}
+          onRemoveComponent={removeSurgicalComponent}
+        />
+      );
+    }
+
     if (category === "medication") {
       return (
         <div className="space-y-4">
@@ -362,195 +378,6 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
       );
     }
 
-    if (category === "surgical") {
-      return (
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <Label>Surgical Procedure Name</Label>
-            <Input
-              value={surgicalProcedure.name}
-              onChange={(e) => setSurgicalProcedure(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter procedure name"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Label>Professional Fees</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addSurgicalComponent('professional')}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Professional Fee
-              </Button>
-            </div>
-            {surgicalProcedure.professionalFees.map((fee, index) => (
-              <div key={fee.id} className="grid grid-cols-12 gap-4 items-end">
-                <div className="col-span-5">
-                  <Label>Description</Label>
-                  <Input
-                    value={fee.description}
-                    onChange={(e) => updateSurgicalComponent('professional', index, 'description', e.target.value)}
-                    placeholder="Enter description"
-                  />
-                </div>
-                <div className="col-span-4">
-                  <Label>CPT Codes</Label>
-                  <Input
-                    value={fee.cptCodes.join(', ')}
-                    onChange={(e) => updateSurgicalComponent('professional', index, 'cptCodes', e.target.value.split(',').map(code => code.trim()))}
-                    placeholder="Enter CPT codes"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Cost</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={fee.cost}
-                    onChange={(e) => updateSurgicalComponent('professional', index, 'cost', Number(e.target.value))}
-                    placeholder="Enter cost"
-                  />
-                </div>
-                <div className="col-span-1">
-                  {index > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeSurgicalComponent('professional', index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Label>Anesthesia Fees</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addSurgicalComponent('anesthesia')}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Anesthesia Fee
-              </Button>
-            </div>
-            {surgicalProcedure.anesthesiaFees.map((fee, index) => (
-              <div key={fee.id} className="grid grid-cols-12 gap-4 items-end">
-                <div className="col-span-5">
-                  <Label>Description</Label>
-                  <Input
-                    value={fee.description}
-                    onChange={(e) => updateSurgicalComponent('anesthesia', index, 'description', e.target.value)}
-                    placeholder="Enter description"
-                  />
-                </div>
-                <div className="col-span-4">
-                  <Label>CPT Codes</Label>
-                  <Input
-                    value={fee.cptCodes.join(', ')}
-                    onChange={(e) => updateSurgicalComponent('anesthesia', index, 'cptCodes', e.target.value.split(',').map(code => code.trim()))}
-                    placeholder="Enter CPT codes"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Cost</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={fee.cost}
-                    onChange={(e) => updateSurgicalComponent('anesthesia', index, 'cost', Number(e.target.value))}
-                    placeholder="Enter cost"
-                  />
-                </div>
-                <div className="col-span-1">
-                  {index > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeSurgicalComponent('anesthesia', index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Label>Facility Fees</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => addSurgicalComponent('facility')}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Facility Fee
-              </Button>
-            </div>
-            {surgicalProcedure.facilityFees.map((fee, index) => (
-              <div key={fee.id} className="grid grid-cols-12 gap-4 items-end">
-                <div className="col-span-5">
-                  <Label>Description</Label>
-                  <Input
-                    value={fee.description}
-                    onChange={(e) => updateSurgicalComponent('facility', index, 'description', e.target.value)}
-                    placeholder="Enter description"
-                  />
-                </div>
-                <div className="col-span-4">
-                  <Label>CPT Codes</Label>
-                  <Input
-                    value={fee.cptCodes.join(', ')}
-                    onChange={(e) => updateSurgicalComponent('facility', index, 'cptCodes', e.target.value.split(',').map(code => code.trim()))}
-                    placeholder="Enter CPT codes"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label>Cost</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={fee.cost}
-                    onChange={(e) => updateSurgicalComponent('facility', index, 'cost', Number(e.target.value))}
-                    placeholder="Enter cost"
-                  />
-                </div>
-                <div className="col-span-1">
-                  {index > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeSurgicalComponent('facility', index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
     if (isMultiSourceCategory(category)) {
       return (
         <div className="space-y-4">
@@ -695,6 +522,20 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
       { name: "", cost: 0 },
       { name: "", cost: 0 },
     ]);
+    setIsModifiedVehicle(false);
+    setVehicleModifications([{ item: "", cost: 0 }]);
+    setMedicationDetails({
+      name: "",
+      dose: "",
+      frequency: "",
+      duration: "",
+      pharmacyPrices: [
+        { name: "", cost: 0 },
+        { name: "", cost: 0 },
+        { name: "", cost: 0 },
+        { name: "", cost: 0 },
+      ]
+    });
   };
 
   return (
@@ -727,7 +568,7 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
                 </SelectContent>
               </Select>
             </div>
-            {category !== "medication" && (
+            {category !== "medication" && category !== "surgical" && (
               <div className="space-y-2">
                 <Label>Service</Label>
                 <Input name="service" placeholder="Enter service name" />
@@ -735,7 +576,7 @@ const PlanForm = ({ onSubmit }: PlanFormProps) => {
             )}
           </div>
 
-          {category !== "medication" && category !== "transportation" && (
+          {category !== "medication" && category !== "surgical" && category !== "transportation" && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>CPT/HCPCS Code</Label>
