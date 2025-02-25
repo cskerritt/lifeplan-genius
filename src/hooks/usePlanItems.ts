@@ -9,41 +9,87 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
   const { toast } = useToast();
   const { calculateAdjustedCosts, calculateAnnualCost, lookupCPTCode } = useCostCalculations();
 
+  const calculateCosts = (baseRate: number, frequency: string) => {
+    // Extract frequency numbers from strings like "2-3 times per year"
+    const frequencyMatch = frequency.match(/(\d+)-(\d+)\s+times?\s+per\s+year/i);
+    const durationMatch = frequency.match(/(\d+)-(\d+)\s+years?/i);
+    
+    let lowFrequency = 1;
+    let highFrequency = 1;
+    let lowDuration = 1;
+    let highDuration = 1;
+    let isOneTime = frequency.toLowerCase().includes('one-time');
+
+    if (frequencyMatch) {
+      lowFrequency = parseInt(frequencyMatch[1]);
+      highFrequency = parseInt(frequencyMatch[2]);
+      console.log('Frequency range:', lowFrequency, 'to', highFrequency, 'times per year');
+    }
+
+    if (durationMatch) {
+      lowDuration = parseInt(durationMatch[1]);
+      highDuration = parseInt(durationMatch[2]);
+      console.log('Duration range:', lowDuration, 'to', highDuration, 'years');
+    }
+
+    // Calculate costs with frequency
+    const lowAnnualCost = baseRate * lowFrequency;
+    const highAnnualCost = baseRate * highFrequency;
+    const averageAnnualCost = (lowAnnualCost + highAnnualCost) / 2;
+
+    // Calculate lifetime costs
+    const lowLifetimeCost = lowAnnualCost * lowDuration;
+    const highLifetimeCost = highAnnualCost * highDuration;
+    const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
+
+    if (isOneTime) {
+      return {
+        annual: baseRate,
+        lifetime: baseRate,
+        low: baseRate,
+        high: baseRate,
+        average: baseRate
+      };
+    }
+
+    return {
+      annual: averageAnnualCost,
+      lifetime: averageLifetimeCost,
+      low: lowAnnualCost,
+      high: highAnnualCost,
+      average: averageAnnualCost
+    };
+  };
+
   const addItem = async (newItem: Omit<CareItem, "id" | "annualCost">) => {
     console.log('Adding new item:', newItem);
     try {
-      let cptData = null;
+      let unitCost = newItem.costPerUnit;
+      
       if (newItem.cptCode && newItem.cptCode.trim() !== '') {
         const cptResult = await lookupCPTCode(newItem.cptCode);
         console.log('CPT code data found:', cptResult);
         
         if (cptResult && Array.isArray(cptResult) && cptResult.length > 0) {
-          cptData = cptResult[0];
+          const cptData = cptResult[0];
           if (cptData.pfr_75th) {
             console.log('Using CPT code pricing:', cptData.pfr_75th);
-            newItem.costPerUnit = cptData.pfr_75th;
+            unitCost = cptData.pfr_75th;
           }
         }
       }
 
       const adjustedCosts = await calculateAdjustedCosts(
-        newItem.costPerUnit,
+        unitCost,
         newItem.cptCode,
         newItem.category,
         newItem.costResources
       );
-      console.log('Adjusted costs calculated:', adjustedCosts);
-      
-      const isOneTime = newItem.frequency.toLowerCase().includes('one-time');
-      const annualCost = calculateAnnualCost(
-        newItem.frequency,
-        adjustedCosts.average,
-        isOneTime
-      );
-      console.log('Annual cost calculated:', annualCost);
+      console.log('Base adjusted costs:', adjustedCosts);
 
-      // Calculate lifetime_cost based on whether it's one-time or annual
-      const lifetime_cost = isOneTime ? annualCost : (annualCost * 1); // Multiply by years if needed
+      // Calculate costs with frequency and duration
+      const costs = calculateCosts(adjustedCosts.average, newItem.frequency);
+      console.log('Final calculated costs:', costs);
 
       if (planId !== "new") {
         const insertData = {
@@ -52,16 +98,18 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
           item: newItem.service,
           frequency: newItem.frequency,
           cpt_code: newItem.cptCode,
-          cpt_description: cptData?.code_description || null,
-          min_cost: adjustedCosts.low,
-          avg_cost: adjustedCosts.average,
-          max_cost: adjustedCosts.high,
-          annual_cost: annualCost,
-          lifetime_cost: lifetime_cost, // Add the lifetime_cost field
+          cpt_description: null,
+          min_cost: costs.low,
+          avg_cost: costs.average,
+          max_cost: costs.high,
+          annual_cost: costs.annual,
+          lifetime_cost: costs.lifetime,
           start_age: 0,
           end_age: 100,
-          is_one_time: isOneTime
+          is_one_time: newItem.frequency.toLowerCase().includes('one-time')
         };
+
+        console.log('Inserting data:', insertData);
 
         const { error } = await supabase
           .from('care_plan_entries')
