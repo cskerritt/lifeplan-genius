@@ -108,12 +108,11 @@ export function CostDetails({
             onCostRangeChange('low', Math.round(lowValue * 100) / 100);
             onCostRangeChange('average', Math.round(averageValue * 100) / 100);
             onCostRangeChange('high', Math.round(highValue * 100) / 100);
-          } else {
-            console.log('CPT code is not valid:', result);
+            return; // Exit after successful calculation
           }
-        } else {
-          console.log('No CPT data found or invalid format');
         }
+        
+        console.log('No CPT data found or invalid format');
       } catch (error) {
         console.error('Error looking up CPT code:', error);
       }
