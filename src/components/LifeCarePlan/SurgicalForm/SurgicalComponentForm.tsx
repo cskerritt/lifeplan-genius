@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SurgicalComponent } from "@/types/lifecare";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Search } from "lucide-react";
+import { useCostCalculations } from "@/hooks/useCostCalculations";
+import { useState } from "react";
 
 interface SurgicalComponentFormProps {
   title: string;
@@ -22,6 +24,30 @@ export const SurgicalComponentForm = ({
   onUpdate,
   onRemove
 }: SurgicalComponentFormProps) => {
+  const { lookupCPTCode } = useCostCalculations();
+  const [isLookingUp, setIsLookingUp] = useState(false);
+
+  const handleCPTLookup = async (index: number, cptCode: string) => {
+    setIsLookingUp(true);
+    try {
+      const cptData = await lookupCPTCode(cptCode);
+      if (cptData) {
+        // Update the component with the looked up cost
+        const cost = type === 'facility' ? cptData.mfu_75th : cptData.pfr_75th;
+        onUpdate(type, index, 'cost', cost);
+        
+        // If it's a facility fee, automatically add the description
+        if (type === 'facility') {
+          onUpdate(type, index, 'description', `Facility fee for ${cptCode}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error looking up CPT code:', error);
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -48,11 +74,22 @@ export const SurgicalComponentForm = ({
           </div>
           <div className="col-span-4">
             <Label>CPT Codes</Label>
-            <Input
-              value={component.cptCodes.join(', ')}
-              onChange={(e) => onUpdate(type, index, 'cptCodes', e.target.value.split(',').map(code => code.trim()))}
-              placeholder="Enter CPT codes"
-            />
+            <div className="flex gap-2">
+              <Input
+                value={component.cptCodes.join(', ')}
+                onChange={(e) => onUpdate(type, index, 'cptCodes', e.target.value.split(',').map(code => code.trim()))}
+                placeholder="Enter CPT codes"
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => component.cptCodes[0] && handleCPTLookup(index, component.cptCodes[0])}
+                disabled={isLookingUp || !component.cptCodes[0]}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <div className="col-span-2">
             <Label>Cost</Label>
