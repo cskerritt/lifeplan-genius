@@ -61,7 +61,7 @@ export const usePlanData = (id: string) => {
       if (entriesError) throw entriesError;
 
       return entriesData?.map(entry => ({
-        id: entry.id.toString(), // Convert UUID to string
+        id: entry.id.toString(),
         category: entry.category as CareCategory,
         service: entry.item,
         frequency: entry.frequency || '',
@@ -85,16 +85,19 @@ export const usePlanData = (id: string) => {
         const { error } = await supabase
           .from('care_plan_entries')
           .upsert({
-            id: item.id,
             plan_id: id,
             category: item.category,
             item: item.service,
-            frequency: item.frequency,
-            cpt_code: item.cptCode,
+            frequency: item.frequency || '',
+            cpt_code: item.cptCode || '',
             min_cost: item.costRange.low,
             avg_cost: item.costRange.average,
             max_cost: item.costRange.high,
-            annual_cost: item.annualCost
+            annual_cost: item.annualCost,
+            lifetime_cost: item.annualCost * (Number(evaluee?.lifeExpectancy) || 1),
+            start_age: 0,
+            end_age: 100,
+            is_one_time: item.frequency.toLowerCase().includes('one-time')
           });
 
         if (error) throw error;
@@ -107,7 +110,7 @@ export const usePlanData = (id: string) => {
         description: "Failed to update care plan items"
       });
     }
-  }, [id, toast]);
+  }, [id, toast, evaluee?.lifeExpectancy]);
 
   return {
     evaluee,
