@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,10 @@ interface FrequencyDetails {
   timesPerYear: number;
   isOneTime: boolean;
   customFrequency: string;
+  lowFrequencyPerYear: number;
+  highFrequencyPerYear: number;
+  lowDurationYears: number;
+  highDurationYears: number;
 }
 
 export default function AddEntryForm({ planId, category, zipCode, onClose, onSave, dateOfBirth, dateOfInjury, lifeExpectancy }: AddEntryFormProps) {
@@ -34,6 +39,10 @@ export default function AddEntryForm({ planId, category, zipCode, onClose, onSav
     timesPerYear: 1,
     isOneTime: false,
     customFrequency: "",
+    lowFrequencyPerYear: 1,
+    highFrequencyPerYear: 1,
+    lowDurationYears: 1,
+    highDurationYears: 1
   });
   const [minFrequency, setMinFrequency] = useState('');
   const [maxFrequency, setMaxFrequency] = useState('');
