@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -8,6 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAgeCalculations } from '@/hooks/useAgeCalculations';
 import { useEvalueeFormSubmit } from '@/hooks/useEvalueeFormSubmit';
@@ -24,6 +26,7 @@ interface EvalueeFormProps {
 export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(!initialData);
   const { formData, updateFormData } = useEvalueeFormState(initialData);
   const { geoFactors, lookupGeoFactors } = useGafLookup();
   
@@ -36,32 +39,71 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const { handleSubmit } = useEvalueeFormSubmit(onSave);
 
   const handleLocationChange = (city: string, state: string) => {
-    // We don't need to do anything here since the form data is already updated
-    // by the time this is called
+    // No changes needed here as form data is already updated
   };
 
   const onFormSubmit = (e: React.FormEvent) => {
     handleSubmit(e, formData, ageData);
+    setIsEditing(false);
   };
+
+  const renderReadOnlyField = (label: string, value: string) => (
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-gray-500">{label}</p>
+      <p className="text-base">{value || '-'}</p>
+    </div>
+  );
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{initialData ? "Edit Life Care Plan" : "New Life Care Plan"}</CardTitle>
-        <CardDescription>
-          {initialData ? "Update evaluee information" : "Enter evaluee information to begin"}
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <div>
+          <CardTitle>{initialData ? "Life Care Plan Details" : "New Life Care Plan"}</CardTitle>
+          <CardDescription>
+            {initialData ? "Review evaluee information" : "Enter evaluee information to begin"}
+          </CardDescription>
+        </div>
+        {initialData && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            {isEditing ? "Cancel Editing" : "Edit Information"}
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
-        <EvalueeTabs
-          formData={formData}
-          onFormDataChange={updateFormData}
-          onLocationChange={handleLocationChange}
-          onCancel={() => navigate('/')}
-          onSubmit={onFormSubmit}
-          ageData={ageData}
-          geoFactors={geoFactors}
-        />
+        {isEditing ? (
+          <EvalueeTabs
+            formData={formData}
+            onFormDataChange={updateFormData}
+            onLocationChange={handleLocationChange}
+            onCancel={() => {
+              if (initialData) {
+                setIsEditing(false);
+              } else {
+                navigate('/');
+              }
+            }}
+            onSubmit={onFormSubmit}
+            ageData={ageData}
+            geoFactors={geoFactors}
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-6">
+            {renderReadOnlyField("First Name", formData.firstName)}
+            {renderReadOnlyField("Last Name", formData.lastName)}
+            {renderReadOnlyField("Date of Birth", formData.dateOfBirth)}
+            {renderReadOnlyField("Date of Injury", formData.dateOfInjury)}
+            {renderReadOnlyField("Gender", formData.gender)}
+            {renderReadOnlyField("State", formData.state)}
+            {renderReadOnlyField("City", formData.city)}
+            {renderReadOnlyField("ZIP Code", formData.zipCode)}
+            {renderReadOnlyField("Life Expectancy (years)", formData.lifeExpectancy)}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
