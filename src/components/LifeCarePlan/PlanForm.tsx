@@ -1,4 +1,3 @@
-
 import { Separator } from "@/components/ui/separator";
 import { CategorySelect } from "./FormSections/CategorySelect";
 import { FrequencyForm } from "./FrequencyForm";
@@ -9,6 +8,7 @@ import { usePlanFormState } from "./hooks/usePlanFormState";
 import { PlanFormProps } from "./types";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
 import { SurgicalForm } from "./SurgicalForm/SurgicalForm";
+import { InterventionalForm } from "./InterventionalForm/InterventionalForm";
 
 const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
   const {
@@ -29,46 +29,8 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
 
   const { lookupCPTCode } = useCostCalculations();
 
-  const handleCPTLookup = async () => {
-    if (cptCode.trim()) {
-      try {
-        const cptData = await lookupCPTCode(cptCode);
-        if (cptData && Array.isArray(cptData) && cptData.length > 0) {
-          const result = cptData[0];
-          if (result.pfr_75th) {
-            setCostRange({
-              low: result.pfr_50th,
-              average: result.pfr_75th,
-              high: result.pfr_90th
-            });
-            setService(result.code_description || '');
-          }
-        }
-      } catch (error) {
-        console.error('Error looking up CPT code:', error);
-      }
-    }
-  };
-
-  const extractCostFromService = (serviceName: string) => {
-    if (category === 'transportation' && serviceName.includes('$')) {
-      const match = serviceName.match(/\$(\d+(\.\d{2})?)/);
-      if (match) {
-        const cost = parseFloat(match[1]);
-        console.log('Extracted cost:', cost);
-        setCostRange({
-          low: cost,
-          average: cost,
-          high: cost
-        });
-      }
-    }
-  };
-
-  const handleServiceChange = (newService: string) => {
-    console.log('Service changed:', newService);
-    setService(newService);
-    extractCostFromService(newService);
+  const handleFrequencyChange = (field: keyof FrequencyDetails, value: any) => {
+    setFrequencyDetails(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -77,26 +39,12 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
         category={category}
         service={service}
         onCategoryChange={setCategory}
-        onServiceChange={handleServiceChange}
+        onServiceChange={setService}
       />
 
       <Separator className="my-4" />
 
-      {category !== "surgical" && (
-        <FrequencyForm
-          frequencyDetails={frequencyDetails}
-          onFrequencyChange={(field, value) => 
-            setFrequencyDetails(prev => ({ ...prev, [field]: value }))
-          }
-          dateOfBirth={dateOfBirth}
-          dateOfInjury={dateOfInjury}
-          lifeExpectancy={lifeExpectancy}
-        />
-      )}
-
-      <Separator className="my-4" />
-
-      {category === "medication" ? (
+      {category === "medication" && (
         <MedicationForm
           medicationDetails={medicationDetails}
           onMedicationChange={(field, value) => 
@@ -110,42 +58,68 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
             });
           }}
         />
-      ) : category === "surgical" ? (
+      )}
+
+      {category === "surgical" && (
         <SurgicalForm
-          onFrequencyChange={(field, value) => 
-            setFrequencyDetails(prev => ({ ...prev, [field]: value }))
-          }
+          onFrequencyChange={handleFrequencyChange}
           frequencyDetails={frequencyDetails}
           dateOfBirth={dateOfBirth}
           dateOfInjury={dateOfInjury}
           lifeExpectancy={lifeExpectancy}
           onSubmit={onSubmit}
         />
-      ) : category !== "transportation" && (
-        <CostDetails
-          cptCode={cptCode}
-          costRange={costRange}
-          onCPTCodeChange={setCptCode}
-          onCostRangeChange={(field, value) => 
-            setCostRange(prev => ({ ...prev, [field]: value }))
-          }
-          onCPTLookup={handleCPTLookup}
+      )}
+
+      {category === "interventional" && (
+        <InterventionalForm
+          onFrequencyChange={handleFrequencyChange}
+          frequencyDetails={frequencyDetails}
+          dateOfBirth={dateOfBirth}
+          dateOfInjury={dateOfInjury}
+          lifeExpectancy={lifeExpectancy}
+          onSubmit={onSubmit}
         />
       )}
 
-      {category !== "surgical" && (
-        <FormActions
-          category={category}
-          costRange={costRange}
-          formState={{
-            service,
-            cptCode,
-            frequencyDetails,
-            medicationDetails
-          }}
-          onSubmit={onSubmit}
-          onReset={resetForm}
-        />
+      {!["surgical", "interventional", "medication"].includes(category) && (
+        <>
+          <FrequencyForm
+            frequencyDetails={frequencyDetails}
+            onFrequencyChange={handleFrequencyChange}
+            dateOfBirth={dateOfBirth}
+            dateOfInjury={dateOfInjury}
+            lifeExpectancy={lifeExpectancy}
+          />
+
+          {category !== "transportation" && (
+            <>
+              <Separator className="my-4" />
+              <CostDetails
+                cptCode={cptCode}
+                costRange={costRange}
+                onCPTCodeChange={setCptCode}
+                onCostRangeChange={(field, value) => 
+                  setCostRange(prev => ({ ...prev, [field]: value }))
+                }
+                onCPTLookup={lookupCPTCode}
+              />
+            </>
+          )}
+
+          <FormActions
+            category={category}
+            costRange={costRange}
+            formState={{
+              service,
+              cptCode,
+              frequencyDetails,
+              medicationDetails
+            }}
+            onSubmit={onSubmit}
+            onReset={resetForm}
+          />
+        </>
       )}
     </div>
   );
