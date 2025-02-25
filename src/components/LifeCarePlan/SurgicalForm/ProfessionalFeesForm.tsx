@@ -33,6 +33,29 @@ export function ProfessionalFeesForm({
     high: 0
   });
 
+  const handleCPTLookup = async () => {
+    if (currentCPT.trim()) {
+      try {
+        const { data: cptData } = await supabase
+          .rpc('validate_cpt_code', { code_to_check: currentCPT });
+
+        if (cptData && Array.isArray(cptData) && cptData.length > 0) {
+          const result = cptData[0];
+          if (result.pfr_75th) {
+            setCurrentDescription(result.code_description || '');
+            setCurrentCostRange({
+              low: result.pfr_50th || 0,
+              average: result.pfr_75th || 0,
+              high: result.pfr_90th || 0
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error looking up CPT code:', error);
+      }
+    }
+  };
+
   const handleAdd = () => {
     if (currentCPT && fees.length < 15) {
       onAddFee({
@@ -62,7 +85,7 @@ export function ProfessionalFeesForm({
               type="button"
               variant="outline"
               size="icon"
-              onClick={() => onCPTLookup(currentCPT)}
+              onClick={handleCPTLookup}
             >
               <Search className="h-4 w-4" />
             </Button>

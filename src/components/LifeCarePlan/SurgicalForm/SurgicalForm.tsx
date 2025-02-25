@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
 import { FrequencyForm } from "../FrequencyForm";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SurgicalFormProps {
   onFrequencyChange: (field: string, value: any) => void;
@@ -28,25 +29,6 @@ export function SurgicalForm({
   const [professionalFees, setProfessionalFees] = useState([]);
   const [anesthesiaFees, setAnesthesiaFees] = useState([]);
   const [facilityFees, setFacilityFees] = useState([]);
-  
-  const { lookupCPTCode } = useCostCalculations();
-
-  const handleCPTLookup = async (code: string) => {
-    if (code.trim()) {
-      try {
-        const cptData = await lookupCPTCode(code);
-        if (cptData && Array.isArray(cptData) && cptData.length > 0) {
-          const result = cptData[0];
-          if (result.pfr_75th) {
-            // Handle CPT code data
-            console.log('CPT code data:', result);
-          }
-        }
-      } catch (error) {
-        console.error('Error looking up CPT code:', error);
-      }
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -58,7 +40,11 @@ export function SurgicalForm({
           newFees.splice(index, 1);
           setProfessionalFees(newFees);
         }}
-        onCPTLookup={handleCPTLookup}
+        onCPTLookup={async (code) => {
+          const { data: cptData } = await supabase
+            .rpc('validate_cpt_code', { code_to_check: code });
+          return cptData;
+        }}
       />
 
       <Separator className="my-6" />
