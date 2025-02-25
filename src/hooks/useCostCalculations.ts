@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareCategory, CostRange, CostResource, VehicleModification } from "@/types/lifecare";
@@ -26,8 +27,8 @@ export const useCostCalculations = () => {
       if (data && data.length > 0) {
         console.log('Found geographic factors:', data[0]);
         const factors = {
-          mfr_factor: data[0].mfr_code,
-          pfr_factor: data[0].pfr_code
+          mfr_factor: data[0].mfr_code,  // Use mfr_code from the response
+          pfr_factor: data[0].pfr_code   // Use pfr_code from the response
         };
         setGeoFactors(factors);
         return factors;
@@ -53,12 +54,7 @@ export const useCostCalculations = () => {
       }
 
       console.log('CPT code lookup result:', data);
-      
-      if (data && data.length > 0 && data[0].is_valid) {
-        return data[0];
-      }
-      
-      return null;
+      return data; // Return the full array response
     } catch (error) {
       console.error('Error looking up CPT code:', error);
       return null;
@@ -111,11 +107,11 @@ export const useCostCalculations = () => {
 
       if (cptCode) {
         const cptData = await lookupCPTCode(cptCode);
-        if (cptData) {
-          console.log('Using CPT code data:', cptData);
-          low = cptData.pfr_50th;
-          average = cptData.pfr_75th;
-          high = cptData.pfr_90th;
+        if (cptData && Array.isArray(cptData) && cptData.length > 0) {
+          console.log('Using CPT code data:', cptData[0]);
+          low = cptData[0].pfr_50th;
+          average = cptData[0].pfr_75th;
+          high = cptData[0].pfr_90th;
         }
       }
 
@@ -123,26 +119,10 @@ export const useCostCalculations = () => {
         console.log('Applying geographic factors:', geoFactors);
         const { mfr_factor, pfr_factor } = geoFactors;
         
-        const { data: adjustedCosts, error } = await supabase
-          .rpc('calculate_adjusted_costs', {
-            base_fee: baseRate,
-            mfr_factor: mfr_factor,
-            pfr_factor: pfr_factor
-          });
-
-        if (error) {
-          console.error('Error calculating adjusted costs:', error);
-          throw error;
-        }
-
-        if (adjustedCosts && adjustedCosts.length > 0) {
-          console.log('Adjusted costs calculated:', adjustedCosts[0]);
-          return {
-            low: Math.round(adjustedCosts[0].min_cost * 100) / 100,
-            average: Math.round(adjustedCosts[0].avg_cost * 100) / 100,
-            high: Math.round(adjustedCosts[0].max_cost * 100) / 100
-          };
-        }
+        // Apply geographic factors directly
+        low *= pfr_factor;
+        average *= pfr_factor;
+        high *= pfr_factor;
       }
 
       return {
