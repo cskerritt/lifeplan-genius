@@ -4,12 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Evaluee, CareCategory } from '@/types/lifecare';
 import { useCostCalculations } from './useCostCalculations';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const usePlanData = (id: string) => {
   const { toast } = useToast();
   const { fetchGeoFactors } = useCostCalculations();
   const [evaluee, setEvaluee] = useState<Evaluee | null>(null);
+  const queryClient = useQueryClient();
 
   const {
     data: items = [],
@@ -102,6 +103,7 @@ export const usePlanData = (id: string) => {
 
         if (error) throw error;
       }
+      await queryClient.invalidateQuery({ queryKey: ['plan-data', id] });
     } catch (error) {
       console.error('Error updating items:', error);
       toast({
@@ -110,7 +112,7 @@ export const usePlanData = (id: string) => {
         description: "Failed to update care plan items"
       });
     }
-  }, [id, toast, evaluee?.lifeExpectancy]);
+  }, [id, toast, evaluee?.lifeExpectancy, queryClient]);
 
   return {
     evaluee,
@@ -118,6 +120,7 @@ export const usePlanData = (id: string) => {
     isLoading,
     items,
     setItems,
-    hasError: !!error
+    hasError: !!error,
+    refetch: () => queryClient.invalidateQuery({ queryKey: ['plan-data', id] })
   };
 };

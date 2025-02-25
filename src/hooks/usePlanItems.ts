@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
 import { useToast } from "@/hooks/use-toast";
 import { useCostCalculations } from "./useCostCalculations";
 
-export const usePlanItems = (planId: string) => {
+export const usePlanItems = (planId: string, onItemDeleted?: () => void) => {
   const [items, setItems] = useState<CareItem[]>([]);
   const { toast } = useToast();
   const { calculateAdjustedCosts, calculateAnnualCost, lookupCPTCode } = useCostCalculations();
@@ -126,6 +127,11 @@ export const usePlanItems = (planId: string) => {
         console.log('Updated items after deletion:', updatedItems);
         return updatedItems;
       });
+
+      // Call the callback to trigger a refetch
+      if (onItemDeleted) {
+        onItemDeleted();
+      }
       
       toast({
         title: "Success",
