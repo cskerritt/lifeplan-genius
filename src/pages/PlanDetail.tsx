@@ -17,7 +17,7 @@ const PlanDetail = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("evaluee");
   const { evaluee, setEvaluee, isLoading, items, setItems } = usePlanData(id);
-  const { addItem, calculateTotals } = usePlanItems(id);
+  const { addItem, deleteItem, calculateTotals } = usePlanItems(id);
   const { fetchGeoFactors } = useCostCalculations();
 
   const handleEvalueeSave = async (newEvaluee: any) => {
@@ -85,6 +85,7 @@ const PlanDetail = () => {
                 items={items}
                 categoryTotals={categoryTotals}
                 grandTotal={grandTotal}
+                onDeleteItem={deleteItem}
               />
             </div>
           </div>
@@ -95,6 +96,9 @@ const PlanDetail = () => {
             items={items}
             categoryTotals={categoryTotals}
             grandTotal={grandTotal}
+            onDeleteItem={deleteItem}
+            evalueeName={`${evaluee?.firstName} ${evaluee?.lastName}`}
+            planId={id}
           />
         </TabsContent>
       </Tabs>

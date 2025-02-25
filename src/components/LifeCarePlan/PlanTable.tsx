@@ -8,9 +8,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileDown } from "lucide-react";
+import { FileDown, Trash2 } from "lucide-react";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
 import { exportToWord, exportToExcel } from "@/utils/exportUtils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface PlanTableProps {
   items: CareItem[];
@@ -19,6 +30,7 @@ interface PlanTableProps {
   lifetimeTotal?: number;
   evalueeName?: string;
   planId?: string;
+  onDeleteItem?: (itemId: string) => void;
 }
 
 const PlanTable = ({ 
@@ -27,7 +39,8 @@ const PlanTable = ({
   grandTotal, 
   lifetimeTotal = 0,
   evalueeName = "Unknown",
-  planId = "unknown"
+  planId = "unknown",
+  onDeleteItem
 }: PlanTableProps) => {
   const handleExport = (format: 'word' | 'excel') => {
     const exportData = {
@@ -88,6 +101,7 @@ const PlanTable = ({
               <TableHead>Frequency</TableHead>
               <TableHead>Cost Range</TableHead>
               <TableHead>Annual Cost</TableHead>
+              {onDeleteItem && <TableHead className="w-[50px]">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -101,6 +115,38 @@ const PlanTable = ({
                   {formatCostRange(item.costRange.low, item.costRange.high)}
                 </TableCell>
                 <TableCell>{formatCurrency(item.annualCost)}</TableCell>
+                {onDeleteItem && (
+                  <TableCell>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Care Plan Item</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this item? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onDeleteItem(item.id)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Delete Item
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

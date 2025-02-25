@@ -18,12 +18,11 @@ export const usePlanItems = (planId: string) => {
         const cptResult = await lookupCPTCode(newItem.cptCode);
         console.log('CPT code data found:', cptResult);
         
-        // Check if we have valid CPT data
         if (cptResult && Array.isArray(cptResult) && cptResult.length > 0) {
           cptData = cptResult[0];
           if (cptData.pfr_75th) {
             console.log('Using CPT code pricing:', cptData.pfr_75th);
-            newItem.costPerUnit = cptData.pfr_75th; // Using 75th percentile as default
+            newItem.costPerUnit = cptData.pfr_75th;
           }
         }
       }
@@ -36,9 +35,11 @@ export const usePlanItems = (planId: string) => {
       );
       console.log('Adjusted costs calculated:', adjustedCosts);
       
+      const isOneTime = newItem.frequency.toLowerCase().includes('one-time');
       const annualCost = calculateAnnualCost(
         newItem.frequency,
-        adjustedCosts.average
+        adjustedCosts.average,
+        isOneTime
       );
       console.log('Annual cost calculated:', annualCost);
       
@@ -60,7 +61,6 @@ export const usePlanItems = (planId: string) => {
         const lifeExpectancy = planData?.life_expectancy || 1;
         const lifetimeCost = annualCost * lifeExpectancy;
 
-        // Include CPT description if available
         const cptDescription = cptData?.code_description;
 
         const { error } = await supabase
@@ -79,7 +79,7 @@ export const usePlanItems = (planId: string) => {
             lifetime_cost: lifetimeCost,
             start_age: 0,
             end_age: 100,
-            is_one_time: item.frequency.toLowerCase().includes('one-time'),
+            is_one_time: isOneTime,
             mfr_adjusted: adjustedCosts.average,
             pfr_adjusted: adjustedCosts.average
           });
@@ -102,6 +102,45 @@ export const usePlanItems = (planId: string) => {
         variant: "destructive",
         title: "Error",
         description: "Failed to add care item"
+      });
+    }
+  };
+
+  const deleteItem = async (itemId: string) => {
+    try {
+      if (planId !== "new") {
+        const itemToDelete = items.find(item => item.id === itemId);
+        if (!itemToDelete) {
+          throw new Error("Item not found");
+        }
+
+        const { error } = await supabase
+          .from('care_plan_entries')
+          .delete()
+          .match({ 
+            plan_id: planId,
+            category: itemToDelete.category,
+            item: itemToDelete.service 
+          });
+
+        if (error) {
+          console.error('Error deleting care plan entry:', error);
+          throw error;
+        }
+      }
+
+      setItems(prev => prev.filter(item => item.id !== itemId));
+      
+      toast({
+        title: "Success",
+        description: "Care item deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete care item"
       });
     }
   };
@@ -137,6 +176,7 @@ export const usePlanItems = (planId: string) => {
     items,
     setItems,
     addItem,
+    deleteItem,
     calculateTotals
   };
 };
