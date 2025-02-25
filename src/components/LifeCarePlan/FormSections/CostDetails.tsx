@@ -4,13 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CostRange } from "@/types/lifecare";
 import { Search } from "lucide-react";
+import { useCostCalculations } from "@/hooks/useCostCalculations";
+import { useEffect } from "react";
 
 interface CostDetailsProps {
   cptCode: string;
   costRange: CostRange;
   onCPTCodeChange: (value: string) => void;
   onCostRangeChange: (field: keyof CostRange, value: number) => void;
-  onCPTLookup: () => void;
+  onCPTLookup: () => Promise<void>;
 }
 
 export function CostDetails({
@@ -20,6 +22,27 @@ export function CostDetails({
   onCostRangeChange,
   onCPTLookup,
 }: CostDetailsProps) {
+  const { lookupCPTCode } = useCostCalculations();
+
+  const handleCPTLookup = async () => {
+    if (cptCode.trim()) {
+      try {
+        const cptData = await lookupCPTCode(cptCode);
+        if (cptData && Array.isArray(cptData) && cptData.length > 0) {
+          const result = cptData[0];
+          if (result.pfr_50th && result.pfr_75th && result.pfr_90th) {
+            // Update all three cost values
+            onCostRangeChange('low', result.pfr_50th);
+            onCostRangeChange('average', result.pfr_75th);
+            onCostRangeChange('high', result.pfr_90th);
+          }
+        }
+      } catch (error) {
+        console.error('Error looking up CPT code:', error);
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Cost Details</h3>
@@ -35,7 +58,7 @@ export function CostDetails({
             type="button"
             variant="outline"
             size="icon"
-            onClick={onCPTLookup}
+            onClick={handleCPTLookup}
           >
             <Search className="h-4 w-4" />
           </Button>
