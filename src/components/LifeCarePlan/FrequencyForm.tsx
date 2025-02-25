@@ -42,12 +42,15 @@ export function FrequencyForm({
         onFrequencyChange('startAge', Math.floor(ageData.ageToday));
       }
       
-      // Only update stop age if it hasn't been manually set (still at default value)
-      if (ageData.projectedAgeAtDeath !== undefined && frequencyDetails.stopAge === 100) {
+      // Update stop age if ageData is available and either:
+      // 1. Stop age is 0 (initial load)
+      // 2. Stop age is at default value (100)
+      if (ageData.projectedAgeAtDeath !== undefined && 
+          (frequencyDetails.stopAge === 0 || frequencyDetails.stopAge === 100)) {
         onFrequencyChange('stopAge', Math.ceil(ageData.projectedAgeAtDeath));
       }
     }
-  }, [ageData, onFrequencyChange]);
+  }, [ageData, onFrequencyChange, frequencyDetails.stopAge]);
 
   return (
     <div className="space-y-4">
@@ -83,7 +86,7 @@ export function FrequencyForm({
                 type="number"
                 min="0"
                 max="150"
-                value={frequencyDetails.stopAge}
+                value={frequencyDetails.stopAge || ''}
                 onChange={(e) => onFrequencyChange('stopAge', parseInt(e.target.value) || 0)}
               />
             </div>
