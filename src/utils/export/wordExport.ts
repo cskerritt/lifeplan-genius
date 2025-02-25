@@ -3,6 +3,7 @@ import { Document, Paragraph, Table, TableRow, TableCell, WidthType, Packer, Ali
 import { saveAs } from 'file-saver';
 import { ExportData } from './types';
 import { groupItemsByCategory, calculateCategoryTotal, calculateOneTimeTotal } from './utils';
+import { CareItem } from '@/types/lifecare';
 
 export const exportToWord = async (data: ExportData) => {
   const doc = new Document({
