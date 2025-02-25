@@ -22,6 +22,7 @@ interface EvalueeInfoFormProps {
   onLocationChange: (city: string, state: string) => void;
   onCancel: () => void;
   onSubmit: (e: React.FormEvent) => void;
+  isEditing?: boolean;
 }
 
 export default function EvalueeInfoForm({
@@ -29,7 +30,8 @@ export default function EvalueeInfoForm({
   onFormDataChange,
   onLocationChange,
   onCancel,
-  onSubmit
+  onSubmit,
+  isEditing
 }: EvalueeInfoFormProps) {
   const { isLoading, cities, lookupGeoFactors, lookupCitiesByState } = useGafLookup();
 
@@ -45,7 +47,6 @@ export default function EvalueeInfoForm({
 
   const handleCityChange = (city: string) => {
     handleFieldChange('city', city);
-    // Remove the onLocationChange call here since we don't need to trigger another lookup
   };
 
   const handleZipLookup = async (zipCode: string) => {
@@ -98,7 +99,7 @@ export default function EvalueeInfoForm({
         onChange={(value) => handleFieldChange('lifeExpectancy', value)}
       />
 
-      <FormActions onCancel={onCancel} />
+      <FormActions onCancel={onCancel} isEditing={isEditing} />
     </form>
   );
 }
