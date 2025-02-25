@@ -130,3 +130,15 @@ export interface SurgicalProcedure {
   name: string;
   components: SurgicalComponent[];
 }
+
+export interface FrequencyDetails {
+  startAge: number;
+  stopAge: number;
+  timesPerYear: number;
+  isOneTime: boolean;
+  customFrequency: string;
+  lowFrequencyPerYear: number;
+  highFrequencyPerYear: number;
+  lowDurationYears: number;
+  highDurationYears: number;
+}

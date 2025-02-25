@@ -1,29 +1,19 @@
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   CareCategory,
   CareItem,
   CostRange,
   CostResource,
-  VehicleModification,
   MedicationDetails,
 } from "@/types/lifecare";
 import { useState } from "react";
-import { Search } from "lucide-react";
-import { SurgicalProcedureForm } from "./SurgicalForm/SurgicalProcedureForm";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
 import { Separator } from "@/components/ui/separator";
 import { FrequencyForm } from "./FrequencyForm";
 import { MedicationForm } from "./MedicationForm";
+import { CategorySelect } from "./FormSections/CategorySelect";
+import { CostDetails } from "./FormSections/CostDetails";
 
 interface PlanFormProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
@@ -76,11 +66,6 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     average: 0,
     high: 0,
   });
-  const [costResources, setCostResources] = useState<CostResource[]>([
-    { name: "", cost: 0 },
-    { name: "", cost: 0 },
-    { name: "", cost: 0 },
-  ]);
   
   const { lookupCPTCode } = useCostCalculations();
 
@@ -106,14 +91,11 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     });
   };
 
-  const calculateFrequencyString = () => {
-    if (frequencyDetails.isOneTime) {
-      return "One-time";
-    }
-    if (frequencyDetails.customFrequency) {
-      return frequencyDetails.customFrequency;
-    }
-    return `${frequencyDetails.timesPerYear}x per year`;
+  const handleCostRangeChange = (field: keyof CostRange, value: number) => {
+    setCostRange(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleCPTLookup = async () => {
@@ -135,6 +117,16 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
         console.error('Error looking up CPT code:', error);
       }
     }
+  };
+
+  const calculateFrequencyString = () => {
+    if (frequencyDetails.isOneTime) {
+      return "One-time";
+    }
+    if (frequencyDetails.customFrequency) {
+      return frequencyDetails.customFrequency;
+    }
+    return `${frequencyDetails.lowFrequencyPerYear}-${frequencyDetails.highFrequencyPerYear}x per year`;
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -184,39 +176,12 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Category</Label>
-          <Select
-            value={category}
-            onValueChange={(value: CareCategory) => setCategory(value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="physician">Physician Services</SelectItem>
-              <SelectItem value="medication">Medication</SelectItem>
-              <SelectItem value="surgical">Surgical Services</SelectItem>
-              <SelectItem value="dme">Prosthetics & DME</SelectItem>
-              <SelectItem value="supplies">Aids & Supplies</SelectItem>
-              <SelectItem value="homeCare">Home Care</SelectItem>
-              <SelectItem value="homeModification">Home Modifications</SelectItem>
-              <SelectItem value="transportation">Transportation</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {category !== "medication" && category !== "surgical" && (
-          <div className="space-y-2">
-            <Label>Service</Label>
-            <Input 
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-              placeholder="Enter service name" 
-            />
-          </div>
-        )}
-      </div>
+      <CategorySelect
+        category={category}
+        service={service}
+        onCategoryChange={setCategory}
+        onServiceChange={setService}
+      />
 
       <Separator className="my-4" />
 
@@ -237,66 +202,13 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
           onPharmacyPriceChange={handlePharmacyPriceChange}
         />
       ) : category !== "surgical" && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Cost Details</h3>
-          <div className="space-y-2">
-            <Label>CPT/HCPCS Code</Label>
-            <div className="flex gap-2">
-              <Input 
-                value={cptCode}
-                onChange={(e) => setCptCode(e.target.value)}
-                placeholder="Enter code"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handleCPTLookup}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Cost Range</Label>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label>Low</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={costRange.low}
-                  onChange={(e) => setCostRange(prev => ({ ...prev, low: Number(e.target.value) }))}
-                  placeholder="Minimum cost"
-                />
-              </div>
-              <div>
-                <Label>Average</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={costRange.average}
-                  onChange={(e) => setCostRange(prev => ({ ...prev, average: Number(e.target.value) }))}
-                  placeholder="Average cost"
-                />
-              </div>
-              <div>
-                <Label>High</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={costRange.high}
-                  onChange={(e) => setCostRange(prev => ({ ...prev, high: Number(e.target.value) }))}
-                  placeholder="Maximum cost"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <CostDetails
+          cptCode={cptCode}
+          costRange={costRange}
+          onCPTCodeChange={setCptCode}
+          onCostRangeChange={handleCostRangeChange}
+          onCPTLookup={handleCPTLookup}
+        />
       )}
 
       <Button type="submit" className="w-full bg-medical-500 hover:bg-medical-600">
