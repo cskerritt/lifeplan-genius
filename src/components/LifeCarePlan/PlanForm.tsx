@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,7 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CareCategory, CareItem, CostRange, CostResource, VehicleModification, MedicationDetails } from "@/types/lifecare";
+import {
+  CareCategory,
+  CareItem,
+  CostRange,
+  CostResource,
+  VehicleModification,
+  MedicationDetails,
+  SurgicalComponent
+} from "@/types/lifecare";
 import { useState } from "react";
 import { PlusCircle, Trash2 } from "lucide-react";
 
