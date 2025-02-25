@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
@@ -73,22 +74,22 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       };
     }
 
-    // If we have a duration specified, use lifetime costs for the range
     if (durationMatch) {
+      // If we have a duration, calculate full lifetime ranges
       console.log('Using lifetime costs for ranges due to duration specification');
       return {
         annual: averageAnnualCost,
-        lifetime: averageLifetimeCost,
+        lifetime: highLifetimeCost, // Set lifetime to the maximum potential cost
         low: lowLifetimeCost,
         high: highLifetimeCost,
         average: averageLifetimeCost
       };
     } else {
-      // If no duration specified, use annual costs for the range
+      // If no duration specified, use annual costs for the ranges
       console.log('Using annual costs for ranges (no duration specified)');
       return {
         annual: averageAnnualCost,
-        lifetime: averageLifetimeCost,
+        lifetime: highAnnualCost, // Set lifetime to the maximum annual cost
         low: lowAnnualCost,
         high: highAnnualCost,
         average: averageAnnualCost
