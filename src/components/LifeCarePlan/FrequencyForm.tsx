@@ -50,16 +50,22 @@ export function FrequencyForm({
       // Calculate stop age based on start age plus life expectancy
       const lifeExpectancyYears = parseFloat(lifeExpectancy);
       if (!isNaN(lifeExpectancyYears)) {
-        // Use the current start age plus life expectancy
+        // Calculate the expected stop age
         const calculatedStopAge = frequencyDetails.startAge + lifeExpectancyYears;
-        // Only update stop age if it hasn't been manually set (is 0 or matches previous calculation)
+        
+        // Update stop age if:
+        // 1. It's currently 0 (initial state)
+        // 2. It's currently 100 (default state)
+        // 3. It was previously set to start age + life expectancy (auto-calculated)
+        const previousCalculation = frequencyDetails.startAge + parseFloat(lifeExpectancy);
         if (frequencyDetails.stopAge === 0 || 
-            frequencyDetails.stopAge === (frequencyDetails.startAge + parseFloat(lifeExpectancy))) {
+            frequencyDetails.stopAge === 100 || 
+            Math.abs(frequencyDetails.stopAge - previousCalculation) < 0.01) {
           onFrequencyChange('stopAge', calculatedStopAge);
         }
       }
     }
-  }, [ageData, onFrequencyChange, frequencyDetails.startAge, lifeExpectancy]);
+  }, [ageData, onFrequencyChange, frequencyDetails.startAge, lifeExpectancy, frequencyDetails.stopAge]);
 
   return (
     <div className="space-y-4">
