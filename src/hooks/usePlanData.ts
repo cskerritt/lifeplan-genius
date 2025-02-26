@@ -21,6 +21,7 @@ export const usePlanData = (id: string) => {
     queryKey: ['plan-data', id],
     enabled: id !== 'new',
     queryFn: async () => {
+      // Fetch plan data
       const { data: planData, error: planError } = await supabase
         .from('life_care_plans')
         .select('*')
@@ -33,6 +34,7 @@ export const usePlanData = (id: string) => {
         throw new Error('Plan not found');
       }
 
+      // Transform plan data to evaluee format
       const evalueeData: Evaluee = {
         id: planData.id,
         firstName: planData.first_name || '',
@@ -55,6 +57,7 @@ export const usePlanData = (id: string) => {
         await fetchGeoFactors(planData.zip_code);
       }
 
+      // Fetch care plan entries
       const { data: entriesData, error: entriesError } = await supabase
         .from('care_plan_entries')
         .select('*')
@@ -63,6 +66,7 @@ export const usePlanData = (id: string) => {
 
       if (entriesError) throw entriesError;
 
+      // Transform and return entries data
       return entriesData?.map(entry => ({
         id: entry.id.toString(),
         category: entry.category as CareCategory,

@@ -7,6 +7,7 @@ import { PlanHeader } from "@/components/LifeCarePlan/PlanHeader";
 import EvalueeForm from "@/components/LifeCarePlan/EvalueeForm";
 import PlanForm from "@/components/LifeCarePlan/PlanForm";
 import PlanTable from "@/components/LifeCarePlan/PlanTable";
+import JsonViewer from "@/components/Debug/JsonViewer";
 import { usePlanItems } from "@/hooks/usePlanItems";
 import { usePlanData } from "@/hooks/usePlanData";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
@@ -16,6 +17,7 @@ const PlanDetail = () => {
   const { id = "new" } = useParams();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("evaluee");
+  const [responseData, setResponseData] = useState<any>(null);
   const { evaluee, setEvaluee, isLoading, items, refetch } = usePlanData(id);
   const { addItem, deleteItem, calculateTotals } = usePlanItems(id, items, refetch);
   const { fetchGeoFactors } = useCostCalculations();
@@ -24,7 +26,8 @@ const PlanDetail = () => {
     try {
       if (id !== "new") {
         if (newEvaluee.zipCode && (!evaluee || newEvaluee.zipCode !== evaluee.zipCode)) {
-          await fetchGeoFactors(newEvaluee.zipCode);
+          const geoFactors = await fetchGeoFactors(newEvaluee.zipCode);
+          setResponseData({ type: 'Geographic Factors', data: geoFactors });
         }
         
         setEvaluee(newEvaluee);
@@ -37,6 +40,7 @@ const PlanDetail = () => {
       }
     } catch (error) {
       console.error("Error:", error);
+      setResponseData({ type: 'Error', data: error });
       toast({
         variant: "destructive",
         title: "Error",
@@ -53,7 +57,7 @@ const PlanDetail = () => {
   const { categoryTotals, grandTotal, lifetimeLow, lifetimeHigh } = calculateTotals();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <PlanHeader isNew={id === "new"} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -107,6 +111,8 @@ const PlanDetail = () => {
           />
         </TabsContent>
       </Tabs>
+
+      <JsonViewer data={responseData} />
     </div>
   );
 };
