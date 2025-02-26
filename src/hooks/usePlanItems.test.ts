@@ -1,6 +1,7 @@
 
 import { renderHook } from '@testing-library/react-hooks';
 import { usePlanItems } from './usePlanItems';
+import { CareCategory, CareItem } from '@/types/lifecare';
 import { vi, describe, it, expect } from 'vitest';
 
 vi.mock('./useCostCalculations', () => ({
@@ -34,10 +35,10 @@ vi.mock('./usePlanItemsDb', () => ({
 }));
 
 describe('usePlanItems', () => {
-  const mockItems = [
+  const mockItems: CareItem[] = [
     {
       id: '1',
-      category: 'medical',
+      category: 'physicianEvaluation',
       service: 'Office Visit',
       frequency: '4x per year',
       cptCode: '99213',
@@ -57,7 +58,7 @@ describe('usePlanItems', () => {
     const { categoryTotals, grandTotal } = result.current.calculateTotals();
 
     expect(categoryTotals).toHaveLength(1);
-    expect(categoryTotals[0].category).toBe('medical');
+    expect(categoryTotals[0].category).toBe('physicianEvaluation');
     expect(grandTotal).toBe(600);
   });
 

@@ -2,6 +2,7 @@
 import { renderHook } from '@testing-library/react-hooks';
 import { useCostCalculations } from './useCostCalculations';
 import { supabase } from "@/integrations/supabase/client";
+import { CareCategory } from '@/types/lifecare';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock("@/integrations/supabase/client", () => ({
@@ -55,7 +56,7 @@ describe('useCostCalculations', () => {
       // Set the geoFactors
       await result.current.fetchGeoFactors('12345');
       
-      const costs = await result.current.calculateAdjustedCosts(100, null, 'medical');
+      const costs = await result.current.calculateAdjustedCosts(100, null, 'physicianEvaluation' as CareCategory);
 
       expect(costs).toMatchObject({
         low: expect.any(Number),
@@ -69,7 +70,7 @@ describe('useCostCalculations', () => {
       const costs = await result.current.calculateAdjustedCosts(
         1000,
         null,
-        'transportation',
+        'transportation' as CareCategory,
         [{ name: 'Vendor 1', cost: 1000 }]
       );
 
