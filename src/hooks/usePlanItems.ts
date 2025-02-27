@@ -1,10 +1,17 @@
-
 import { useCallback } from "react";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
 import { useToast } from "@/hooks/use-toast";
 import { useCostCalculations } from "./useCostCalculations";
 import { usePlanItemCosts } from "./usePlanItemCosts";
 import { usePlanItemsDb } from "./usePlanItemsDb";
+import { v4 as uuidv4 } from "uuid";
+import { 
+  calculateLifetimeCost, 
+  isOneTimeItem, 
+  getItemDuration,
+  calculateCategoryLifetimeCost,
+  getCategoryAgeRange
+} from "@/utils/export/utils";
 
 export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: () => void) => {
   const { toast } = useToast();
@@ -100,32 +107,87 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
   };
 
   const calculateTotals = useCallback(() => {
-    const totals: CategoryTotal[] = items.reduce((acc, item) => {
-      const existingCategory = acc.find((t) => t.category === item.category);
-      if (existingCategory) {
-        existingCategory.total += item.annualCost;
-        existingCategory.costRange.low += item.costRange.low;
-        existingCategory.costRange.average += item.costRange.average;
-        existingCategory.costRange.high += item.costRange.high;
-      } else {
-        acc.push({
-          category: item.category,
-          total: item.annualCost,
-          costRange: {
-            low: item.costRange.low,
-            average: item.costRange.average,
-            high: item.costRange.high,
-          },
-        });
+    // First, group items by category
+    const groupedItems = items.reduce<Record<string, CareItem[]>>((acc, item) => {
+      const category = item.category;
+      if (!acc[category]) {
+        acc[category] = [];
       }
+      acc[category].push(item);
       return acc;
-    }, [] as CategoryTotal[]);
+    }, {});
 
+    // Calculate totals for each category
+    const totals: CategoryTotal[] = Object.entries(groupedItems).map(([category, categoryItems]) => {
+      // Calculate annual costs (sum of all non-one-time items)
+      const annualTotal = categoryItems
+        .filter(item => !isOneTimeItem(item))
+        .reduce((sum, item) => sum + item.annualCost, 0);
+      
+      // Calculate cost ranges
+      const lowTotal = categoryItems.reduce((sum, item) => sum + item.costRange.low, 0);
+      const avgTotal = categoryItems.reduce((sum, item) => sum + item.costRange.average, 0);
+      const highTotal = categoryItems.reduce((sum, item) => sum + item.costRange.high, 0);
+      
+      return {
+        category: category as any,
+        total: annualTotal,
+        costRange: {
+          low: lowTotal,
+          average: avgTotal,
+          high: highTotal
+        }
+      };
+    });
+
+    // Calculate grand total (sum of all category annual totals)
     const grandTotal = totals.reduce((sum, category) => sum + category.total, 0);
     
-    // Calculate lifetime totals by summing the low and high ranges
-    const lifetimeLow = totals.reduce((sum, category) => sum + category.costRange.low, 0);
-    const lifetimeHigh = totals.reduce((sum, category) => sum + category.costRange.high, 0);
+    // Calculate lifetime totals properly using age ranges
+    let lifetimeLow = 0;
+    let lifetimeHigh = 0;
+    
+    // Process each category
+    Object.values(groupedItems).forEach(categoryItems => {
+      // Get age range for the category
+      const ageRange = getCategoryAgeRange(categoryItems);
+      
+      // Calculate annual costs for this category
+      const annualCost = categoryItems
+        .filter(item => !isOneTimeItem(item))
+        .reduce((sum, item) => sum + item.annualCost, 0);
+      
+      // Calculate one-time costs for this category
+      const oneTimeCost = categoryItems
+        .filter(item => isOneTimeItem(item))
+        .reduce((sum, item) => sum + item.costRange.average, 0);
+      
+      // Calculate lifetime costs based on age ranges
+      if (ageRange.startAge !== undefined && ageRange.endAge !== undefined) {
+        const duration = ageRange.endAge - ageRange.startAge;
+        // Add annual costs multiplied by duration
+        lifetimeLow += (annualCost * 0.8) * duration; // Using 80% of annual cost for low estimate
+        lifetimeHigh += (annualCost * 1.2) * duration; // Using 120% of annual cost for high estimate
+      } else {
+        // If no category age range, calculate using individual item durations
+        categoryItems.forEach(item => {
+          if (isOneTimeItem(item)) {
+            // Add one-time costs directly
+            lifetimeLow += item.costRange.low;
+            lifetimeHigh += item.costRange.high;
+          } else if (item.startAge !== undefined && item.endAge !== undefined) {
+            // Calculate based on individual item duration
+            const duration = getItemDuration(item);
+            lifetimeLow += item.costRange.low * duration;
+            lifetimeHigh += item.costRange.high * duration;
+          }
+        });
+      }
+      
+      // Add one-time costs
+      lifetimeLow += oneTimeCost * 0.8; // Using 80% of one-time cost for low estimate
+      lifetimeHigh += oneTimeCost * 1.2; // Using 120% of one-time cost for high estimate
+    });
 
     return { 
       categoryTotals: totals, 

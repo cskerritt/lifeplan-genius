@@ -1,4 +1,10 @@
+import { exportToWord } from './export/wordExport';
+import { exportToExcel } from './export/excelExport';
+import { ExportData } from './export/types';
 
-export { exportToWord } from './export/wordExport';
-export { exportToExcel } from './export/excelExport';
-export type { ExportData } from './export/types';
+export {
+  exportToWord,
+  exportToExcel
+};
+
+export type { ExportData };

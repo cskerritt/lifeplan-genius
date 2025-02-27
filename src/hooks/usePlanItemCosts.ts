@@ -1,64 +1,64 @@
 
-import { useFrequencyParser } from "./useFrequencyParser";
+import { calculateItemCosts as calculateItemCostsUtil } from '@/utils/calculations';
+import { CostCalculationParams, CalculatedCosts } from '@/utils/calculations/types';
+import { useCallback } from 'react';
 
+/**
+ * Hook for calculating costs for plan items
+ * This is a wrapper around the centralized cost calculator utilities
+ * to maintain backward compatibility with existing code
+ */
 export const usePlanItemCosts = () => {
-  const { parseFrequency, parseDuration } = useFrequencyParser();
-
-  const calculateItemCosts = (baseRate: number, frequency: string) => {
-    console.log('Calculating costs for:', { baseRate, frequency });
+  /**
+   * Calculate costs for a plan item based on frequency, duration, and other factors
+   * @param baseRate - The base rate per unit
+   * @param frequency - The frequency string
+   * @param currentAge - The current age of the evaluee
+   * @param lifeExpectancy - The life expectancy of the evaluee
+   * @returns An object with calculated costs
+   */
+  const calculateItemCosts = useCallback(async (
+    baseRate: number, 
+    frequency: string, 
+    currentAge?: number, 
+    lifeExpectancy?: number,
+    cptCode?: string | null,
+    category?: string,
+    zipCode?: string
+  ) => {
+    console.log('Calculating costs for:', { baseRate, frequency, currentAge, lifeExpectancy });
     
-    const { lowFrequency, highFrequency } = parseFrequency(frequency);
-    const { lowDuration, highDuration } = parseDuration(frequency);
-    const isOneTime = frequency.toLowerCase().includes('one-time');
-
-    // Calculate annual costs (per year costs)
-    const lowAnnualCost = baseRate * lowFrequency;
-    const highAnnualCost = baseRate * highFrequency;
-    const averageAnnualCost = (lowAnnualCost + highAnnualCost) / 2;
-
-    console.log('Annual cost calculations:', {
-      baseRate,
-      lowFrequency,
-      highFrequency,
-      lowAnnualCost,
-      highAnnualCost,
-      averageAnnualCost
-    });
-
-    // Calculate lifetime costs with duration
-    const lowLifetimeCost = lowAnnualCost * lowDuration;
-    const highLifetimeCost = highAnnualCost * highDuration;
-    const averageLifetimeCost = (lowLifetimeCost + highLifetimeCost) / 2;
-
-    console.log('Lifetime cost calculations:', {
-      lowDuration,
-      highDuration,
-      lowAnnualCost,
-      highAnnualCost,
-      lowLifetimeCost,
-      highLifetimeCost,
-      averageLifetimeCost
-    });
-
-    if (isOneTime) {
-      console.log('One-time cost, using base rate:', baseRate);
+    try {
+      // Prepare parameters for the centralized calculator
+      const params: CostCalculationParams = {
+        baseRate,
+        frequency,
+        currentAge,
+        lifeExpectancy,
+        cptCode,
+        category: category as any, // Type cast to match expected type
+        zipCode
+      };
+      
+      // Use the centralized calculator
+      const result = await calculateItemCostsUtil(params);
+      
+      console.log('Calculated costs:', result);
+      return result;
+    } catch (error) {
+      console.error('Error calculating costs:', error);
+      
+      // Fallback to a simple calculation in case of error
       return {
         annual: baseRate,
-        lifetime: baseRate,
+        lifetime: baseRate * (lifeExpectancy || 30),
         low: baseRate,
         high: baseRate,
-        average: baseRate
+        average: baseRate,
+        isOneTime: false
       };
     }
-
-    return {
-      annual: averageAnnualCost,
-      lifetime: highLifetimeCost,
-      low: lowLifetimeCost,
-      high: highLifetimeCost,
-      average: averageLifetimeCost
-    };
-  };
+  }, []);
 
   return {
     calculateItemCosts

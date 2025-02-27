@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +50,7 @@ export const usePlanData = (id: string) => {
         lifeExpectancy: planData.life_expectancy?.toString() || ''
       };
 
+      console.log('usePlanData evalueeData:', evalueeData);
       setEvaluee(evalueeData);
 
       if (planData.zip_code) {

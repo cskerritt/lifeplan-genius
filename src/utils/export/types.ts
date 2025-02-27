@@ -1,4 +1,3 @@
-
 import { CategoryTotal, CareItem } from '@/types/lifecare';
 
 export interface ExportData {
@@ -12,4 +11,18 @@ export interface ExportData {
   lifeExpectancy?: string;
   dateOfBirth?: string;
   dateOfInjury?: string;
+  gender?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phone?: string;
+  email?: string;
+  ageAtInjury?: number;
+  statisticalLifespan?: number;
+  race?: string;
+  countyAPC?: string;
+  countyDRG?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

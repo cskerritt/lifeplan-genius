@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +54,11 @@ const PlanDetail = () => {
 
   // Calculate totals including lifetime ranges
   const { categoryTotals, grandTotal, lifetimeLow, lifetimeHigh } = calculateTotals();
+  
+  // Log evaluee information for debugging
+  console.log('PlanDetail evaluee:', evaluee);
+  const evalueeFullName = evaluee ? `${evaluee.firstName} ${evaluee.lastName}`.trim() : "Unknown";
+  console.log('PlanDetail evalueeFullName:', evalueeFullName);
 
   return (
     <div className="space-y-6 pb-20">
@@ -93,6 +97,9 @@ const PlanDetail = () => {
                 lifetimeLow={lifetimeLow}
                 lifetimeHigh={lifetimeHigh}
                 onDeleteItem={deleteItem}
+                evalueeName={evalueeFullName}
+                planId={id}
+                evaluee={evaluee || undefined}
               />
             </div>
           </div>
@@ -106,8 +113,9 @@ const PlanDetail = () => {
             lifetimeLow={lifetimeLow}
             lifetimeHigh={lifetimeHigh}
             onDeleteItem={deleteItem}
-            evalueeName={`${evaluee?.firstName} ${evaluee?.lastName}`}
+            evalueeName={evalueeFullName}
             planId={id}
+            evaluee={evaluee || undefined}
           />
         </TabsContent>
       </Tabs>
