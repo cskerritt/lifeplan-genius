@@ -44,6 +44,17 @@ export const usePlanItemCosts = () => {
       const result = await calculateItemCostsUtil(params);
       
       console.log('Calculated costs:', result);
+      
+      // Ensure annual cost is never null
+      if (result.annual === null || result.annual === undefined) {
+        result.annual = baseRate;
+      }
+      
+      // Ensure lifetime cost is never null
+      if (result.lifetime === null || result.lifetime === undefined) {
+        result.lifetime = baseRate * (lifeExpectancy || 30);
+      }
+      
       return result;
     } catch (error) {
       console.error('Error calculating costs:', error);

@@ -264,6 +264,16 @@ export const parseDuration = (
       logger.info(`Extracted single year duration from frequency: ${lowDuration} years`);
     }
   }
+  // Check for duration at the end of the string (e.g., "4-4x per year 30 years")
+  else if (frequency.match(/\d+\s*(?:years?|yrs?)$/i)) {
+    const match = frequency.match(/(\d+)\s*(?:years?|yrs?)$/i);
+    if (match) {
+      lowDuration = parseInt(match[1]);
+      highDuration = lowDuration;
+      source = 'frequency';
+      logger.info(`Extracted duration from end of frequency: ${lowDuration} years`);
+    }
+  }
   // If no duration in frequency, try to use age range
   else if (startAge !== undefined && endAge !== undefined) {
     lowDuration = endAge - startAge;

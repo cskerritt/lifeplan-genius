@@ -28,9 +28,13 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       // For surgical and interventional items, use the provided cost range directly
       if (newItem.category === 'surgical' || newItem.category === 'interventional') {
         console.log('Using provided procedure costs:', newItem.costRange);
-        const costs = calculateItemCosts(newItem.costRange.average, newItem.frequency);
+        const costs = await calculateItemCosts(newItem.costRange.average, newItem.frequency);
 
         if (planId !== "new") {
+          // Ensure costs are never null
+          const annualCost = costs.annual ?? newItem.costRange.average;
+          const lifetimeCost = costs.lifetime ?? (newItem.costRange.average * 30);
+          
           await insertPlanItem({
             plan_id: planId,
             category: newItem.category,
@@ -41,8 +45,8 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
             min_cost: newItem.costRange.low,
             avg_cost: newItem.costRange.average,
             max_cost: newItem.costRange.high,
-            annual_cost: costs.annual,
-            lifetime_cost: costs.lifetime,
+            annual_cost: annualCost,
+            lifetime_cost: lifetimeCost,
             start_age: 0,
             end_age: 100,
             is_one_time: newItem.frequency.toLowerCase().includes('one-time')
@@ -75,10 +79,14 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
       console.log('Base adjusted costs:', adjustedCosts);
 
       // Calculate costs with frequency and duration
-      const costs = calculateItemCosts(adjustedCosts.average, newItem.frequency);
+      const costs = await calculateItemCosts(adjustedCosts.average, newItem.frequency);
       console.log('Final calculated costs:', costs);
 
       if (planId !== "new") {
+        // Ensure costs are never null
+        const annualCost = costs.annual ?? adjustedCosts.average;
+        const lifetimeCost = costs.lifetime ?? (adjustedCosts.average * 30);
+        
         await insertPlanItem({
           plan_id: planId,
           category: newItem.category,
@@ -86,11 +94,11 @@ export const usePlanItems = (planId: string, items: CareItem[], onItemsChange: (
           frequency: newItem.frequency,
           cpt_code: newItem.cptCode,
           cpt_description: cptDescription,
-          min_cost: costs.low,
-          avg_cost: costs.average,
-          max_cost: costs.high,
-          annual_cost: costs.annual,
-          lifetime_cost: costs.lifetime,
+          min_cost: costs.low ?? adjustedCosts.low,
+          avg_cost: costs.average ?? adjustedCosts.average,
+          max_cost: costs.high ?? adjustedCosts.high,
+          annual_cost: annualCost,
+          lifetime_cost: lifetimeCost,
           start_age: 0,
           end_age: 100,
           is_one_time: newItem.frequency.toLowerCase().includes('one-time')

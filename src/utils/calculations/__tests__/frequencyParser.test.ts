@@ -1,4 +1,4 @@
-import { parseFrequency, parseDuration, isOneTimeFrequency } from '../frequencyParser';
+import frequencyParser, { parseFrequency, parseDuration, isOneTimeFrequency } from '../frequencyParser';
 
 describe('Frequency Parser', () => {
   describe('parseFrequency', () => {
@@ -9,6 +9,29 @@ describe('Frequency Parser', () => {
       expect(result.highFrequency).toBe(5);
       expect(result.isOneTime).toBe(false);
     });
+
+// Test the fix for parsing duration from frequency strings like "4-4x per year 30 years"
+describe('parseDuration with duration at end of string', () => {
+  it('should correctly parse duration from "4-4x per year 30 years"', () => {
+    const frequency = '4-4x per year 30 years';
+    const result = frequencyParser.parseDuration(frequency);
+    
+    expect(result.valid).toBe(true);
+    expect(result.lowDuration).toBe(30);
+    expect(result.highDuration).toBe(30);
+    expect(result.source).toBe('frequency');
+  });
+  
+  it('should correctly parse duration from "2-2x per year 20 years"', () => {
+    const frequency = '2-2x per year 20 years';
+    const result = frequencyParser.parseDuration(frequency);
+    
+    expect(result.valid).toBe(true);
+    expect(result.lowDuration).toBe(20);
+    expect(result.highDuration).toBe(20);
+    expect(result.source).toBe('frequency');
+  });
+});
 
     test('should parse weekly frequency correctly', () => {
       const result = parseFrequency('3 times per week');
