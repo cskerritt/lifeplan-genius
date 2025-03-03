@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { CareCategory, CareItem, CostRange } from "@/types/lifecare";
+import { CareCategory, CareItem, CostRange, AgeIncrement } from "@/types/lifecare";
 import { FormState } from "./types";
 
 interface FormActionsProps {
@@ -33,7 +33,10 @@ export function FormActions({ category, costRange, formState, onSubmit, onReset 
       cptCode: formState.cptCode,
       costPerUnit: costRange.average,
       costRange,
-      costResources: category === "medication" ? formState.medicationDetails.pharmacyPrices : undefined
+      costResources: category === "medication" ? formState.medicationDetails.pharmacyPrices : undefined,
+      // Add age increments data if enabled
+      useAgeIncrements: formState.useAgeIncrements,
+      ageIncrements: formState.useAgeIncrements ? formState.ageIncrements : undefined
     };
 
     onSubmit(itemData);

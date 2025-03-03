@@ -1,7 +1,7 @@
-
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface FormData {
   firstName: string;
@@ -24,6 +24,7 @@ interface AgeData {
 export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent, formData: FormData, ageData: AgeData, planId?: string) => {
     e.preventDefault();
@@ -112,8 +113,14 @@ export function useEvalueeFormSubmit(onSave?: (evaluee: any) => void) {
           onSave(transformedData);
         }
 
+        // Invalidate and refetch the life care plans query to update the dashboard
+        queryClient.invalidateQueries({ queryKey: ['life-care-plans'] });
+
         if (!planId || planId === 'new') {
-          navigate('/');
+          // Add a small delay before navigation to allow the query to be invalidated
+          setTimeout(() => {
+            navigate('/');
+          }, 100);
         }
       }
     } catch (error) {

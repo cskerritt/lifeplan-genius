@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CareCategory, CostRange, MedicationDetails } from "@/types/lifecare";
+import { AgeIncrement, CareCategory, CostRange, MedicationDetails } from "@/types/lifecare";
 import { FormState } from "../types";
 
 export function usePlanFormState() {
@@ -35,6 +35,8 @@ export function usePlanFormState() {
       { name: "", cost: 0 },
     ]
   });
+  const [useAgeIncrements, setUseAgeIncrements] = useState(false);
+  const [ageIncrements, setAgeIncrements] = useState<AgeIncrement[]>([]);
 
   const resetForm = () => {
     setService("");
@@ -63,6 +65,8 @@ export function usePlanFormState() {
         { name: "", cost: 0 },
       ]
     });
+    setUseAgeIncrements(false);
+    setAgeIncrements([]);
   };
 
   return {
@@ -78,6 +82,10 @@ export function usePlanFormState() {
     setFrequencyDetails,
     medicationDetails,
     setMedicationDetails,
+    useAgeIncrements,
+    setUseAgeIncrements,
+    ageIncrements,
+    setAgeIncrements,
     resetForm
   };
 }

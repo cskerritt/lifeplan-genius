@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Search } from 'lucide-react';
 import { StateSelector } from './StateSelector';
-import { CitySelector } from './CitySelector';
 import { useToast } from "@/hooks/use-toast";
 
 interface LocationSelectorProps {
@@ -64,14 +62,6 @@ export function LocationSelector({
           value={state}
           onValueChange={onStateChange}
           isLoading={isLoading}
-        />
-
-        <CitySelector
-          value={city}
-          cities={cities}
-          isLoading={isLoading}
-          disabled={!state}
-          onValueChange={onCityChange}
         />
 
         <div className="space-y-2">

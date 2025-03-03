@@ -45,8 +45,8 @@ export { default as durationCalculator } from './durationCalculator';
 
 // Export commonly used functions directly
 import { parseFrequency, parseDuration, isOneTimeFrequency } from './frequencyParser';
-import { calculateItemCosts, calculateAdjustedCosts } from './costCalculator';
-import { determineDuration, calculateAgeFromDOB } from './durationCalculator';
+import { calculateItemCosts, calculateItemCostsWithAgeIncrements, calculateAdjustedCosts } from './costCalculator';
+import { determineDuration, calculateAgeFromDOB, calculateDurationFromAgeRange, calculateDurationFromAgeIncrements } from './durationCalculator';
 
 export {
   // Frequency parsing
@@ -56,11 +56,14 @@ export {
   
   // Cost calculations
   calculateItemCosts,
+  calculateItemCostsWithAgeIncrements,
   calculateAdjustedCosts,
   
   // Duration calculations
   determineDuration,
   calculateAgeFromDOB,
+  calculateDurationFromAgeRange,
+  calculateDurationFromAgeIncrements,
 };
 
 /**

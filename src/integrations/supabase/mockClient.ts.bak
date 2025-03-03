@@ -1,0 +1,137 @@
+/**
+ * Mock Supabase Client
+ * 
+ * This file provides a mock implementation of the Supabase client that doesn't
+ * actually connect to Supabase but provides the same API. This is useful for
+ * development and testing without requiring a Supabase connection.
+ */
+
+import type { Database } from './types';
+
+// Create a mock Supabase client
+const createMockClient = () => {
+  console.log('Creating mock Supabase client...');
+  
+  // Mock auth object
+  const auth = {
+    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+    signIn: () => Promise.resolve({ data: null, error: new Error('Auth is not available in mock mode') }),
+    signUp: () => Promise.resolve({ data: null, error: new Error('Auth is not available in mock mode') }),
+    signOut: () => Promise.resolve({ error: null }),
+    onAuthStateChange: (callback: any) => {
+      console.log('Mock auth state change registered');
+      return { data: { subscription: { unsubscribe: () => {} } } };
+    }
+  };
+  
+  // Mock database operations
+  const from = (table: string) => {
+    console.log(`Mock Supabase: Accessing table ${table}`);
+    
+    return {
+      select: (columns = '*') => {
+        console.log(`Mock Supabase: SELECT ${columns} FROM ${table}`);
+        return {
+          eq: (column: string, value: any) => {
+            console.log(`Mock Supabase: WHERE ${column} = ${value}`);
+            return {
+              single: () => Promise.resolve({ data: null, error: null }),
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              order: () => Promise.resolve({ data: [], error: null }),
+              limit: () => Promise.resolve({ data: [], error: null }),
+              range: () => Promise.resolve({ data: [], error: null }),
+              then: (callback: any) => Promise.resolve({ data: [], error: null }).then(callback)
+            };
+          },
+          neq: () => Promise.resolve({ data: [], error: null }),
+          gt: () => Promise.resolve({ data: [], error: null }),
+          lt: () => Promise.resolve({ data: [], error: null }),
+          gte: () => Promise.resolve({ data: [], error: null }),
+          lte: () => Promise.resolve({ data: [], error: null }),
+          order: () => {
+            console.log(`Mock Supabase: ORDER BY`);
+            return {
+              then: (callback: any) => Promise.resolve({ data: [], error: null }).then(callback)
+            };
+          },
+          limit: () => Promise.resolve({ data: [], error: null }),
+          range: () => Promise.resolve({ data: [], error: null }),
+          single: () => Promise.resolve({ data: null, error: null }),
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+          then: (callback: any) => Promise.resolve({ data: [], error: null }).then(callback)
+        };
+      },
+      insert: (data: any) => {
+        console.log(`Mock Supabase: INSERT INTO ${table}`, data);
+        return Promise.resolve({ data: { id: 'mock-id' }, error: null });
+      },
+      update: (data: any) => {
+        console.log(`Mock Supabase: UPDATE ${table}`, data);
+        return {
+          eq: (column: string, value: any) => {
+            console.log(`Mock Supabase: WHERE ${column} = ${value}`);
+            return Promise.resolve({ data: { id: value }, error: null });
+          }
+        };
+      },
+      delete: () => {
+        console.log(`Mock Supabase: DELETE FROM ${table}`);
+        return {
+          eq: (column: string, value: any) => {
+            console.log(`Mock Supabase: WHERE ${column} = ${value}`);
+            return Promise.resolve({ data: { id: value }, error: null });
+          }
+        };
+      }
+    };
+  };
+  
+  // Mock RPC calls
+  const rpc = (functionName: string, params: any = {}) => {
+    console.log(`Mock Supabase: RPC call to ${functionName}`, params);
+    
+    // Simulate specific RPC functions
+    if (functionName === 'search_geographic_factors') {
+      return Promise.resolve([{
+        mfr_code: 1.1,
+        pfr_code: 1.2
+      }]);
+    } else if (functionName === 'validate_cpt_code') {
+      return Promise.resolve([{
+        code: params.code_to_check,
+        code_description: 'Mock CPT Code',
+        pfr_50th: 100.00,
+        pfr_75th: 150.00,
+        pfr_90th: 200.00
+      }]);
+    }
+    
+    return Promise.resolve([]);
+  };
+  
+  // Mock storage
+  const storage = {
+    from: (bucket: string) => {
+      console.log(`Mock Supabase: Accessing storage bucket ${bucket}`);
+      return {
+        upload: () => Promise.resolve({ data: null, error: new Error('Storage is not available in mock mode') }),
+        download: () => Promise.resolve({ data: null, error: new Error('Storage is not available in mock mode') }),
+        list: () => Promise.resolve({ data: [], error: null }),
+        remove: () => Promise.resolve({ data: null, error: null })
+      };
+    }
+  };
+  
+  return {
+    auth,
+    from,
+    rpc,
+    storage
+  };
+};
+
+// Export the mock Supabase client
+export const supabase = createMockClient() as any;
+
+console.log('Mock Supabase client initialized');

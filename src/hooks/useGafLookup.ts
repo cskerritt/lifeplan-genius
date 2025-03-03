@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,34 +14,6 @@ export function useGafLookup() {
   const [isLoading, setIsLoading] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
   const { toast } = useToast();
-
-  const lookupCitiesByState = useCallback(async (state: string) => {
-    console.log('🔍 Looking up cities for state:', state);
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('gaf_lookup')
-        .select('city')
-        .eq('state_name', state)
-        .not('city', 'is', null);
-
-      if (error) throw error;
-
-      const uniqueCities = Array.from(new Set(data.map(row => row.city))).filter(Boolean);
-      console.log(`Found ${uniqueCities.length} cities for ${state}`);
-      setCities(uniqueCities as string[]);
-
-    } catch (error) {
-      console.error('Error in lookupCitiesByState:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to lookup cities"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
 
   const lookupGeoFactors = useCallback(async (zipCode: string) => {
     if (!zipCode) return;
@@ -72,7 +43,7 @@ export function useGafLookup() {
         toast({
           variant: "destructive",
           title: "Location Not Found",
-          description: "Please try another ZIP code or enter state/city manually"
+          description: "Please try another ZIP code or enter state manually"
         });
         return null;
       }
@@ -102,5 +73,5 @@ export function useGafLookup() {
     }
   }, [toast]);
 
-  return { geoFactors, isLoading, cities, lookupGeoFactors, lookupCitiesByState };
+  return { geoFactors, isLoading, cities, lookupGeoFactors };
 }

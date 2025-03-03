@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SearchBar from "@/components/Dashboard/SearchBar";
 import PlanCard from "@/components/Dashboard/PlanCard";
 import EmptyState from "@/components/Dashboard/EmptyState";
@@ -15,26 +14,81 @@ const Index = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: plans = [], isLoading, error } = useQuery({
+  const { data: plans = [], isLoading, error, refetch } = useQuery({
     queryKey: ["life-care-plans"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("life_care_plans")
-        .select(`
-          id,
-          first_name,
-          last_name,
-          date_of_birth,
-          date_of_injury,
-          city,
-          state,
-          zip_code,
-          created_at,
-          care_plan_entries (*)
-        `)
-        .order('created_at', { ascending: false });
+      console.log("Fetching life care plans...");
+      try {
+        // Get the current user
+        const authResult = await supabase.auth.getUser();
+        if (!authResult.data.user) {
+          throw new Error("User not authenticated");
+        }
 
-      if (error) {
+        // First, fetch all life care plans
+        const plansQuery = supabase
+          .from("life_care_plans")
+          .select(`
+            id,
+            first_name,
+            last_name,
+            date_of_birth,
+            date_of_injury,
+            city,
+            state,
+            zip_code,
+            created_at
+          `);
+        
+        // Execute the query
+        const result = await plansQuery.execute();
+
+        if (result.error) {
+          console.error("Error fetching plans:", result.error);
+          toast({
+            variant: "destructive",
+            title: "Error fetching plans",
+            description: result.error.message,
+          });
+          throw result.error;
+        }
+
+        // Now fetch the care plan entries for each plan
+        const plansWithEntries = await Promise.all(
+          result.data.map(async (plan) => {
+            try {
+              // For each plan, fetch its entries
+              const entriesQuery = supabase
+                .from("care_plan_entries")
+                .select("*");
+              
+              // Execute the query with a filter
+              const entriesResult = await entriesQuery.eq("plan_id", plan.id).execute();
+              
+              // Combine the plan with its entries
+              return {
+                ...plan,
+                care_plan_entries: entriesResult.error ? [] : entriesResult.data
+              };
+            } catch (error) {
+              console.error(`Error fetching entries for plan ${plan.id}:`, error);
+              return {
+                ...plan,
+                care_plan_entries: []
+              };
+            }
+          })
+        );
+
+        // Sort the data by created_at in descending order
+        const sortedData = plansWithEntries ? [...plansWithEntries].sort((a, b) => {
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        }) : [];
+
+        console.log("Fetched plans:", sortedData);
+        return sortedData;
+      } catch (error: any) {
+        console.error("Error in query function:", error);
         toast({
           variant: "destructive",
           title: "Error fetching plans",
@@ -42,13 +96,45 @@ const Index = () => {
         });
         throw error;
       }
-
-      return data || [];
     },
+    // Ensure the query is always fresh when the component mounts
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
+
+  // Force a refetch when the component mounts
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const handleDelete = async (planId: string) => {
     try {
+      // First delete related records in life_care_plan_totals
+      const { error: totalsError } = await supabase
+        .from('life_care_plan_totals')
+        .delete()
+        .eq('plan_id', planId);
+
+      if (totalsError) throw totalsError;
+
+      // Delete records from life_care_plan_category_totals
+      const { error: categoryTotalsError } = await supabase
+        .from('life_care_plan_category_totals')
+        .delete()
+        .eq('plan_id', planId);
+
+      if (categoryTotalsError) throw categoryTotalsError;
+
+      // Then delete care plan entries
+      const { error: entriesError } = await supabase
+        .from('care_plan_entries')
+        .delete()
+        .eq('plan_id', planId);
+
+      if (entriesError) throw entriesError;
+
+      // Finally delete the plan itself
       const { error } = await supabase
         .from('life_care_plans')
         .delete()
@@ -60,6 +146,9 @@ const Index = () => {
         title: "Success",
         description: "Life care plan deleted successfully",
       });
+
+      // After successful deletion, refetch the plans
+      refetch();
     } catch (error: any) {
       toast({
         variant: "destructive",

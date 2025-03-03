@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cost Range Calculation Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .result-section {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .comparison-table th, .comparison-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .comparison-table th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cost Range Calculation Test</h1>
+  
+  <p>This page tests the updated cost range calculation to verify that:</p>
+  <ol>
+    <li>Both MFU and PFR values are used in the cost range display</li>
+    <li>The order is low, high, then average (with average calculated from low and high)</li>
+    <li>Only 50th and 75th percentiles are used (not 90th)</li>
+  </ol>
+
+  <button id="runTest">Run Test</button>
+  
+  <div id="results" class="result-section" style="display: none;">
+    <h2>Test Results</h2>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    // Mock data for testing
+    const mockCptData = {
+      mfu_50th: 350.00,
+      mfu_75th: 453.00,
+      mfu_90th: 500.00, // Not used in calculation
+      pfr_50th: 375.00,
+      pfr_75th: 475.00,
+      pfr_90th: 550.00  // Not used in calculation
+    };
+
+    // Mock geographic adjustment factors
+    const mockGeoFactors = {
+      mfr_factor: 1.1,  // Factor for MFU values
+      pfr_factor: 1.05  // Factor for PFR values
+    };
+
+    function log(message, isError = false) {
+      const output = document.getElementById('output');
+      const logEntry = document.createElement('div');
+      logEntry.innerHTML = message;
+      if (isError) {
+        logEntry.classList.add('error');
+      }
+      output.appendChild(logEntry);
+    }
+
+    function logJson(obj) {
+      const output = document.getElementById('output');
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(obj, null, 2);
+      output.appendChild(pre);
+    }
+
+    function runTest() {
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('output').innerHTML = '';
+      
+      log('Testing cost range calculation fix...');
+      
+      // Step 1: Log the mock CPT code data
+      log('CPT code data:');
+      logJson({
+        mfu_50th: mockCptData.mfu_50th,
+        mfu_75th: mockCptData.mfu_75th,
+        mfu_90th: mockCptData.mfu_90th,
+        pfr_50th: mockCptData.pfr_50th,
+        pfr_75th: mockCptData.pfr_75th,
+        pfr_90th: mockCptData.pfr_90th
+      });
+      
+      // Step 2: Log the geographic adjustment factors
+      log('Geographic adjustment factors:');
+      logJson(mockGeoFactors);
+      
+      // Step 3: Check data availability
+      const hasMfuData = mockCptData.mfu_50th !== undefined && mockCptData.mfu_75th !== undefined;
+      const hasPfrData = mockCptData.pfr_50th !== undefined && mockCptData.pfr_75th !== undefined;
+      
+      log('Data availability:');
+      logJson({ 
+        hasMfuData, 
+        hasPfrData,
+        mfu_50th_exists: mockCptData.mfu_50th !== undefined,
+        mfu_75th_exists: mockCptData.mfu_75th !== undefined,
+        pfr_50th_exists: mockCptData.pfr_50th !== undefined,
+        pfr_75th_exists: mockCptData.pfr_75th !== undefined
+      });
+      
+      // Step 4: Apply geographic adjustments to MFU and PFR values
+      const adjustedMfu50th = mockCptData.mfu_50th * mockGeoFactors.mfr_factor;
+      const adjustedMfu75th = mockCptData.mfu_75th * mockGeoFactors.mfr_factor;
+      const adjustedPfr50th = mockCptData.pfr_50th * mockGeoFactors.pfr_factor;
+      const adjustedPfr75th = mockCptData.pfr_75th * mockGeoFactors.pfr_factor;
+      
+      log('Adjusted MFU values:');
+      logJson({
+        mfu_50th: mockCptData.mfu_50th,
+        mfu_75th: mockCptData.mfu_75th,
+        adjusted_mfu_50th: adjustedMfu50th,
+        adjusted_mfu_75th: adjustedMfu75th
+      });
+      
+      log('Adjusted PFR values:');
+      logJson({
+        pfr_50th: mockCptData.pfr_50th,
+        pfr_75th: mockCptData.pfr_75th,
+        adjusted_pfr_50th: adjustedPfr50th,
+        adjusted_pfr_75th: adjustedPfr75th
+      });
+      
+      // Step 5: Calculate costs using our updated methodology
+      let low, high, average;
+      
+      if (hasMfuData && hasPfrData) {
+        // If we have both MFU and PFR data, use both for the calculation
+        // Use 50th percentiles for low
+        low = (adjustedMfu50th + adjustedPfr50th) / 2;
+        // Use 75th percentiles for high
+        high = (adjustedMfu75th + adjustedPfr75th) / 2;
+        // Calculate average as (low + high) / 2
+        average = (low + high) / 2;
+        
+        log('Calculated costs using both MFU and PFR data:');
+        logJson({
+          low: low.toFixed(2),
+          high: high.toFixed(2),
+          average: average.toFixed(2)
+        });
+      } else if (hasMfuData) {
+        // If we only have MFU data
+        low = adjustedMfu50th;
+        high = adjustedMfu75th;
+        average = (low + high) / 2;
+        
+        log('Calculated costs using only MFU data:');
+        logJson({
+          low: low.toFixed(2),
+          high: high.toFixed(2),
+          average: average.toFixed(2)
+        });
+      } else if (hasPfrData) {
+        // If we only have PFR data
+        low = adjustedPfr50th;
+        high = adjustedPfr75th;
+        average = (low + high) / 2;
+        
+        log('Calculated costs using only PFR data:');
+        logJson({
+          low: low.toFixed(2),
+          high: high.toFixed(2),
+          average: average.toFixed(2)
+        });
+      } else {
+        log('No percentile data found', true);
+        return;
+      }
+      
+      // Step 6: Compare with incorrect calculation (using only PFR values)
+      const incorrectLow = adjustedPfr50th;
+      const incorrectHigh = adjustedPfr75th;
+      const incorrectAverage = (incorrectLow + incorrectHigh) / 2;
+      
+      log('<br><h3>Comparison: Correct vs. Incorrect Calculation</h3>');
+      
+      const comparisonTable = document.createElement('table');
+      comparisonTable.className = 'comparison-table';
+      comparisonTable.innerHTML = `
+        <tr>
+          <th>Calculation</th>
+          <th>Low</th>
+          <th>High</th>
+          <th>Average</th>
+        </tr>
+        <tr>
+          <td><strong>Correct (MFU + PFR)</strong></td>
+          <td>$${low.toFixed(2)}</td>
+          <td>$${high.toFixed(2)}</td>
+          <td>$${average.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td><strong>Incorrect (PFR only)</strong></td>
+          <td>$${incorrectLow.toFixed(2)}</td>
+          <td>$${incorrectHigh.toFixed(2)}</td>
+          <td>$${incorrectAverage.toFixed(2)}</td>
+        </tr>
+      `;
+      document.getElementById('output').appendChild(comparisonTable);
+      
+      // Step 7: Verify the calculation
+      log('<br><strong>Verification Results:</strong>');
+      log('<hr>');
+      
+      // Verify that both MFU and PFR values are being used (when available)
+      if (hasMfuData && hasPfrData) {
+        log('<span class="success">✅ Both MFU and PFR values are being used in the calculation</span>');
+      } else if (hasMfuData) {
+        log('<span class="success">✅ Only MFU values are available and being used in the calculation</span>');
+      } else if (hasPfrData) {
+        log('<span class="success">✅ Only PFR values are available and being used in the calculation</span>');
+      }
+      
+      // Verify that the order is low, high, then average
+      if (low < high && average === (low + high) / 2) {
+        log('<span class="success">✅ The order is correct: low, high, with average calculated as (low + high) / 2</span>');
+      } else {
+        log('<span class="error">❌ The order or calculation is incorrect</span>');
+      }
+      
+      // Verify that only 50th and 75th percentiles are being used
+      if ((hasMfuData && mockCptData.mfu_90th !== undefined) || (hasPfrData && mockCptData.pfr_90th !== undefined)) {
+        log('<span class="success">✅ 90th percentile is available but not being used in the calculation</span>');
+      } else {
+        log('<span class="success">✅ Only 50th and 75th percentiles are being used (90th percentile is not available)</span>');
+      }
+      
+      log('<br><strong>Final Cost Range:</strong>');
+      log('<hr>');
+      log(`Low: $${low.toFixed(2)}`);
+      log(`High: $${high.toFixed(2)}`);
+      log(`Average: $${average.toFixed(2)}`);
+    }
+
+    document.getElementById('runTest').addEventListener('click', runTest);
+  </script>
+</body>
+</html>

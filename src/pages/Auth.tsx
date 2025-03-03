@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/utils/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,62 +22,47 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await auth.signUp({
           email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin
-          }
+          password
         });
 
         if (error) {
-          if (error.message.includes("already registered")) {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "This email is already registered. Please sign in instead."
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: error.message
-            });
-          }
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: error.message
+          });
           return;
         }
 
-        if (data?.user) {
+        if (data?.session) {
           toast({
             title: "Success!",
-            description: "Please check your email to verify your account.",
+            description: "Account created successfully.",
           });
+          navigate("/");
+        } else {
           setIsSignUp(false); // Switch to sign in mode
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await auth.signIn({
           email,
-          password,
+          password
         });
 
         if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Incorrect email or password. Please try again."
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: error.message
-            });
-          }
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Incorrect email or password. Please try again."
+          });
           return;
         }
 
-        navigate("/");
+        if (data.session) {
+          navigate("/");
+        }
       }
     } catch (error: any) {
       toast({

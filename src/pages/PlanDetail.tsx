@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingState } from "@/components/LifeCarePlan/LoadingState";
@@ -17,8 +17,9 @@ const PlanDetail = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("evaluee");
   const [responseData, setResponseData] = useState<any>(null);
+  const [forceUpdate, setForceUpdate] = useState(0);
   const { evaluee, setEvaluee, isLoading, items, refetch } = usePlanData(id);
-  const { addItem, deleteItem, calculateTotals } = usePlanItems(id, items, refetch);
+  const { addItem: originalAddItem, deleteItem: originalDeleteItem, calculateTotals } = usePlanItems(id, items, refetch, evaluee || undefined);
   const { fetchGeoFactors } = useCostCalculations();
 
   const handleEvalueeSave = async (newEvaluee: any) => {
@@ -48,14 +49,60 @@ const PlanDetail = () => {
     }
   };
 
+  const handleAddItem = async (newItem: any) => {
+    try {
+      await originalAddItem(newItem);
+      // Force a refresh of the data after adding
+      setForceUpdate(prev => prev + 1);
+      // Explicitly call refetch to ensure data is updated
+      await refetch();
+      
+      toast({
+        title: "Success",
+        description: "Care item added successfully"
+      });
+    } catch (error) {
+      console.error("Error adding item:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add care item"
+      });
+    }
+  };
+
+  const deleteItem = async (itemId: string) => {
+    try {
+      await originalDeleteItem(itemId);
+      setForceUpdate(prev => prev + 1);
+      await refetch();
+      
+      toast({
+        title: "Success",
+        description: "Care item deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete care item"
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (id !== "new") {
+      refetch();
+    }
+  }, [forceUpdate, id, refetch]);
+
   if (isLoading) {
     return <LoadingState />;
   }
 
-  // Calculate totals including lifetime ranges
   const { categoryTotals, grandTotal, lifetimeLow, lifetimeHigh } = calculateTotals();
   
-  // Log evaluee information for debugging
   console.log('PlanDetail evaluee:', evaluee);
   const evalueeFullName = evaluee ? `${evaluee.firstName} ${evaluee.lastName}`.trim() : "Unknown";
   console.log('PlanDetail evalueeFullName:', evalueeFullName);
@@ -83,7 +130,7 @@ const PlanDetail = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <PlanForm 
-                onSubmit={addItem} 
+                onSubmit={handleAddItem} 
                 dateOfBirth={evaluee?.dateOfBirth || ''}
                 dateOfInjury={evaluee?.dateOfInjury || ''}
                 lifeExpectancy={evaluee?.lifeExpectancy || ''}
@@ -91,6 +138,7 @@ const PlanDetail = () => {
             </div>
             <div>
               <PlanTable
+                key={`plan-table-${items.length}-${forceUpdate}`}
                 items={items}
                 categoryTotals={categoryTotals}
                 grandTotal={grandTotal}
@@ -107,6 +155,7 @@ const PlanDetail = () => {
 
         <TabsContent value="summary">
           <PlanTable
+            key={`summary-table-${items.length}-${forceUpdate}`}
             items={items}
             categoryTotals={categoryTotals}
             grandTotal={grandTotal}

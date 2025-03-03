@@ -4,15 +4,29 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/utils/authService";
 import DashboardLayout from "./components/Layout/DashboardLayout";
 import Index from "./pages/Index";
 import Plans from "./pages/Plans";
 import PlanDetail from "./pages/PlanDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import CalculationDebugPanel from "./components/CalculationDebugPanel";
 
-const queryClient = new QueryClient();
+// Configure the query client with more aggressive stale times for development
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Shorter stale time to ensure data is refreshed more frequently
+      staleTime: 10 * 1000, // 10 seconds
+      // Refetch on window focus and mount
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      // Retry failed queries
+      retry: 1,
+    },
+  },
+});
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -20,7 +34,7 @@ function App() {
 
   useEffect(() => {
     // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
@@ -28,7 +42,7 @@ function App() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
@@ -67,6 +81,7 @@ function App() {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          {session && <CalculationDebugPanel />}
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

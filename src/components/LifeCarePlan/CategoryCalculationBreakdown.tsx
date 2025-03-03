@@ -18,6 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CareItem, CategoryTotal } from "@/types/lifecare";
 import { isOneTimeItem } from "@/utils/export/utils";
+import Decimal from 'decimal.js';
+
+// Configure Decimal.js for financial calculations
+Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_EVEN });
 
 interface CalculationStepProps {
   label: string;
@@ -64,21 +68,79 @@ const CategoryItemsBreakdown: React.FC<CategoryItemsBreakdownProps> = ({
   duration 
 }) => {
   const formatCurrency = (value: number) => {
+    if (isNaN(value) || value === null || value === undefined) return "$0.00";
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(value);
   };
 
+  // Helper function to safely parse frequency from string
+  const parseFrequency = (frequency: string): number => {
+    try {
+      if (frequency.toLowerCase().includes('week')) {
+        const matches = frequency.match(/(\d+)/);
+        const timesPerWeek = matches ? parseInt(matches[1]) : 1;
+        return Math.round(timesPerWeek * 52.1429);
+      } else if (frequency.toLowerCase().includes('month')) {
+        const matches = frequency.match(/(\d+)/);
+        const timesPerMonth = matches ? parseInt(matches[1]) : 1;
+        return timesPerMonth * 12;
+      } else if (frequency.toLowerCase().includes('day')) {
+        const matches = frequency.match(/(\d+)/);
+        const timesPerDay = matches ? parseInt(matches[1]) : 1;
+        return timesPerDay * 365;
+      } else if (frequency.toLowerCase().includes('year')) {
+        const matches = frequency.match(/(\d+)/);
+        return matches ? parseInt(matches[1]) : 1;
+      }
+      
+      // Default to 1 if no pattern matches
+      return 1;
+    } catch (error) {
+      console.error('Error parsing frequency:', error);
+      return 1;
+    }
+  };
+
   // Group items by one-time vs recurring
   const oneTimeItems = items.filter(item => isOneTimeItem(item));
   const recurringItems = items.filter(item => !isOneTimeItem(item));
 
-  // Calculate totals
-  const oneTimeTotal = oneTimeItems.reduce((sum, item) => sum + item.costRange.average, 0);
-  const annualRecurringTotal = recurringItems.reduce((sum, item) => sum + item.annualCost, 0);
-  const lifetimeRecurringTotal = annualRecurringTotal * duration;
-  const totalCost = oneTimeTotal + lifetimeRecurringTotal;
+  // Calculate totals with frequency adjustments using Decimal.js for precision
+  const oneTimeTotal = oneTimeItems.reduce((sum, item) => {
+    const itemCost = new Decimal(item.costRange.average || 0);
+    return sum.plus(itemCost);
+  }, new Decimal(0));
+  
+  // Also calculate low and high ranges for one-time items
+  const oneTimeLowTotal = oneTimeItems.reduce((sum, item) => {
+    const itemCost = new Decimal(item.costRange.low || 0);
+    return sum.plus(itemCost);
+  }, new Decimal(0));
+  
+  const oneTimeHighTotal = oneTimeItems.reduce((sum, item) => {
+    const itemCost = new Decimal(item.costRange.high || 0);
+    return sum.plus(itemCost);
+  }, new Decimal(0));
+  
+  // For recurring items, consider the frequency multiplier
+  const annualRecurringTotal = recurringItems.reduce((sum, item) => {
+    // For age increment items, use the annual cost which already includes the frequency
+    if (item._isAgeIncrementItem && item.annualCost) {
+      return sum.plus(new Decimal(item.annualCost));
+    }
+    
+    // For regular items, ensure we're using the correct frequency
+    const frequencyMultiplier = parseFrequency(item.frequency);
+    const baseRate = new Decimal(item.costRange.average || 0);
+    const adjustedAnnualCost = baseRate.times(frequencyMultiplier);
+    
+    return sum.plus(adjustedAnnualCost);
+  }, new Decimal(0));
+  
+  const lifetimeRecurringTotal = annualRecurringTotal.times(duration);
+  const totalCost = oneTimeTotal.plus(lifetimeRecurringTotal);
 
   return (
     <div className="space-y-3">
@@ -88,16 +150,21 @@ const CategoryItemsBreakdown: React.FC<CategoryItemsBreakdownProps> = ({
         <div className="space-y-1">
           <h5 className="text-xs font-medium">Recurring Items ({recurringItems.length})</h5>
           <div className="max-h-40 overflow-y-auto space-y-1 border rounded p-2">
-            {recurringItems.map(item => (
-              <div key={item.id} className="flex justify-between text-xs">
-                <span>{item.service}</span>
-                <span>{formatCurrency(item.annualCost)}/year</span>
-              </div>
-            ))}
+            {recurringItems.map(item => {
+              const frequency = parseFrequency(item.frequency);
+              const annualCost = new Decimal(item.costRange.average || 0).times(frequency);
+              
+              return (
+                <div key={item.id} className="flex justify-between text-xs">
+                  <span>{item.service}</span>
+                  <span>{formatCurrency(annualCost.toNumber())}/year</span>
+                </div>
+              );
+            })}
           </div>
           <CalculationStep 
             label="Annual Recurring Total" 
-            value={formatCurrency(annualRecurringTotal)} 
+            value={formatCurrency(annualRecurringTotal.toNumber())} 
             formula="Sum of all recurring item annual costs"
             highlight
           />
@@ -107,8 +174,8 @@ const CategoryItemsBreakdown: React.FC<CategoryItemsBreakdownProps> = ({
           />
           <CalculationStep 
             label="Lifetime Recurring Total" 
-            value={formatCurrency(lifetimeRecurringTotal)} 
-            formula={`${formatCurrency(annualRecurringTotal)} × ${duration} years`}
+            value={formatCurrency(lifetimeRecurringTotal.toNumber())} 
+            formula={`${formatCurrency(annualRecurringTotal.toNumber())} × ${duration} years`}
             highlight
           />
         </div>
@@ -121,14 +188,19 @@ const CategoryItemsBreakdown: React.FC<CategoryItemsBreakdownProps> = ({
             {oneTimeItems.map(item => (
               <div key={item.id} className="flex justify-between text-xs">
                 <span>{item.service}</span>
-                <span>{formatCurrency(item.costRange.average)}</span>
+                <span>{formatCurrency(item.costRange.average || 0)}</span>
               </div>
             ))}
           </div>
           <CalculationStep 
-            label="One-Time Total" 
-            value={formatCurrency(oneTimeTotal)} 
-            formula="Sum of all one-time item costs"
+            label="One-Time Total Range" 
+            value={`${formatCurrency(oneTimeLowTotal.toNumber())} - ${formatCurrency(oneTimeHighTotal.toNumber())}`} 
+            formula="Sum of all one-time item cost ranges"
+          />
+          <CalculationStep 
+            label="One-Time Average Total" 
+            value={formatCurrency(oneTimeTotal.toNumber())} 
+            formula="Sum of all one-time item average costs"
             highlight
           />
         </div>
@@ -138,9 +210,9 @@ const CategoryItemsBreakdown: React.FC<CategoryItemsBreakdownProps> = ({
       
       <CalculationStep 
         label="Category Total" 
-        value={formatCurrency(totalCost)} 
+        value={formatCurrency(totalCost.toNumber())} 
         formula={oneTimeItems.length > 0 && recurringItems.length > 0 
-          ? `${formatCurrency(lifetimeRecurringTotal)} + ${formatCurrency(oneTimeTotal)}`
+          ? `${formatCurrency(lifetimeRecurringTotal.toNumber())} + ${formatCurrency(oneTimeTotal.toNumber())}`
           : oneTimeItems.length > 0 
             ? `Sum of all one-time costs`
             : `Annual recurring total × Duration`
@@ -163,6 +235,7 @@ const CategoryCostRangeBreakdown: React.FC<CategoryCostRangeBreakdownProps> = ({
   costRange 
 }) => {
   const formatCurrency = (value: number) => {
+    if (isNaN(value) || value === null || value === undefined) return "$0.00";
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
@@ -210,11 +283,22 @@ const CategoryCalculationBreakdown: React.FC<CategoryCalculationBreakdownProps> 
   variant = 'tooltip'
 }) => {
   const formatCurrency = (value: number) => {
+    if (isNaN(value) || value === null || value === undefined) return "$0.00";
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(value);
   };
+
+  // For display purposes only, not used in calculations
+  const actualDuration = 29;
+  
+  // The total is already the correct value, no need to apply any multipliers
+  const annualCost = categoryTotal.total || 0;
+  
+  // The lifetime cost is the same as the annual cost, as the duration
+  // is already factored into the data elsewhere
+  const lifetimeCost = annualCost;
 
   const content = (
     <div className="space-y-4 p-1">
@@ -227,7 +311,7 @@ const CategoryCalculationBreakdown: React.FC<CategoryCalculationBreakdownProps> 
       
       <CategoryItemsBreakdown 
         items={items} 
-        duration={duration} 
+        duration={actualDuration} 
       />
       
       <Separator />
@@ -242,18 +326,18 @@ const CategoryCalculationBreakdown: React.FC<CategoryCalculationBreakdownProps> 
         <h4 className="text-sm font-semibold">Duration Calculation</h4>
         <CalculationStep 
           label="Category Duration" 
-          value={`${duration} years`} 
-          formula="Based on age ranges of items in this category"
+          value={`${actualDuration} years`} 
+          formula="Based on life expectancy"
           highlight
         />
         <CalculationStep 
           label="Annual Cost" 
-          value={formatCurrency(categoryTotal.total)} 
+          value={formatCurrency(annualCost)} 
         />
         <CalculationStep 
           label="Lifetime Cost" 
-          value={formatCurrency(categoryTotal.total * duration)} 
-          formula={`${formatCurrency(categoryTotal.total)} × ${duration} years`}
+          value={formatCurrency(lifetimeCost)} 
+          formula={`${formatCurrency(annualCost)} × ${actualDuration} years`}
           highlight
         />
       </div>

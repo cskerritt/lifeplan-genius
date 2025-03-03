@@ -1,5 +1,5 @@
 import { AlignmentType, Table, TableCell, TableRow, TextRun, Paragraph, HeadingLevel, IParagraphOptions, BorderStyle } from "docx";
-import { CareItem } from "@/types/lifecare";
+import { AgeIncrement, CareItem } from "@/types/lifecare";
 import { groupItemsByCategory, calculateCategoryTotal, calculateCategoryOneTimeTotal, isOneTimeItem } from "../utils";
 
 export const createDetailedHeaderRow = (): TableRow => {
@@ -138,8 +138,63 @@ const calculateAgeFromDOB = (dob: string): number => {
   return age;
 };
 
+// Function to expand items with age increments into multiple display items
+const expandItemsWithAgeIncrements = (items: CareItem[]): CareItem[] => {
+  const expanded: CareItem[] = [];
+  
+  items.forEach(item => {
+    if (!item.useAgeIncrements || !item.ageIncrements || item.ageIncrements.length === 0) {
+      expanded.push(item);
+      return;
+    }
+    
+    item.ageIncrements.forEach((increment, index) => {
+      // Calculate the annual cost for this specific increment based on its frequency
+      let incrementAnnualCost = item.annualCost;
+      
+      // If the parent item has a different frequency than this increment,
+      // we need to adjust the annual cost proportionally
+      if (item.frequency !== increment.frequency) {
+        // Extract numeric values from frequencies for comparison
+        const itemFreqMatch = item.frequency.match(/(\d+)x/i);
+        const incFreqMatch = increment.frequency.match(/(\d+)x/i);
+        
+        if (itemFreqMatch && incFreqMatch) {
+          const itemFreq = parseInt(itemFreqMatch[1]);
+          const incFreq = parseInt(incFreqMatch[1]);
+          
+          if (itemFreq > 0) {
+            // Adjust annual cost based on frequency ratio
+            incrementAnnualCost = (item.annualCost / itemFreq) * incFreq;
+          }
+        }
+      }
+      
+      const incrementItem: CareItem = {
+        ...item,
+        id: `${item.id}-increment-${index}`,
+        startAge: increment.startAge,
+        endAge: increment.endAge,
+        frequency: increment.frequency,
+        isOneTime: increment.isOneTime,
+        annualCost: incrementAnnualCost, // Use the adjusted annual cost
+        _isAgeIncrementItem: true,
+        _parentItemId: item.id,
+        _incrementIndex: index
+      };
+      
+      expanded.push(incrementItem);
+    });
+  });
+  
+  return expanded;
+};
+
 export const createDetailedItemRows = (items: CareItem[], dateOfBirth?: string, lifeExpectancy?: string): TableRow[] => {
-  const groupedItems = groupItemsByCategory(items);
+  // Expand items with age increments
+  const expandedItems = expandItemsWithAgeIncrements(items);
+  
+  const groupedItems = groupItemsByCategory(expandedItems);
   const rows: TableRow[] = [];
 
   // Calculate current age and max age

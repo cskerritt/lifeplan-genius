@@ -54,6 +54,10 @@ export interface ParsedDuration {
  * @property high - The high estimate of lifetime cost
  * @property average - The average estimate of lifetime cost
  * @property isOneTime - Whether this is a one-time cost
+ * @property mfrCosts - Optional Medicare Facility Rate costs
+ * @property pfrCosts - Optional Private Facility Rate costs
+ * @property adjustedMfrCosts - Optional adjusted Medicare Facility Rate costs
+ * @property adjustedPfrCosts - Optional adjusted Private Facility Rate costs
  */
 export interface CalculatedCosts {
   annual: number;
@@ -62,6 +66,10 @@ export interface CalculatedCosts {
   high: number;
   average: number;
   isOneTime: boolean;
+  mfrCosts?: { low: number; high: number; average: number };
+  pfrCosts?: { low: number; high: number; average: number };
+  adjustedMfrCosts?: { low: number; high: number; average: number };
+  adjustedPfrCosts?: { low: number; high: number; average: number };
 }
 
 /**

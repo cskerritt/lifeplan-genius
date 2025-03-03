@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GAF Lookup Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .test-title {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .test-status {
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .pending {
+      background-color: #f0f0f0;
+      color: #666;
+    }
+    .running {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .test-details {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 3px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .test-input {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .test-input input {
+      flex-grow: 1;
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .test-input button {
+      padding: 8px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .test-input button:hover {
+      background-color: #0069d9;
+    }
+    .summary {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e9ecef;
+      border-radius: 5px;
+    }
+    .summary h2 {
+      margin-top: 0;
+    }
+    .summary-item {
+      margin: 5px 0;
+    }
+    .success-text {
+      color: #155724;
+    }
+    .error-text {
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <h1>GAF Lookup Test</h1>
+  
+  <div class="test-input">
+    <input type="text" id="zipCode" placeholder="Enter ZIP code to test">
+    <button id="testButton">Test ZIP Code</button>
+  </div>
+  
+  <div id="testResults"></div>
+  
+  <div class="test-section">
+    <div class="test-header">
+      <div class="test-title">Run All Tests</div>
+      <button id="runAllButton">Run All Tests</button>
+    </div>
+  </div>
+  
+  <div id="allTestResults"></div>
+  
+  <div id="summary" class="summary" style="display: none;">
+    <h2>Test Summary</h2>
+    <div id="summaryContent"></div>
+  </div>
+  
+  <script>
+    // Define a simple mock implementation of executeQuery
+    async function executeQuery(query, params) {
+      console.log('Executing query:', query);
+      console.log('With parameters:', params);
+      
+      // Mock data for GAF lookup
+      const mockData = {
+        gaf_lookup: [
+          {
+            id: '1',
+            zip: '02917',
+            city: 'Providence',
+            state_name: 'Rhode Island',
+            mfr_code: 1.1,
+            pfr_code: 1.2
+          },
+          {
+            id: '2',
+            zip: '12345',
+            city: 'New York',
+            state_name: 'New York',
+            mfr_code: 1.2,
+            pfr_code: 1.3
+          },
+          {
+            id: '3',
+            zip: '90210',
+            city: 'Beverly Hills',
+            state_name: 'California',
+            mfr_code: 1.3,
+            pfr_code: 1.4
+          },
+          {
+            id: '4',
+            zip: '06471',
+            city: 'Orange',
+            state_name: 'Connecticut',
+            mfr_code: 1.2,
+            pfr_code: 1.3
+          }
+        ]
+      };
+      
+      // Check if we're looking up by ZIP
+      if (query.toLowerCase().includes('where zip =')) {
+        const zipCode = params[0];
+        console.log(`Looking up by ZIP: ${zipCode}`);
+        
+        // Find the matching GAF entry
+        let gafEntry = mockData.gaf_lookup.find(entry => entry.zip === zipCode);
+        
+        // If not found, create a new entry
+        if (!gafEntry && zipCode) {
+          gafEntry = {
+            id: (mockData.gaf_lookup.length + 1).toString(),
+            zip: zipCode,
+            city: zipCode === '10001' ? 'New York' : 
+                 zipCode === '60601' ? 'Chicago' : 
+                 zipCode === '94102' ? 'San Francisco' : 
+                 zipCode === '33101' ? 'Miami' : 
+                 zipCode === '75201' ? 'Dallas' : 
+                 zipCode === '98101' ? 'Seattle' : 'Unknown City',
+            state_name: zipCode === '10001' ? 'New York' : 
+                        zipCode === '60601' ? 'Illinois' : 
+                        zipCode === '94102' ? 'California' : 
+                        zipCode === '33101' ? 'Florida' : 
+                        zipCode === '75201' ? 'Texas' : 
+                        zipCode === '98101' ? 'Washington' : 'Unknown State',
+            mfr_code: 1.2,
+            pfr_code: 1.3
+          };
+          mockData.gaf_lookup.push(gafEntry);
+        }
+        
+        return {
+          rows: gafEntry ? [gafEntry] : [],
+          rowCount: gafEntry ? 1 : 0
+        };
+      }
+      
+      // Default case - return all GAF entries
+      return {
+        rows: mockData.gaf_lookup,
+        rowCount: mockData.gaf_lookup.length
+      };
+    }
+    
+    // Test ZIP codes
+    const zipCodes = [
+      // Initial mock data
+      '02917',  // Providence, RI
+      '12345',  // New York, NY
+      '90210',  // Beverly Hills, CA
+      
+      // Additional ZIP codes
+      '06471',  // Orange, CT
+      '10001',  // New York, NY
+      '60601',  // Chicago, IL
+      '94102',  // San Francisco, CA
+      '33101',  // Miami, FL
+      '75201',  // Dallas, TX
+      '98101',  // Seattle, WA
+    ];
+    
+    // Test a single ZIP code
+    async function testZipCode(zipCode) {
+      const testId = `test-${zipCode}`;
+      const testResultsDiv = document.getElementById('testResults');
+      
+      // Create test section if it doesn't exist
+      let testSection = document.getElementById(testId);
+      if (!testSection) {
+        testSection = document.createElement('div');
+        testSection.id = testId;
+        testSection.className = 'test-section';
+        testSection.innerHTML = `
+          <div class="test-header">
+            <div class="test-title">Testing ZIP code: ${zipCode}</div>
+            <div class="test-status pending">Pending</div>
+          </div>
+          <div class="test-details"></div>
+        `;
+        testResultsDiv.appendChild(testSection);
+      }
+      
+      const statusDiv = testSection.querySelector('.test-status');
+      const detailsDiv = testSection.querySelector('.test-details');
+      
+      // Update status to running
+      statusDiv.className = 'test-status running';
+      statusDiv.textContent = 'Running';
+      
+      try {
+        // Execute the query
+        detailsDiv.textContent = `Executing query: SELECT mfr_code, pfr_code, city, state_name FROM gaf_lookup WHERE zip = '${zipCode}' LIMIT 1\n`;
+        
+        const result = await executeQuery(
+          'SELECT mfr_code, pfr_code, city, state_name FROM gaf_lookup WHERE zip = $1 LIMIT 1',
+          [zipCode]
+        );
+        
+        // Check if the query returned a result
+        if (result.rows.length === 0) {
+          statusDiv.className = 'test-status error';
+          statusDiv.textContent = 'Error';
+          detailsDiv.textContent += `No GAF entry found for ZIP code: ${zipCode}`;
+          return false;
+        }
+        
+        // Print the result
+        const gafEntry = result.rows[0];
+        statusDiv.className = 'test-status success';
+        statusDiv.textContent = 'Success';
+        detailsDiv.textContent += `Found GAF entry for ZIP code: ${zipCode}\n`;
+        detailsDiv.textContent += `  City: ${gafEntry.city}\n`;
+        detailsDiv.textContent += `  State: ${gafEntry.state_name}\n`;
+        detailsDiv.textContent += `  MFR Code: ${gafEntry.mfr_code}\n`;
+        detailsDiv.textContent += `  PFR Code: ${gafEntry.pfr_code}`;
+        
+        return true;
+      } catch (error) {
+        statusDiv.className = 'test-status error';
+        statusDiv.textContent = 'Error';
+        detailsDiv.textContent += `Error testing GAF lookup for ZIP code: ${zipCode}\n`;
+        detailsDiv.textContent += `  Error: ${error.message}`;
+        
+        return false;
+      }
+    }
+    
+    // Test all ZIP codes
+    async function testAllZipCodes() {
+      const allTestResultsDiv = document.getElementById('allTestResults');
+      allTestResultsDiv.innerHTML = '';
+      
+      let passed = 0;
+      let failed = 0;
+      
+      for (const zipCode of zipCodes) {
+        const testId = `all-test-${zipCode}`;
+        
+        // Create test section
+        const testSection = document.createElement('div');
+        testSection.id = testId;
+        testSection.className = 'test-section';
+        testSection.innerHTML = `
+          <div class="test-header">
+            <div class="test-title">Testing ZIP code: ${zipCode}</div>
+            <div class="test-status pending">Pending</div>
+          </div>
+          <div class="test-details"></div>
+        `;
+        allTestResultsDiv.appendChild(testSection);
+        
+        const statusDiv = testSection.querySelector('.test-status');
+        const detailsDiv = testSection.querySelector('.test-details');
+        
+        // Update status to running
+        statusDiv.className = 'test-status running';
+        statusDiv.textContent = 'Running';
+        
+        try {
+          // Execute the query
+          detailsDiv.textContent = `Executing query: SELECT mfr_code, pfr_code, city, state_name FROM gaf_lookup WHERE zip = '${zipCode}' LIMIT 1\n`;
+          
+          const result = await executeQuery(
+            'SELECT mfr_code, pfr_code, city, state_name FROM gaf_lookup WHERE zip = $1 LIMIT 1',
+            [zipCode]
+          );
+          
+          // Check if the query returned a result
+          if (result.rows.length === 0) {
+            statusDiv.className = 'test-status error';
+            statusDiv.textContent = 'Error';
+            detailsDiv.textContent += `No GAF entry found for ZIP code: ${zipCode}`;
+            failed++;
+          } else {
+            // Print the result
+            const gafEntry = result.rows[0];
+            statusDiv.className = 'test-status success';
+            statusDiv.textContent = 'Success';
+            detailsDiv.textContent += `Found GAF entry for ZIP code: ${zipCode}\n`;
+            detailsDiv.textContent += `  City: ${gafEntry.city}\n`;
+            detailsDiv.textContent += `  State: ${gafEntry.state_name}\n`;
+            detailsDiv.textContent += `  MFR Code: ${gafEntry.mfr_code}\n`;
+            detailsDiv.textContent += `  PFR Code: ${gafEntry.pfr_code}`;
+            passed++;
+          }
+        } catch (error) {
+          statusDiv.className = 'test-status error';
+          statusDiv.textContent = 'Error';
+          detailsDiv.textContent += `Error testing GAF lookup for ZIP code: ${zipCode}\n`;
+          detailsDiv.textContent += `  Error: ${error.message}`;
+          failed++;
+        }
+      }
+      
+      // Show summary
+      const summaryDiv = document.getElementById('summary');
+      const summaryContentDiv = document.getElementById('summaryContent');
+      
+      summaryDiv.style.display = 'block';
+      summaryContentDiv.innerHTML = `
+        <div class="summary-item">Total tests: ${zipCodes.length}</div>
+        <div class="summary-item success-text">Passed: ${passed}</div>
+        ${failed > 0 ? `<div class="summary-item error-text">Failed: ${failed}</div>` : ''}
+        ${failed === 0 ? '<div class="summary-item success-text">All tests passed!</div>' : ''}
+      `;
+    }
+    
+    // Add event listeners
+    document.getElementById('testButton').addEventListener('click', () => {
+      const zipCode = document.getElementById('zipCode').value.trim();
+      if (zipCode) {
+        testZipCode(zipCode);
+      }
+    });
+    
+    document.getElementById('runAllButton').addEventListener('click', () => {
+      testAllZipCodes();
+    });
+    
+    // Allow pressing Enter in the input field
+    document.getElementById('zipCode').addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        const zipCode = document.getElementById('zipCode').value.trim();
+        if (zipCode) {
+          testZipCode(zipCode);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -34,10 +33,11 @@ export function StateSelector({
       }
 
       try {
+        // Use a more lenient search with wildcards
         const { data, error: queryError } = await supabase
           .from('gaf_lookup')
           .select('state_name')
-          .ilike('state_name', inputValue)
+          .ilike('state_name', `%${inputValue}%`)
           .limit(1);
 
         if (queryError) throw queryError;
@@ -47,7 +47,30 @@ export function StateSelector({
           // Update with the correct case from the database
           onValueChange(data[0].state_name);
         } else {
-          setError('Please enter a valid US state name');
+          // Check against a list of valid US states if not found in database
+          const validStates = [
+            "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", 
+            "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", 
+            "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", 
+            "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", 
+            "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", 
+            "New Hampshire", "New Jersey", "New Mexico", "New York", 
+            "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
+            "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+            "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", 
+            "West Virginia", "Wisconsin", "Wyoming", "District of Columbia"
+          ];
+          
+          const matchedState = validStates.find(state => 
+            state.toLowerCase().includes(inputValue.toLowerCase())
+          );
+          
+          if (matchedState) {
+            setError(null);
+            onValueChange(matchedState);
+          } else {
+            setError('Please enter a valid US state name');
+          }
         }
       } catch (err) {
         console.error('Error validating state:', err);
@@ -60,7 +83,7 @@ export function StateSelector({
     }, 500); // Debounce for 500ms
 
     return () => clearTimeout(timeoutId);
-  }, [inputValue]);
+  }, [inputValue, onValueChange]);
 
   return (
     <div className="space-y-2">

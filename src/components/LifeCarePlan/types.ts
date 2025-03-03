@@ -1,5 +1,5 @@
 
-import { CareItem, FrequencyDetails, MedicationDetails } from "@/types/lifecare";
+import { AgeIncrement, CareItem, FrequencyDetails, MedicationDetails } from "@/types/lifecare";
 
 export interface PlanFormProps {
   onSubmit: (item: Omit<CareItem, "id" | "annualCost">) => void;
@@ -13,4 +13,6 @@ export interface FormState {
   cptCode: string;
   frequencyDetails: FrequencyDetails;
   medicationDetails: MedicationDetails;
+  useAgeIncrements?: boolean;
+  ageIncrements?: AgeIncrement[];
 }

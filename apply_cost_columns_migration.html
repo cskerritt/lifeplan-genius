@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply Cost Columns Migration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .card {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .warning {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #output {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Apply Cost Columns Migration</h1>
+    
+    <div class="card info">
+        <h2>Migration Details</h2>
+        <p>This migration will update the following columns in the <code>care_plan_entries</code> table from <strong>integer</strong> to <strong>numeric</strong> type:</p>
+        <ul>
+            <li><code>min_cost</code></li>
+            <li><code>avg_cost</code></li>
+            <li><code>max_cost</code></li>
+            <li><code>annual_cost</code></li>
+            <li><code>lifetime_cost</code></li>
+        </ul>
+        <p>This change will allow these columns to store decimal values, fixing the error:</p>
+        <pre>invalid input syntax for type integer: "80.3"</pre>
+    </div>
+    
+    <div class="card warning">
+        <h2>⚠️ Warning</h2>
+        <p>This migration will modify your database schema. It's recommended to:</p>
+        <ul>
+            <li>Backup your database before proceeding</li>
+            <li>Run this in a development environment first</li>
+            <li>Test thoroughly after applying the migration</li>
+        </ul>
+    </div>
+    
+    <button id="applyMigration">Apply Migration</button>
+    
+    <div id="output"></div>
+    
+    <script>
+        document.getElementById('applyMigration').addEventListener('click', function() {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = 'Running migration...\n';
+            
+            // Execute the migration script
+            fetch('/apply_cost_columns_migration.js')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load migration script');
+                    }
+                    
+                    outputDiv.innerHTML += 'Migration script loaded. Executing...\n';
+                    
+                    // Use a simple approach to execute the script via a server endpoint
+                    return fetch('/execute-migration', { method: 'POST' });
+                })
+                .then(response => response.text())
+                .then(data => {
+                    outputDiv.innerHTML += data + '\n';
+                    outputDiv.innerHTML += 'Migration completed successfully!\n';
+                    
+                    // Add success message
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'card success';
+                    successDiv.innerHTML = '<h2>✅ Migration Applied</h2><p>The cost columns have been successfully updated to numeric type. The application has been restarted with the new schema.</p>';
+                    
+                    document.body.insertBefore(successDiv, outputDiv);
+                })
+                .catch(error => {
+                    outputDiv.innerHTML += 'Error: ' + error.message + '\n';
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+</html>

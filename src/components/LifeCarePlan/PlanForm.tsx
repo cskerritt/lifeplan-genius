@@ -10,7 +10,9 @@ import { PlanFormProps } from "./types";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
 import { SurgicalForm } from "./SurgicalForm/SurgicalForm";
 import { InterventionalForm } from "./InterventionalForm/InterventionalForm";
-import { FrequencyDetails } from "@/types/lifecare";
+import { AgeIncrement, FrequencyDetails } from "@/types/lifecare";
+import { useState } from "react";
+import { calculateAgeFromDOB } from "@/utils/calculations/durationCalculator";
 
 const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanFormProps) => {
   const {
@@ -26,6 +28,10 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     setFrequencyDetails,
     medicationDetails,
     setMedicationDetails,
+    useAgeIncrements,
+    setUseAgeIncrements,
+    ageIncrements,
+    setAgeIncrements,
     resetForm
   } = usePlanFormState();
 
@@ -108,6 +114,11 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
             dateOfBirth={dateOfBirth}
             dateOfInjury={dateOfInjury}
             lifeExpectancy={lifeExpectancy}
+            useAgeIncrements={useAgeIncrements}
+            onUseAgeIncrementsChange={setUseAgeIncrements}
+            ageIncrements={ageIncrements}
+            onAgeIncrementsChange={setAgeIncrements}
+            currentAge={calculateAgeFromDOB(dateOfBirth)}
           />
 
           {category !== "transportation" && (
@@ -132,7 +143,9 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
               service,
               cptCode,
               frequencyDetails,
-              medicationDetails
+              medicationDetails,
+              useAgeIncrements,
+              ageIncrements
             }}
             onSubmit={onSubmit}
             onReset={resetForm}

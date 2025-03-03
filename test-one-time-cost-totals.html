@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One-Time Cost Calculation Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .info {
+            color: #3498db;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result-container {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>One-Time Cost Calculation Test</h1>
+    <p>This page tests the one-time cost calculations to verify that they are properly calculated and added to the totals.</p>
+    
+    <div class="section">
+        <h2>Test Controls</h2>
+        <button id="testOneTimeCosts">Test One-Time Costs</button>
+        <button id="testRecurringCosts">Test Recurring Costs</button>
+        <button id="testTotals">Test Totals Calculation</button>
+        <button id="runAllTests">Run All Tests</button>
+    </div>
+    
+    <div id="oneTimeResult" class="section" style="display: none;">
+        <h2>One-Time Cost Results</h2>
+        <div id="oneTimeContent" class="result-container"></div>
+    </div>
+    
+    <div id="recurringResult" class="section" style="display: none;">
+        <h2>Recurring Cost Results</h2>
+        <div id="recurringContent" class="result-container"></div>
+    </div>
+    
+    <div id="totalsResult" class="section" style="display: none;">
+        <h2>Totals Calculation Results</h2>
+        <div id="totalsContent" class="result-container"></div>
+    </div>
+    
+    <div id="summaryResult" class="section" style="display: none;">
+        <h2>Test Summary</h2>
+        <div id="summaryContent" class="result-container"></div>
+    </div>
+    
+    <script>
+        // Helper functions
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(value);
+        }
+        
+        function appendMessage(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const p = document.createElement('p');
+            p.className = type;
+            p.innerHTML = message;
+            container.appendChild(p);
+        }
+        
+        function appendJson(containerId, data) {
+            const container = document.getElementById(containerId);
+            const pre = document.createElement('pre');
+            pre.textContent = JSON.stringify(data, null, 2);
+            container.appendChild(pre);
+        }
+        
+        function appendTable(containerId, data, headers) {
+            const container = document.getElementById(containerId);
+            const table = document.createElement('table');
+            
+            // Create header row
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create body rows
+            const tbody = document.createElement('tbody');
+            
+            if (Array.isArray(data)) {
+                // Array of objects
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    Object.values(item).forEach(value => {
+                        const td = document.createElement('td');
+                        td.textContent = value;
+                        row.appendChild(td);
+                    });
+                    
+                    tbody.appendChild(row);
+                });
+            } else {
+                // Single object
+                const row = document.createElement('tr');
+                
+                Object.values(data).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    row.appendChild(td);
+                });
+                
+                tbody.appendChild(row);
+            }
+            
+            table.appendChild(tbody);
+            container.appendChild(table);
+        }
+        
+        function showSection(id) {
+            document.getElementById(id).style.display = 'block';
+        }
+        
+        // Mock CPT code data for testing
+        function getMockCptData() {
+            return [{
+                code: '99213',
+                code_description: 'Office/outpatient visit, established patient',
+                mfr_50th: 100.00,
+                mfr_75th: 150.00,
+                pfr_50th: 120.00,
+                pfr_75th: 180.00
+            }];
+        }
+        
+        // Mock geographic factors for testing
+        function getMockGeoFactors() {
+            return {
+                mfr_factor: 1.05,
+                pfr_factor: 1.10
+            };
+        }
+        
+        // Calculate one-time costs
+        function calculateOneTimeCosts(params) {
+            // Get CPT code data
+            const cptData = getMockCptData()[0];
+            
+            // Get geographic factors
+            const geoFactors = getMockGeoFactors();
+            
+            // Apply geographic factors to percentiles
+            const adjustedMfr50th = cptData.mfr_50th * geoFactors.mfr_factor;
+            const adjustedMfr75th = cptData.mfr_75th * geoFactors.mfr_factor;
+            const adjustedPfr50th = cptData.pfr_50th * geoFactors.pfr_factor;
+            const adjustedPfr75th = cptData.pfr_75th * geoFactors.pfr_factor;
+            
+            // Calculate combined base rates
+            const low = (adjustedMfr50th + adjustedPfr50th) / 2;
+            const high = (adjustedMfr75th + adjustedPfr75th) / 2;
+            const average = (low + high) / 2;
+            
+            // For one-time costs, annual is 0 and lifetime is the average
+            return {
+                annual: 0,
+                lifetime: average,
+                low: low,
+                high: high,
+                average: average,
+                isOneTime: true,
+                mfrCosts: {
+                    low: adjustedMfr50th,
+                    high: adjustedMfr75th
+                },
+                pfrCosts: {
+                    low: adjustedPfr50th,
+                    high: adjustedPfr75th
+                }
+            };
+        }
+        
+        // Calculate recurring costs
+        function calculateRecurringCosts(params) {
+            // Get CPT code data
+            const cptData = getMockCptData()[0];
+            
+            // Get geographic factors
+            const geoFactors = getMockGeoFactors();
+            
+            // Apply geographic factors to percentiles
+            const adjustedMfr50th = cptData.mfr_50th * geoFactors.mfr_factor;
+            const adjustedMfr75th = cptData.mfr_75th * geoFactors.mfr_factor;
+            const adjustedPfr50th = cptData.pfr_50th * geoFactors.pfr_factor;
+            const adjustedPfr75th = cptData.pfr_75th * geoFactors.pfr_factor;
+            
+            // Calculate combined base rates
+            const low = (adjustedMfr50th + adjustedPfr50th) / 2;
+            const high = (adjustedMfr75th + adjustedPfr75th) / 2;
+            const average = (low + high) / 2;
+            
+            // Parse frequency
+            const frequency = 4; // 4x per year
+            
+            // Calculate annual cost
+            const annual = average * frequency;
+            
+            // Calculate lifetime cost
+            const duration = params.lifeExpectancy;
+            const lifetime = annual * duration;
+            
+            return {
+                annual: annual,
+                lifetime: lifetime,
+                low: low * frequency * duration,
+                high: high * frequency * duration,
+                average: average * frequency * duration,
+                isOneTime: false,
+                mfrCosts: {
+                    low: adjustedMfr50th,
+                    high: adjustedMfr75th
+                },
+                pfrCosts: {
+                    low: adjustedPfr50th,
+                    high: adjustedPfr75th
+                }
+            };
+        }
+        
+        // Test one-time costs
+        async function testOneTimeCosts() {
+            showSection('oneTimeResult');
+            const container = 'oneTimeContent';
+            
+            try {
+                appendMessage(container, 'Calculating one-time costs for CPT code 99213...', 'info');
+                
+                // Test parameters
+                const params = {
+                    baseRate: 100.00,
+                    frequency: 'one-time',
+                    cptCode: '99213',
+                    zipCode: '90210' // Beverly Hills ZIP code
+                };
+                
+                appendMessage(container, 'Calculation parameters:', 'info');
+                appendJson(container, params);
+                
+                // Calculate one-time costs
+                const result = calculateOneTimeCosts(params);
+                
+                appendMessage(container, 'Successfully calculated one-time costs', 'success');
+                appendMessage(container, 'Calculation result:', 'info');
+                appendJson(container, result);
+                
+                // Show calculation steps
+                appendMessage(container, 'Calculation steps:', 'info');
+                
+                // Step 1: Apply geographic factors
+                appendMessage(container, '1. Apply geographic factors to percentiles:', 'info');
+                const cptData = getMockCptData()[0];
+                const geoFactors = getMockGeoFactors();
+                
+                const adjustedMfr50th = cptData.mfr_50th * geoFactors.mfr_factor;
+                const adjustedMfr75th = cptData.mfr_75th * geoFactors.mfr_factor;
+                const adjustedPfr50th = cptData.pfr_50th * geoFactors.pfr_factor;
+                const adjustedPfr75th = cptData.pfr_75th * geoFactors.pfr_factor;
+                
+                appendTable(container, {
+                    'Raw MFR 50th': formatCurrency(cptData.mfr_50th),
+                    'MFR Factor': geoFactors.mfr_factor.toFixed(4),
+                    'Adjusted MFR 50th': formatCurrency(adjustedMfr50th)
+                }, ['Raw MFR 50th', 'MFR Factor', 'Adjusted MFR 50th']);
+                
+                appendTable(container, {
+                    'Raw MFR 75th': formatCurrency(cptData.mfr_75th),
+                    'MFR Factor': geoFactors.mfr_factor.toFixed(4),
+                    'Adjusted MFR 75th': formatCurrency(adjustedMfr75th)
+                }, ['Raw MFR 75th', 'MFR Factor', 'Adjusted MFR 75th']);
+                
+                appendTable(container, {
+                    'Raw PFR 50th': formatCurrency(cptData.pfr_50th),
+                    'PFR Factor': geoFactors.pfr_factor.toFixed(4),
+                    'Adjusted PFR 50th': formatCurrency(adjustedPfr50th)
+                }, ['Raw PFR 50th', 'PFR Factor', 'Adjusted PFR 50th']);
+                
+                appendTable(container, {
+                    'Raw PFR 75th': formatCurrency(cptData.pfr_75th),
+                    'PFR Factor': geoFactors.pfr_factor.toFixed(4),
+                    'Adjusted PFR 75th': formatCurrency(adjustedPfr75th)
+                }, ['Raw PFR 75th', 'PFR Factor', 'Adjusted PFR 75th']);
+                
+                // Step 2: Calculate combined base rates
+                appendMessage(container, '2. Calculate combined base rates:', 'info');
+                const low = (adjustedMfr50th + adjustedPfr50th) / 2;
+                const high = (adjustedMfr75th + adjustedPfr75th) / 2;
+                const average = (low + high) / 2;
+                
+                appendTable(container, {
+                    'Low': `(${formatCurrency(adjustedMfr50th)} + ${formatCurrency(adjustedPfr50th)}) ÷ 2 = ${formatCurrency(low)}`,
+                    'High': `(${formatCurrency(adjustedMfr75th)} + ${formatCurrency(adjustedPfr75th)}) ÷ 2 = ${formatCurrency(high)}`,
+                    'Average': `(${formatCurrency(low)} + ${formatCurrency(high)}) ÷ 2 = ${formatCurrency(average)}`
+                }, ['Calculation', 'Result']);
+                
+                // Step 3: For one-time costs, annual is 0 and lifetime is the average
+                appendMessage(container, '3. Set annual and lifetime costs:', 'info');
+                appendTable(container, {
+                    'Annual Cost': `${formatCurrency(0)} (one-time items have no annual cost)`,
+                    'Lifetime Cost': `${formatCurrency(average)} (one-time items have lifetime cost equal to average)`
+                }, ['Calculation', 'Result']);
+                
+                // Verify the result
+                if (result.annual === 0) {
+                    appendMessage(container, 'Annual cost is correctly set to 0 for one-time items', 'success');
+                } else {
+                    appendMessage(container, `Annual cost (${formatCurrency(result.annual)}) should be 0 for one-time items`, 'error');
+                }
+                
+                if (result.lifetime === result.average) {
+                    appendMessage(container, 'Lifetime cost is correctly set to the average cost for one-time items', 'success');
+                } else {
+                    appendMessage(container, `Lifetime cost (${formatCurrency(result.lifetime)}) should be equal to average cost (${formatCurrency(result.average)}) for one-time items`, 'error');
+                }
+                
+                if (result.isOneTime === true) {
+                    appendMessage(container, 'isOneTime flag is correctly set to true', 'success');
+                } else {
+                    appendMessage(container, 'isOneTime flag should be true for one-time items', 'error');
+                }
+                
+                return result;
+            } catch (error) {
+                appendMessage(container, `Error calculating one-time costs: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Test recurring costs
+        async function testRecurringCosts() {
+            showSection('recurringResult');
+            const container = 'recurringContent';
+            
+            try {
+                appendMessage(container, 'Calculating recurring costs for CPT code 99213...', 'info');
+                
+                // Test parameters
+                const params = {
+                    baseRate: 100.00,
+                    frequency: '4x per year',
+                    cptCode: '99213',
+                    zipCode: '90210', // Beverly Hills ZIP code
+                    currentAge: 51,
+                    lifeExpectancy: 29.3
+                };
+                
+                appendMessage(container, 'Calculation parameters:', 'info');
+                appendJson(container, params);
+                
+                // Calculate recurring costs
+                const result = calculateRecurringCosts(params);
+                
+                appendMessage(container, 'Successfully calculated recurring costs', 'success');
+                appendMessage(container, 'Calculation result:', 'info');
+                appendJson(container, result);
+                
+                // Show calculation steps
+                appendMessage(container, 'Calculation steps:', 'info');
+                
+                // Step 1: Apply geographic factors
+                appendMessage(container, '1. Apply geographic factors to percentiles:', 'info');
+                const cptData = getMockCptData()[0];
+                const geoFactors = getMockGeoFactors();
+                
+                const adjustedMfr50th = cptData.mfr_50th * geoFactors.mfr_factor;
+                const adjustedMfr75th = cptData.mfr_75th * geoFactors.mfr_factor;
+                const adjustedPfr50th = cptData.pfr_50th * geoFactors.pfr_factor;
+                const adjustedPfr75th = cptData.pfr_75th * geoFactors.pfr_factor;
+                
+                appendTable(container, {
+                    'Raw MFR 50th': formatCurrency(cptData.mfr_50th),
+                    'MFR Factor': geoFactors.mfr_factor.toFixed(4),
+                    'Adjusted MFR 50th': formatCurrency(adjustedMfr50th)
+                }, ['Raw MFR 50th', 'MFR Factor', 'Adjusted MFR 50th']);
+                
+                // Step 2: Calculate combined base rates
+                appendMessage(container, '2. Calculate combined base rates:', 'info');
+                const low = (adjustedMfr50th + adjustedPfr50th) / 2;
+                const high = (adjustedMfr75th + adjustedPfr75th) / 2;
+                const average = (low + high) / 2;
+                
+                appendTable(container, {
+                    'Low': `(${formatCurrency(adjustedMfr50th)} + ${formatCurrency(adjustedPfr50th)}) ÷ 2 = ${formatCurrency(low)}`,
+                    'High': `(${formatCurrency(adjustedMfr75th)} + ${formatCurrency(adjustedPfr75th)}) ÷ 2 = ${formatCurrency(high)}`,
+                    'Average': `(${formatCurrency(low)} + ${formatCurrency(high)}) ÷ 2 = ${formatCurrency(average)}`
+                }, ['Calculation', 'Result']);
+                
+                // Step 3: Apply frequency multiplier
+                appendMessage(container, '3. Apply frequency multiplier:', 'info');
+                const frequency = 4; // 4x per year
+                const annual = average * frequency;
+                
+                appendTable(container, {
+                    'Annual Cost': `${formatCurrency(average)} × ${frequency} = ${formatCurrency(annual)}`
+                }, ['Calculation', 'Result']);
+                
+                // Step 4: Apply duration multiplier
+                appendMessage(container, '4. Apply duration multiplier:', 'info');
+                const duration = params.lifeExpectancy;
+                const lifetime = annual * duration;
+                
+                appendTable(container, {
+                    'Lifetime Cost': `${formatCurrency(annual)} × ${duration} = ${formatCurrency(lifetime)}`
+                }, ['Calculation', 'Result']);
+                
+                // Verify the result
+                if (result.annual > 0) {
+                    appendMessage(container, `Annual cost (${formatCurrency(result.annual)}) is correctly calculated for recurring items`, 'success');
+                } else {
+                    appendMessage(container, `Annual cost (${formatCurrency(result.annual)}) should be greater than 0 for recurring items`, 'error');
+                }
+                
+                if (result.lifetime > 0) {
+                    appendMessage(container, `Lifetime cost (${formatCurrency(result.lifetime)}) is correctly calculated for recurring items`, 'success');
+                } else {
+                    appendMessage(container, `Lifetime cost (${formatCurrency(result.lifetime)}) should be greater than 0 for recurring items`, 'error');
+                }
+                
+                if (result.isOneTime === false) {
+                    appendMessage(container, 'isOneTime flag is correctly set to false', 'success');
+                } else {
+                    appendMessage(container, 'isOneTime flag should be false for recurring items', 'error');
+                }
+                
+                return result;
+            } catch (error) {
+                appendMessage(container, `Error calculating recurring costs: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Test totals calculation
+        async function testTotals() {
+            showSection('totalsResult');
+            const container = 'totalsContent';
+            
+            try {
+                appendMessage(container, 'Testing totals calculation...', 'info');
+                
+                // Calculate one-time costs
+                const oneTimeParams = {
+                    baseRate: 100.00,
+                    frequency: 'one-time',
+                    cptCode: '99213',
+                    zipCode: '90210'
+                };
+                
+                const oneTimeCosts = calculateOneTimeCosts(oneTimeParams);
+                
+                // Calculate recurring costs
+                const recurringParams = {
+                    baseRate: 100.00,
+                    frequency: '4x per year',
+                    cptCode: '99213',
+                    zipCode: '90210',
+                    currentAge: 51,
+                    lifeExpectancy: 29.3
+                };
+                
+                const recurringCosts = calculateRecurringCosts(recurringParams);
+                
+                // Calculate totals
+                const totalAnnualCost = oneTimeCosts.annual + recurringCosts.annual;
+                const totalLifetimeCost = oneTimeCosts.lifetime + recurringCosts.lifetime;
+                const totalLowCost = oneTimeCosts.low + recurringCosts.low;
+                const totalHighCost = oneTimeCosts.high + recurringCosts.high;
+                
+                appendMessage(container, 'One-time costs:', 'info');
+                appendJson(container, oneTimeCosts);
+                
+                appendMessage(container, 'Recurring costs:', 'info');
+                appendJson(container, recurringCosts);
+                
+                appendMessage(container, 'Totals:', 'info');
+                appendTable(container, {
+                    'Total Annual Cost': formatCurrency(totalAnnualCost),
+                    'Total Lifetime Cost': formatCurrency(totalLifetimeCost),
+                    'Total Low Cost': formatCurrency(totalLowCost),
+                    'Total High Cost': formatCurrency(totalHighCost)
+                }, ['Calculation', 'Result']);
+                
+                // Verify the totals
+                if (totalAnnualCost === recurringCosts.annual) {
+                    appendMessage(container, 'Total annual cost correctly excludes one-time costs', 'success');
+                } else {
+                    appendMessage(container, 'Total annual cost should exclude one-time costs', 'error');
+                }
+                
+                if (totalLifetimeCost === oneTimeCosts.lifetime + recurringCosts.lifetime) {
+                    appendMessage(container, 'Total lifetime cost correctly includes one-time costs', 'success');
+                } else {
+                    appendMessage(container, 'Total lifetime cost should include one-time costs', 'error');
+                }
+                
+                return {
+                    totalAnnualCost,
+                    totalLifetimeCost,
+                    totalLowCost,
+                    totalHighCost
+                };
+            } catch (error) {
+                appendMessage(container, `Error calculating totals: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Run all tests
+        async function runAllTests() {
+            // Clear previous results
+            document.getElementById('oneTimeContent').innerHTML = '';
+            document.getElementById('recurringContent').innerHTML = '';
+            document.getElementById('totalsContent').innerHTML = '';
+            document.getElementById('summaryContent').innerHTML = '';
+            
+            // Run tests
+            const oneTimeResult = await testOneTimeCosts();
+            const recurringResult = await testRecurringCosts();
+            const totalsResult = await testTotals();
+            
+            // Show summary
+            showSection('summaryResult');
+            const container = 'summaryContent';
+            
+            if (oneTimeResult && recurringResult && totalsResult) {
+                appendMessage(container, 'All tests passed', 'success');
+                appendMessage(container, 'One-time costs are being calculated correctly', 'info');
+                appendMessage(container, 'Recurring costs are being calculated correctly', 'info');
+                appendMessage(container, 'Totals are being calculated correctly', 'info');
+                appendMessage(container, 'One-time costs are properly added to the lifetime total', 'info');
+                appendMessage(container, 'One-time costs are not added to the annual total', 'info');
+            } else {
+                appendMessage(container, 'Some tests failed', 'error');
+                appendMessage(container, 'Please check the error messages above for details', 'info');
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('testOneTimeCosts').addEventListener('click', testOneTimeCosts);
+        document.getElementById('testRecurringCosts').addEventListener('click', testRecurringCosts);
+        document.getElementById('testTotals').addEventListener('click', testTotals);
+        document.getElementById('runAllTests').addEventListener('click', runAllTests);
+    </script>
+</body>
+</html>

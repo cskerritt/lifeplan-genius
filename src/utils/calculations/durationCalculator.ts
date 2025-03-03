@@ -1,3 +1,4 @@
+import { AgeIncrement } from '@/types/lifecare';
 import { ParsedDuration } from './types';
 import calculationLogger from './logger';
 import { validateParsedDuration } from './validation';
@@ -103,14 +104,18 @@ export const calculateDurationFromLifeExpectancy = (
  * Calculates the age at which an item ends based on start age and duration
  * @param startAge - The starting age
  * @param duration - The duration in years
+ * @param lifeExpectancy - Optional life expectancy to cap the end age
+ * @param currentAge - Optional current age for life expectancy calculation
  * @returns The ending age
  */
 export const calculateEndAge = (
   startAge: number,
-  duration: number
+  duration: number,
+  lifeExpectancy?: number,
+  currentAge?: number
 ): number => {
   const logger = calculationLogger.createContext('calculateEndAge');
-  logger.info(`Calculating end age: start age ${startAge}, duration ${duration}`);
+  logger.info(`Calculating end age: start age ${startAge}, duration ${duration}, life expectancy ${lifeExpectancy}, current age ${currentAge}`);
   
   // Ensure inputs are valid
   if (startAge < 0) {
@@ -123,7 +128,16 @@ export const calculateEndAge = (
     duration = DEFAULT_VALUES.minDuration;
   }
   
-  const endAge = startAge + duration;
+  let endAge = startAge + duration;
+  
+  // Cap end age at maximum allowed by life expectancy if provided
+  if (lifeExpectancy !== undefined && currentAge !== undefined) {
+    const maxAge = currentAge + lifeExpectancy;
+    if (endAge > maxAge) {
+      logger.warn(`End age (${endAge}) exceeds maximum allowed age (${maxAge}), capping at maximum`);
+      endAge = maxAge;
+    }
+  }
   
   logger.info(`Calculated end age: ${endAge}`);
   return endAge;
@@ -225,11 +239,22 @@ export const determineDuration = (
 
 /**
  * Calculates the current age based on date of birth
+ * Uses memoization to prevent repeated calculations for the same date of birth
  * @param dateOfBirth - The date of birth string
  * @returns The current age in years
  */
+// Create a cache to store previously calculated ages
+const ageCache = new Map<string, number>();
+
 export const calculateAgeFromDOB = (dateOfBirth: string): number => {
   const logger = calculationLogger.createContext('calculateAgeFromDOB');
+  
+  // Return cached value if available to prevent repeated calculations and logging
+  if (ageCache.has(dateOfBirth)) {
+    return ageCache.get(dateOfBirth)!;
+  }
+  
+  // Only log when actually calculating (not retrieving from cache)
   logger.info(`Calculating age from date of birth: ${dateOfBirth}`);
   
   try {
@@ -251,6 +276,10 @@ export const calculateAgeFromDOB = (dateOfBirth: string): number => {
     }
     
     logger.info(`Calculated age: ${age}`);
+    
+    // Cache the result
+    ageCache.set(dateOfBirth, age);
+    
     return age;
   } catch (error) {
     logger.error(`Error calculating age from DOB: ${error}`);
@@ -261,6 +290,166 @@ export const calculateAgeFromDOB = (dateOfBirth: string): number => {
 /**
  * Utility functions for duration calculations
  */
+
+/**
+ * Calculates the total duration from a set of age increments
+ * @param ageIncrements - Array of age increments
+ * @returns The total duration in years
+ */
+export const calculateDurationFromAgeIncrements = (
+  ageIncrements: AgeIncrement[]
+): number => {
+  const logger = calculationLogger.createContext('calculateDurationFromAgeIncrements');
+  logger.info(`Calculating duration from ${ageIncrements.length} age increments`);
+  
+  if (!ageIncrements || ageIncrements.length === 0) {
+    logger.warn('No age increments provided, using minimum duration');
+    return DEFAULT_VALUES.minDuration;
+  }
+  
+  // Sort increments by startAge to ensure proper calculation
+  const sortedIncrements = [...ageIncrements].sort((a, b) => a.startAge - b.startAge);
+  
+  // Calculate total duration
+  let totalDuration = 0;
+  
+  for (const increment of sortedIncrements) {
+    if (increment.endAge < increment.startAge) {
+      logger.warn(`Invalid age range: end age (${increment.endAge}) is less than start age (${increment.startAge})`);
+      continue;
+    }
+    
+    const incrementDuration = increment.endAge - increment.startAge;
+    totalDuration += incrementDuration;
+  }
+  
+  // Ensure duration is within reasonable bounds
+  if (totalDuration < DEFAULT_VALUES.minDuration) {
+    logger.warn(`Total duration (${totalDuration}) is less than minimum (${DEFAULT_VALUES.minDuration}), using minimum`);
+    return DEFAULT_VALUES.minDuration;
+  }
+  
+  if (totalDuration > DEFAULT_VALUES.maxDuration) {
+    logger.warn(`Total duration (${totalDuration}) is greater than maximum (${DEFAULT_VALUES.maxDuration}), using maximum`);
+    return DEFAULT_VALUES.maxDuration;
+  }
+  
+  logger.info(`Calculated total duration: ${totalDuration} years`);
+  return totalDuration;
+};
+
+/**
+ * Validates a set of age increments for gaps and overlaps
+ * @param ageIncrements - Array of age increments to validate
+ * @returns Validation result with valid flag and error messages
+ */
+export const validateAgeIncrements = (
+  ageIncrements: AgeIncrement[]
+): { valid: boolean; errors: string[] } => {
+  const logger = calculationLogger.createContext('validateAgeIncrements');
+  logger.info(`Validating ${ageIncrements.length} age increments`);
+  
+  const errors: string[] = [];
+  
+  if (!ageIncrements || ageIncrements.length === 0) {
+    return { valid: true, errors: [] };
+  }
+  
+  // Sort increments by start age
+  const sortedIncrements = [...ageIncrements].sort((a, b) => a.startAge - b.startAge);
+  
+  // Check for basic validity of each increment
+  for (const increment of sortedIncrements) {
+    if (increment.startAge >= increment.endAge) {
+      errors.push(`Invalid age range: ${increment.startAge}-${increment.endAge}`);
+    }
+  }
+  
+  // Check for gaps and overlaps
+  for (let i = 1; i < sortedIncrements.length; i++) {
+    const prevIncrement = sortedIncrements[i - 1];
+    const currentIncrement = sortedIncrements[i];
+    
+    if (prevIncrement.endAge > currentIncrement.startAge) {
+      errors.push(`Overlap between age ${prevIncrement.endAge} and ${currentIncrement.startAge}`);
+    } else if (prevIncrement.endAge < currentIncrement.startAge) {
+      errors.push(`Gap between age ${prevIncrement.endAge} and ${currentIncrement.startAge}`);
+    }
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
+
+/**
+ * Normalizes a set of age increments to fix gaps and overlaps
+ * @param ageIncrements - Array of age increments to normalize
+ * @returns Normalized array of age increments
+ */
+export const normalizeAgeIncrements = (
+  ageIncrements: AgeIncrement[]
+): AgeIncrement[] => {
+  const logger = calculationLogger.createContext('normalizeAgeIncrements');
+  logger.info(`Normalizing ${ageIncrements.length} age increments`);
+  
+  if (!ageIncrements || ageIncrements.length === 0) {
+    return [];
+  }
+  
+  // Sort increments by start age
+  const sortedIncrements = [...ageIncrements].sort((a, b) => a.startAge - b.startAge);
+  const normalized: AgeIncrement[] = [sortedIncrements[0]];
+  
+  // Fix gaps and overlaps
+  for (let i = 1; i < sortedIncrements.length; i++) {
+    const prevNormalized = normalized[normalized.length - 1];
+    const current = sortedIncrements[i];
+    
+    // Fix overlap by adjusting current start age
+    if (prevNormalized.endAge > current.startAge) {
+      normalized.push({
+        ...current,
+        startAge: prevNormalized.endAge
+      });
+    } 
+    // Fix gap by extending previous end age
+    else if (prevNormalized.endAge < current.startAge) {
+      normalized.push(current);
+    }
+    // Perfect connection, no change needed
+    else {
+      normalized.push(current);
+    }
+  }
+  
+  return normalized;
+};
+
+/**
+ * Converts a legacy item to use age increments
+ * @param startAge - The start age
+ * @param endAge - The end age
+ * @param frequency - The frequency string
+ * @param isOneTime - Whether this is a one-time occurrence
+ * @returns An array with a single age increment
+ */
+export const convertToAgeIncrements = (
+  startAge: number = 0,
+  endAge: number = 100,
+  frequency: string = "1x per year",
+  isOneTime: boolean = false
+): AgeIncrement[] => {
+  return [{
+    startAge,
+    endAge,
+    frequency,
+    isOneTime
+  }];
+};
+
+// Export the utility functions
 export const durationCalculator = {
   calculateDurationFromAgeRange,
   calculateDurationFromLifeExpectancy,
@@ -268,6 +457,10 @@ export const durationCalculator = {
   calculateStartAge,
   determineDuration,
   calculateAgeFromDOB,
+  calculateDurationFromAgeIncrements,
+  validateAgeIncrements,
+  normalizeAgeIncrements,
+  convertToAgeIncrements,
   DEFAULT_VALUES,
 };
 

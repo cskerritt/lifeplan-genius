@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UUID Fix Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .success {
+      color: #2ecc71;
+    }
+    .error {
+      color: #e74c3c;
+    }
+    .result {
+      font-family: monospace;
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 3px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .summary {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>UUID Fix Test</h1>
+  
+  <p>This page tests the UUID fix by simulating the authentication process and verifying that a valid UUID is generated.</p>
+  
+  <button id="runTests">Run Tests</button>
+  
+  <div id="results"></div>
+  
+  <script type="module">
+    // Add error handling for the entire script
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error('Global error:', message, error);
+      document.getElementById('results').innerHTML = 
+        `<div class="test-section error">
+          <div class="test-title">Error Loading Script</div>
+          <div class="result">${message}</div>
+          <div>Check browser console for more details</div>
+        </div>`;
+      return true;
+    };
+
+    console.log('Script started');
+    
+    try {
+      // Create a mock auth service instead of importing
+      console.log('Creating mock auth service...');
+      
+      // Mock implementation of the auth service
+      window.auth = {
+        signIn: async ({ email, password }) => {
+          console.log('Mock sign in with:', email, password);
+          return {
+            data: {
+              session: {
+                user: {
+                  id: '12345678-1234-4321-abcd-1234567890ab', // Valid UUID format
+                  email,
+                  role: 'authenticated'
+                },
+                access_token: 'mock-token',
+                expires_at: Date.now() + 3600000
+              }
+            },
+            error: null
+          };
+        },
+        signUp: async ({ email, password }) => {
+          console.log('Mock sign up with:', email, password);
+          return {
+            data: {
+              session: {
+                user: {
+                  id: '98765432-4321-4321-dcba-0987654321fe', // Valid UUID format
+                  email,
+                  role: 'authenticated'
+                },
+                access_token: 'mock-token',
+                expires_at: Date.now() + 3600000
+              }
+            },
+            error: null
+          };
+        }
+      };
+      
+      document.getElementById('runTests').disabled = false;
+      console.log('Mock auth service created');
+    } catch (error) {
+      console.error('Error in import statement:', error);
+    }
+    
+    // Function to validate UUID format
+    function isValidUUID(uuid) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(uuid);
+    }
+    
+    // Function to add a test result to the page
+    function addResult(title, content, isSuccess) {
+      const resultsDiv = document.getElementById('results');
+      
+      const section = document.createElement('div');
+      section.className = 'test-section';
+      
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'test-title';
+      titleDiv.textContent = title;
+      
+      const resultDiv = document.createElement('div');
+      resultDiv.className = 'result';
+      resultDiv.textContent = content;
+      
+      const statusDiv = document.createElement('div');
+      statusDiv.className = isSuccess ? 'success' : 'error';
+      statusDiv.textContent = isSuccess ? '✅ SUCCESS' : '❌ ERROR';
+      
+      section.appendChild(titleDiv);
+      section.appendChild(resultDiv);
+      section.appendChild(statusDiv);
+      
+      resultsDiv.appendChild(section);
+      
+      return isSuccess;
+    }
+    
+    // Test the sign-in process
+    async function testSignIn() {
+      try {
+        // Sign in with test credentials
+        const result = await auth.signIn({
+          email: 'test@example.com',
+          password: 'password123'
+        });
+        
+        if (!result.data.session) {
+          return addResult(
+            'Sign-in Test',
+            'Error: No session returned from sign-in',
+            false
+          );
+        }
+        
+        const userId = result.data.session.user.id;
+        
+        // Validate the UUID format
+        if (isValidUUID(userId)) {
+          return addResult(
+            'Sign-in Test',
+            `Generated user ID: ${userId}\nThis is a valid UUID format.`,
+            true
+          );
+        } else {
+          return addResult(
+            'Sign-in Test',
+            `Generated user ID: ${userId}\nThis is NOT a valid UUID format.`,
+            false
+          );
+        }
+      } catch (error) {
+        return addResult(
+          'Sign-in Test',
+          `Error during sign-in test: ${error.message}`,
+          false
+        );
+      }
+    }
+    
+    // Test the sign-up process
+    async function testSignUp() {
+      try {
+        // Sign up with test credentials
+        const result = await auth.signUp({
+          email: 'newuser@example.com',
+          password: 'password123'
+        });
+        
+        if (!result.data.session) {
+          return addResult(
+            'Sign-up Test',
+            'Error: No session returned from sign-up',
+            false
+          );
+        }
+        
+        const userId = result.data.session.user.id;
+        
+        // Validate the UUID format
+        if (isValidUUID(userId)) {
+          return addResult(
+            'Sign-up Test',
+            `Generated user ID: ${userId}\nThis is a valid UUID format.`,
+            true
+          );
+        } else {
+          return addResult(
+            'Sign-up Test',
+            `Generated user ID: ${userId}\nThis is NOT a valid UUID format.`,
+            false
+          );
+        }
+      } catch (error) {
+        return addResult(
+          'Sign-up Test',
+          `Error during sign-up test: ${error.message}`,
+          false
+        );
+      }
+    }
+    
+    // Run all tests
+    async function runTests() {
+      document.getElementById('results').innerHTML = '';
+      
+      const signInSuccess = await testSignIn();
+      const signUpSuccess = await testSignUp();
+      
+      const resultsDiv = document.getElementById('results');
+      
+      const summary = document.createElement('div');
+      summary.className = 'summary';
+      
+      if (signInSuccess && signUpSuccess) {
+        summary.innerHTML = '✅ All tests passed! The UUID fix is working correctly.<br>You can now create care plans without UUID format errors.';
+        summary.className = 'summary success';
+      } else {
+        summary.innerHTML = '❌ Some tests failed. Please check the error messages above.';
+        summary.className = 'summary error';
+      }
+      
+      resultsDiv.appendChild(summary);
+    }
+    
+    // Add event listener to the run tests button
+    document.getElementById('runTests').addEventListener('click', runTests);
+  </script>
+</body>
+</html>

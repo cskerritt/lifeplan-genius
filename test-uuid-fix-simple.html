@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UUID Fix Test (Simple)</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .success {
+      color: #2ecc71;
+    }
+    .error {
+      color: #e74c3c;
+    }
+    .result {
+      font-family: monospace;
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 3px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .summary {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>UUID Fix Test (Simple)</h1>
+  
+  <p>This page tests the UUID generation function that was implemented in the fix.</p>
+  
+  <button id="runTests">Generate and Test UUIDs</button>
+  
+  <div id="results"></div>
+  
+  <script>
+    // Function to generate a UUID (copied from the fix in authService.ts)
+    function generateUUID() {
+      // RFC4122 compliant UUID v4
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+    
+    // Function to validate UUID format
+    function isValidUUID(uuid) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(uuid);
+    }
+    
+    // Function to add a test result to the page
+    function addResult(title, content, isSuccess) {
+      const resultsDiv = document.getElementById('results');
+      
+      const section = document.createElement('div');
+      section.className = 'test-section';
+      
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'test-title';
+      titleDiv.textContent = title;
+      
+      const resultDiv = document.createElement('div');
+      resultDiv.className = 'result';
+      resultDiv.textContent = content;
+      
+      const statusDiv = document.createElement('div');
+      statusDiv.className = isSuccess ? 'success' : 'error';
+      statusDiv.textContent = isSuccess ? '✅ SUCCESS' : '❌ ERROR';
+      
+      section.appendChild(titleDiv);
+      section.appendChild(resultDiv);
+      section.appendChild(statusDiv);
+      
+      resultsDiv.appendChild(section);
+      
+      return isSuccess;
+    }
+    
+    // Test UUID generation
+    function testUUIDGeneration() {
+      document.getElementById('results').innerHTML = '';
+      
+      // Generate 5 UUIDs and test each one
+      const results = [];
+      
+      for (let i = 1; i <= 5; i++) {
+        const uuid = generateUUID();
+        const isValid = isValidUUID(uuid);
+        
+        results.push({
+          uuid,
+          isValid
+        });
+        
+        addResult(
+          `UUID Generation Test #${i}`,
+          `Generated UUID: ${uuid}\n${isValid ? 'This is a valid UUID format.' : 'This is NOT a valid UUID format.'}`,
+          isValid
+        );
+      }
+      
+      // Add summary
+      const allValid = results.every(r => r.isValid);
+      
+      const resultsDiv = document.getElementById('results');
+      
+      const summary = document.createElement('div');
+      summary.className = 'summary';
+      
+      if (allValid) {
+        summary.innerHTML = '✅ All tests passed! The UUID generation function is working correctly.<br>This confirms that the fix will generate valid UUIDs for user IDs.';
+        summary.className = 'summary success';
+      } else {
+        summary.innerHTML = '❌ Some tests failed. The UUID generation function is not working correctly.';
+        summary.className = 'summary error';
+      }
+      
+      resultsDiv.appendChild(summary);
+    }
+    
+    // Add event listener to the run tests button
+    document.getElementById('runTests').addEventListener('click', testUUIDGeneration);
+  </script>
+</body>
+</html>

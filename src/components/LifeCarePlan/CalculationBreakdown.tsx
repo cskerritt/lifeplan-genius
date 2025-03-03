@@ -164,6 +164,7 @@ interface CostBreakdownProps {
     high: number;
   };
   isOneTime: boolean;
+  cptCode?: string | null;
 }
 
 const CostBreakdown: React.FC<CostBreakdownProps> = ({ 
@@ -173,7 +174,8 @@ const CostBreakdown: React.FC<CostBreakdownProps> = ({
   annualCost, 
   lifetimeCost,
   costRange,
-  isOneTime
+  isOneTime,
+  cptCode
 }) => {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -185,6 +187,19 @@ const CostBreakdown: React.FC<CostBreakdownProps> = ({
   return (
     <div className="space-y-1">
       <h4 className="text-sm font-semibold">Cost Calculation</h4>
+      
+      {cptCode && (
+        <div className="bg-blue-50 p-2 rounded-md mb-2">
+          <h5 className="text-xs font-semibold text-blue-800">CPT Code Cost Calculation</h5>
+          <p className="text-xs text-blue-700">CPT Code: {cptCode}</p>
+          <p className="text-xs text-blue-700">MFR and PFR percentiles are retrieved from the database.</p>
+          <p className="text-xs text-blue-700">Geographic adjustment factors are applied separately to MFR and PFR rates.</p>
+          <p className="text-xs text-blue-700">Low cost = Average of (Adjusted MFR 50th and Adjusted PFR 50th)</p>
+          <p className="text-xs text-blue-700">High cost = Average of (Adjusted MFR 75th and Adjusted PFR 75th)</p>
+          <p className="text-xs text-blue-700">Average cost = Average of (Low and High)</p>
+        </div>
+      )}
+      
       <CalculationStep 
         label="Base Rate" 
         value={formatCurrency(baseRate)} 
@@ -214,11 +229,22 @@ const CostBreakdown: React.FC<CostBreakdownProps> = ({
         </>
       )}
       {isOneTime && (
-        <CalculationStep 
-          label="One-time Cost" 
-          value={formatCurrency(costRange.average)} 
-          highlight
-        />
+        <div className="space-y-1">
+          <h5 className="text-xs font-semibold">Cost Range</h5>
+          <CalculationStep 
+            label="Low" 
+            value={formatCurrency(costRange.low)} 
+          />
+          <CalculationStep 
+            label="Average" 
+            value={formatCurrency(costRange.average)} 
+            highlight
+          />
+          <CalculationStep 
+            label="High" 
+            value={formatCurrency(costRange.high)} 
+          />
+        </div>
       )}
       <Separator className="my-2" />
       <div className="space-y-1">
@@ -256,7 +282,27 @@ const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
   variant = 'tooltip'
 }) => {
   const isOneTimeOccurrence = isOneTimeItem(item);
-  const duration = isOneTimeOccurrence ? 1 : (item.endAge && item.startAge ? item.endAge - item.startAge : 30);
+  
+  // Calculate duration based on the item type
+  let duration = 1; // Default for one-time items
+  
+  if (!isOneTimeOccurrence) {
+    if (item._isAgeIncrementItem) {
+      // For age increment items, duration is simply the difference between end and start age
+      duration = item.endAge && item.startAge ? item.endAge - item.startAge : 30;
+      console.log(`Age increment item duration: ${duration} years (${item.startAge} to ${item.endAge})`);
+    } else if (item.useAgeIncrements && item.ageIncrements && item.ageIncrements.length > 0) {
+      // For parent items with age increments, sum up the durations of all increments
+      duration = item.ageIncrements.reduce((sum, increment) => {
+        return sum + (increment.endAge - increment.startAge);
+      }, 0);
+      console.log(`Parent item with increments duration: ${duration} years`);
+    } else {
+      // For regular items, use the standard calculation
+      duration = item.endAge && item.startAge ? item.endAge - item.startAge : 30;
+      console.log(`Regular item duration: ${duration} years`);
+    }
+  }
   
   // Determine the source of duration
   let durationSource = 'default';
@@ -314,13 +360,14 @@ const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
       )}
       
       <CostBreakdown 
-        baseRate={item.costRange.average}
+        baseRate={item.costPerUnit || item.costRange.average}
         frequency={parsedFrequency.lowFrequency}
         duration={duration}
         annualCost={item.annualCost}
         lifetimeCost={item.annualCost * duration}
         costRange={item.costRange}
         isOneTime={isOneTimeOccurrence}
+        cptCode={item.cptCode}
       />
     </div>
   );

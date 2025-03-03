@@ -291,6 +291,34 @@ export const validateParsedDuration = (parsedDuration: ParsedDuration): Validati
  * @param params - The parameters to validate
  * @returns A validation result
  */
+/**
+ * Validates that the end age does not exceed the maximum allowed age based on life expectancy
+ * @param endAge - The end age to validate
+ * @param currentAge - The current age
+ * @param lifeExpectancy - The life expectancy in years
+ * @returns A validation result
+ */
+export const validateEndAge = (
+  endAge: number,
+  currentAge: number,
+  lifeExpectancy: number
+): ValidationResult => {
+  const logger = calculationLogger.createContext('validateEndAge');
+  const result: ValidationResult = { valid: true, errors: [], warnings: [] };
+  
+  // Calculate maximum allowed age
+  const maxAge = currentAge + lifeExpectancy;
+  
+  // Check if end age exceeds maximum age
+  if (endAge > maxAge) {
+    result.valid = false;
+    result.errors.push(`End age (${endAge}) exceeds maximum allowed age (${maxAge}) based on life expectancy`);
+    logger.error(`End age (${endAge}) exceeds maximum allowed age (${maxAge}) based on life expectancy`);
+  }
+  
+  return result;
+};
+
 export const validateCostCalculationParams = (params: CostCalculationParams): ValidationResult => {
   const logger = calculationLogger.createContext('validateCostCalculationParams');
   const result: ValidationResult = { valid: true, errors: [], warnings: [] };
@@ -386,6 +414,15 @@ export const validateCostCalculationParams = (params: CostCalculationParams): Va
       result.valid = false;
       result.errors.push('End age cannot be less than start age');
       logger.error(`End age (${params.endAge}) is less than start age (${params.startAge})`);
+    }
+    
+    // Check if end age exceeds maximum age based on life expectancy
+    if (params.currentAge !== undefined && params.lifeExpectancy !== undefined) {
+      const endAgeValidation = validateEndAge(params.endAge, params.currentAge, params.lifeExpectancy);
+      if (!endAgeValidation.valid) {
+        result.valid = false;
+        result.errors.push(...endAgeValidation.errors);
+      }
     }
   }
   

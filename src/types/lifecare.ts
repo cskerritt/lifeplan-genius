@@ -41,6 +41,13 @@ export interface GeographicFactor {
   pfr_factor: number | null;
 }
 
+export interface AgeIncrement {
+  startAge: number;
+  endAge: number;
+  frequency: string;
+  isOneTime: boolean;
+}
+
 export interface CareItem {
   id: string;
   category: CareCategory;
@@ -56,6 +63,26 @@ export interface CareItem {
   endAge?: number;
   isOneTime?: boolean;
   notes?: string;
+  
+  // MFR and PFR values
+  mfrMin?: number;
+  mfrMax?: number;
+  pfrMin?: number;
+  pfrMax?: number;
+  
+  // Geographic adjustment factors
+  mfrFactor?: number;
+  pfrFactor?: number;
+  
+  // New fields for age increments
+  ageIncrements?: AgeIncrement[];
+  useAgeIncrements?: boolean;
+  
+  // Fields for age increment display
+  _isAgeIncrementItem?: boolean;
+  _isParentItem?: boolean;
+  _parentItemId?: string;
+  _incrementIndex?: number;
 }
 
 export type CareCategory =
@@ -112,6 +139,9 @@ export interface LifeCarePlan {
   statistical_lifespan: number | null;
   created_at: string | null;
   updated_at: string | null;
+  
+  // New field for plan-level age increment toggle
+  use_age_increments?: boolean;
 }
 
 export interface VehicleModification {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BasicInfoForm } from './BasicInfoForm';
 import { LocationSelector } from './LocationSelector';
@@ -33,7 +32,7 @@ export default function EvalueeInfoForm({
   onSubmit,
   isEditing
 }: EvalueeInfoFormProps) {
-  const { isLoading, cities, lookupGeoFactors, lookupCitiesByState } = useGafLookup();
+  const { isLoading, cities, lookupGeoFactors } = useGafLookup();
 
   const handleFieldChange = (field: string, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
@@ -41,12 +40,8 @@ export default function EvalueeInfoForm({
 
   const handleStateChange = async (state: string) => {
     handleFieldChange('state', state);
+    // City is no longer needed, but we'll keep it in the form data for compatibility
     handleFieldChange('city', '');
-    await lookupCitiesByState(state);
-  };
-
-  const handleCityChange = (city: string) => {
-    handleFieldChange('city', city);
   };
 
   const handleZipLookup = async (zipCode: string) => {
@@ -60,6 +55,7 @@ export default function EvalueeInfoForm({
     const gafData = await lookupGeoFactors(trimmedZip);
     
     if (gafData) {
+      // City is no longer displayed, but we'll keep it in the form data for compatibility
       handleFieldChange('city', gafData.city || '');
       handleFieldChange('state', gafData.state_name || '');
       onLocationChange(gafData.city || '', gafData.state_name || '');
@@ -89,7 +85,7 @@ export default function EvalueeInfoForm({
         cities={cities}
         onZipCodeChange={(value) => handleFieldChange('zipCode', value)}
         onStateChange={handleStateChange}
-        onCityChange={handleCityChange}
+        onCityChange={(city) => handleFieldChange('city', city)}
         onLookup={handleZipLookup}
         isLoading={isLoading}
       />

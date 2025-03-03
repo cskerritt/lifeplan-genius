@@ -175,6 +175,16 @@ export const parseFrequency = (frequency: string): ParsedFrequency => {
       logger.info(`Parsed ${times} times per day pattern: ${lowFrequency} times per year`);
     }
   }
+  // Check for "Nx per year" pattern (e.g., "1x per year", "2x per year")
+  else if (/(\d+)x\s+per\s+year/i.test(frequencyLower)) {
+    const match = frequencyLower.match(/(\d+)x\s+per\s+year/i);
+    if (match) {
+      const times = parseInt(match[1]);
+      lowFrequency = times;
+      highFrequency = times;
+      logger.info(`Parsed Nx per year pattern: ${times} times per year`);
+    }
+  }
   // Check for simple numeric pattern (e.g., "4x" or "4 times")
   else if (/^(\d+)(?:x|times?)?$/i.test(frequencyLower)) {
     const match = frequencyLower.match(/^(\d+)(?:x|times?)?$/i);

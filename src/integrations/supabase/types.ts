@@ -34,6 +34,8 @@ export type Database = {
           plan_id: string
           start_age: number
           updated_at: string | null
+          use_age_increments: boolean | null
+          age_increments: string | null
         }
         Insert: {
           annual_cost: number
@@ -59,6 +61,8 @@ export type Database = {
           plan_id: string
           start_age: number
           updated_at?: string | null
+          use_age_increments?: boolean | null
+          age_increments?: string | null
         }
         Update: {
           annual_cost?: number
@@ -84,6 +88,8 @@ export type Database = {
           plan_id?: string
           start_age?: number
           updated_at?: string | null
+          use_age_increments?: boolean | null
+          age_increments?: string | null
         }
         Relationships: [
           {

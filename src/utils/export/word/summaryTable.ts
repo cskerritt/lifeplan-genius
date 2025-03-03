@@ -1,5 +1,5 @@
 import { Table, TableRow, TableCell, AlignmentType, Paragraph, TextRun, BorderStyle } from "docx";
-import { CareItem } from "@/types/lifecare";
+import { AgeIncrement, CareItem } from "@/types/lifecare";
 import { 
   groupItemsByCategory, 
   calculateCategoryTotal, 
@@ -138,8 +138,63 @@ const calculateAverageDuration = (items: CareItem[], currentAge?: number, lifeEx
   return Math.round(totalDuration / itemsWithAges.length);
 };
 
+// Function to expand items with age increments into multiple display items
+const expandItemsWithAgeIncrements = (items: CareItem[]): CareItem[] => {
+  const expanded: CareItem[] = [];
+  
+  items.forEach(item => {
+    if (!item.useAgeIncrements || !item.ageIncrements || item.ageIncrements.length === 0) {
+      expanded.push(item);
+      return;
+    }
+    
+    item.ageIncrements.forEach((increment, index) => {
+      // Calculate the annual cost for this specific increment based on its frequency
+      let incrementAnnualCost = item.annualCost;
+      
+      // If the parent item has a different frequency than this increment,
+      // we need to adjust the annual cost proportionally
+      if (item.frequency !== increment.frequency) {
+        // Extract numeric values from frequencies for comparison
+        const itemFreqMatch = item.frequency.match(/(\d+)x/i);
+        const incFreqMatch = increment.frequency.match(/(\d+)x/i);
+        
+        if (itemFreqMatch && incFreqMatch) {
+          const itemFreq = parseInt(itemFreqMatch[1]);
+          const incFreq = parseInt(incFreqMatch[1]);
+          
+          if (itemFreq > 0) {
+            // Adjust annual cost based on frequency ratio
+            incrementAnnualCost = (item.annualCost / itemFreq) * incFreq;
+          }
+        }
+      }
+      
+      const incrementItem: CareItem = {
+        ...item,
+        id: `${item.id}-increment-${index}`,
+        startAge: increment.startAge,
+        endAge: increment.endAge,
+        frequency: increment.frequency,
+        isOneTime: increment.isOneTime,
+        annualCost: incrementAnnualCost, // Use the adjusted annual cost
+        _isAgeIncrementItem: true,
+        _parentItemId: item.id,
+        _incrementIndex: index
+      };
+      
+      expanded.push(incrementItem);
+    });
+  });
+  
+  return expanded;
+};
+
 export const createSummaryCategoryRows = (items: CareItem[], dateOfBirth?: string, lifeExpectancy?: string): TableRow[] => {
-  const groupedItems = groupItemsByCategory(items);
+  // Expand items with age increments
+  const expandedItems = expandItemsWithAgeIncrements(items);
+  
+  const groupedItems = groupItemsByCategory(expandedItems);
   const rows: TableRow[] = [];
 
   // Calculate current age and max age
@@ -153,7 +208,7 @@ export const createSummaryCategoryRows = (items: CareItem[], dateOfBirth?: strin
     
     // Calculate duration
     let durationText = lifeExpectancyValue.toString();
-    let lifetimeCost = annualCategoryTotal * lifeExpectancyValue;
+    let lifetimeCost = 0; // We'll calculate this differently for items with age increments
     
     // Update items with current age and max age if startAge or endAge is undefined
     const updatedItems = categoryItems.map(item => {
@@ -170,10 +225,23 @@ export const createSummaryCategoryRows = (items: CareItem[], dateOfBirth?: strin
     // Get age range with updated items
     const ageRange = getCategoryAgeRange(updatedItems);
     
+    // Calculate lifetime cost by summing individual item costs
+    // This ensures we account for different frequencies in different age ranges
+    lifetimeCost = updatedItems.reduce((total, item) => {
+      if (isOneTimeItem(item)) {
+        return total; // One-time costs are handled separately
+      }
+      
+      const itemDuration = item.endAge !== undefined && item.startAge !== undefined 
+        ? item.endAge - item.startAge 
+        : 1;
+        
+      return total + (item.annualCost * itemDuration);
+    }, 0);
+    
     if (ageRange.startAge !== undefined && ageRange.endAge !== undefined) {
       const duration = ageRange.endAge - ageRange.startAge;
       durationText = duration.toString();
-      lifetimeCost = annualCategoryTotal * duration;
     }
 
     // Format category name with spaces between words
@@ -297,7 +365,10 @@ export const createSummaryCategoryRows = (items: CareItem[], dateOfBirth?: strin
 };
 
 export const createSummaryTotalRow = (items: CareItem[], dateOfBirth?: string, lifeExpectancy?: string): TableRow => {
-  const groupedItems = groupItemsByCategory(items);
+  // Expand items with age increments
+  const expandedItems = expandItemsWithAgeIncrements(items);
+  
+  const groupedItems = groupItemsByCategory(expandedItems);
   let totalAnnualCost = 0;
   let totalLifetimeCost = 0;
   let totalOneTimeCost = 0;
@@ -325,16 +396,21 @@ export const createSummaryTotalRow = (items: CareItem[], dateOfBirth?: string, l
       return item;
     });
     
-    // Get age range with updated items
-    const ageRange = getCategoryAgeRange(updatedItems);
+    // Calculate lifetime cost by summing individual item costs
+    // This ensures we account for different frequencies in different age ranges
+    const categoryLifetimeCost = updatedItems.reduce((total, item) => {
+      if (isOneTimeItem(item)) {
+        return total; // One-time costs are handled separately
+      }
+      
+      const itemDuration = item.endAge !== undefined && item.startAge !== undefined 
+        ? item.endAge - item.startAge 
+        : lifeExpectancyValue;
+        
+      return total + (item.annualCost * itemDuration);
+    }, 0);
     
-    if (ageRange.startAge !== undefined && ageRange.endAge !== undefined) {
-      const duration = ageRange.endAge - ageRange.startAge;
-      totalLifetimeCost += annualCategoryTotal * duration;
-    } else {
-      // If no age range, use life expectancy
-      totalLifetimeCost += annualCategoryTotal * lifeExpectancyValue;
-    }
+    totalLifetimeCost += categoryLifetimeCost;
   }
 
   return new TableRow({

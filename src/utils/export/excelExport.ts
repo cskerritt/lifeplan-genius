@@ -12,6 +12,7 @@ import {
   calculateCategoryLifetimeCost,
   getCategoryAgeRange
 } from './utils';
+import { AgeIncrement, CareItem } from '@/types/lifecare';
 
 // Use the centralized age calculation utility
 import { calculateAgeFromDOB } from '@/utils/calculations';
@@ -65,6 +66,58 @@ const createEvalueeInfoSheet = (workbook: Workbook, data: ExportData) => {
   return sheet;
 };
 
+// Function to expand items with age increments into multiple display items
+const expandItemsWithAgeIncrements = (items: CareItem[]): CareItem[] => {
+  const expanded: CareItem[] = [];
+  
+  items.forEach(item => {
+    if (!item.useAgeIncrements || !item.ageIncrements || item.ageIncrements.length === 0) {
+      expanded.push(item);
+      return;
+    }
+    
+    item.ageIncrements.forEach((increment, index) => {
+      // Calculate the annual cost for this specific increment based on its frequency
+      let incrementAnnualCost = item.annualCost;
+      
+      // If the parent item has a different frequency than this increment,
+      // we need to adjust the annual cost proportionally
+      if (item.frequency !== increment.frequency) {
+        // Extract numeric values from frequencies for comparison
+        const itemFreqMatch = item.frequency.match(/(\d+)x/i);
+        const incFreqMatch = increment.frequency.match(/(\d+)x/i);
+        
+        if (itemFreqMatch && incFreqMatch) {
+          const itemFreq = parseInt(itemFreqMatch[1]);
+          const incFreq = parseInt(incFreqMatch[1]);
+          
+          if (itemFreq > 0) {
+            // Adjust annual cost based on frequency ratio
+            incrementAnnualCost = (item.annualCost / itemFreq) * incFreq;
+          }
+        }
+      }
+      
+      const incrementItem: CareItem = {
+        ...item,
+        id: `${item.id}-increment-${index}`,
+        startAge: increment.startAge,
+        endAge: increment.endAge,
+        frequency: increment.frequency,
+        isOneTime: increment.isOneTime,
+        annualCost: incrementAnnualCost, // Use the adjusted annual cost
+        _isAgeIncrementItem: true,
+        _parentItemId: item.id,
+        _incrementIndex: index
+      };
+      
+      expanded.push(incrementItem);
+    });
+  });
+  
+  return expanded;
+};
+
 const createLifetimeProjectedCostsSheet = (workbook: Workbook, data: ExportData) => {
   const sheet = workbook.addWorksheet('Lifetime Projected Costs');
   
@@ -98,8 +151,11 @@ const createLifetimeProjectedCostsSheet = (workbook: Workbook, data: ExportData)
     return sheet;
   }
   
+  // Expand items with age increments
+  const expandedItems = expandItemsWithAgeIncrements(data.items);
+  
   // Group items by category
-  const groupedItems = groupItemsByCategory(data.items);
+  const groupedItems = groupItemsByCategory(expandedItems);
   let currentRow = 4;
   let totalAnnualCost = 0;
   let totalLifetimeCost = 0;
@@ -155,8 +211,19 @@ const createLifetimeProjectedCostsSheet = (workbook: Workbook, data: ExportData)
         durationValue = duration.toString();
         lifetimeCost = annualCost * duration;
       } else {
-        // If no category age range, calculate using individual item durations
-        lifetimeCost = calculateCategoryLifetimeCost(categoryItems);
+        // Calculate lifetime cost by summing individual item costs
+        // This ensures we account for different frequencies in different age ranges
+        lifetimeCost = categoryItems.reduce((total, item) => {
+          if (isOneTimeItem(item)) {
+            return total; // One-time costs are handled separately
+          }
+          
+          const itemDuration = item.endAge !== undefined && item.startAge !== undefined 
+            ? item.endAge - item.startAge 
+            : 30;
+            
+          return total + (item.annualCost * itemDuration);
+        }, 0);
         
         // Check if we have any non-one-time items with durations
         const nonOneTimeItems = categoryItems.filter(item => 
@@ -173,7 +240,7 @@ const createLifetimeProjectedCostsSheet = (workbook: Workbook, data: ExportData)
           durationValue = avgDuration.toString();
         } else {
           // Default to 30 years if we can't determine from age range or items
-          lifetimeCost = annualCost * 30;
+          durationValue = "30";
         }
       }
     }
@@ -255,8 +322,11 @@ const createDetailedItemsSheet = (workbook: Workbook, data: ExportData) => {
     return sheet;
   }
   
+  // Expand items with age increments
+  const expandedItems = expandItemsWithAgeIncrements(data.items);
+  
   // Group items by category
-  const groupedItems = groupItemsByCategory(data.items);
+  const groupedItems = groupItemsByCategory(expandedItems);
   let currentRow = 4;
   
   // Add rows for each item
