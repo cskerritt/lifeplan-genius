@@ -153,12 +153,17 @@ export const executeQuery = async (query: string, params: any[] = []) => {
     debugLog('Query:', query);
     debugLog('Parameters:', params);
     
+    console.log('[DB Connection] Executing browser-compatible query');
+    console.log('[DB Connection] Query:', query);
+    console.log('[DB Connection] Parameters:', params);
+    
     // Create a cache key from the query and parameters
     const cacheKey = `${query}:${JSON.stringify(params)}`;
     
     // Check if we have a cached result
     if (queryCache[cacheKey]) {
       debugLog('Using cached result for query');
+      console.log('[DB Connection] Using cached result for query');
       return queryCache[cacheKey];
     }
     
@@ -171,10 +176,17 @@ export const executeQuery = async (query: string, params: any[] = []) => {
          query.toUpperCase().includes('UPDATE life_care_plans'))) {
       
       debugLog('Development mode detected, using direct handling for life_care_plans operations');
+      console.log('[DB Connection] Development mode detected, using direct handling for life_care_plans operations');
       
       try {
         // Try to execute via API first (which has our bypass logic)
+        console.log('[DB Connection] Attempting to execute via API');
         const result = await executeQueryViaApi(query, sanitizedParams);
+        console.log('[DB Connection] API execution successful, result:', {
+          rowCount: result.rowCount,
+          hasRows: !!result.rows,
+          rowsLength: result.rows ? result.rows.length : 0
+        });
         
         // Cache the result
         queryCache[cacheKey] = result;
@@ -183,6 +195,8 @@ export const executeQuery = async (query: string, params: any[] = []) => {
       } catch (apiError) {
         // If API still fails, create a mock response
         debugLog('API execution failed, creating mock response for development mode');
+        console.error('[DB Connection] API execution failed:', apiError);
+        console.log('[DB Connection] Creating mock response for development mode');
         
         // For INSERT operations, create a mock result
         if (query.toUpperCase().includes('INSERT INTO life_care_plans')) {

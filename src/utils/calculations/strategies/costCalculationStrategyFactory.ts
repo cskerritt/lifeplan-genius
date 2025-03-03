@@ -3,7 +3,7 @@ import { OneTimeCostStrategy } from './oneTimeCostStrategy';
 import { RecurringCostStrategy } from './recurringCostStrategy';
 import { AgeIncrementCostStrategy } from './ageIncrementCostStrategy';
 import { CostCalculationParams } from '../types';
-import { AgeIncrement } from '@/types/lifecare';
+import { AgeIncrement } from '../../../types/lifecare';
 import frequencyParser from '../frequencyParser';
 
 /**

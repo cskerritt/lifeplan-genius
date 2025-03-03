@@ -36,7 +36,10 @@ export function FormActions({ category, costRange, formState, onSubmit, onReset 
       costResources: category === "medication" ? formState.medicationDetails.pharmacyPrices : undefined,
       // Add age increments data if enabled
       useAgeIncrements: formState.useAgeIncrements,
-      ageIncrements: formState.useAgeIncrements ? formState.ageIncrements : undefined
+      ageIncrements: formState.useAgeIncrements ? formState.ageIncrements : undefined,
+      // Add manual cost override and notes fields
+      isManualCost: formState.isManualCost,
+      notes: formState.notes
     };
 
     onSubmit(itemData);

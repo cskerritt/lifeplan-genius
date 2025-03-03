@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileDown, Trash2, Edit, Wand2, Info, CheckCircle, Calculator, ClipboardCheck } from "lucide-react";
+import { FileDown, Trash2, Edit, Wand2, Info, CheckCircle, Calculator, ClipboardCheck, Copy } from "lucide-react";
 import { CareItem, CategoryTotal, Evaluee, LifeCarePlan } from "@/types/lifecare";
 import { exportToWord } from "@/utils/export/wordExport";
 import { exportToExcel } from "@/utils/export/excelExport";
@@ -72,6 +72,7 @@ interface PlanTableProps {
   lifePlan?: LifeCarePlan;
   onDeleteItem?: (itemId: string) => void;
   onUpdateItem?: (itemId: string, updates: Partial<CareItem>) => void;
+  onDuplicateItem?: (itemId: string, modifications: Partial<CareItem>) => void;
 }
 
 const PlanTable = ({ 
@@ -85,7 +86,8 @@ const PlanTable = ({
   evaluee,
   lifePlan,
   onDeleteItem,
-  onUpdateItem
+  onUpdateItem,
+  onDuplicateItem
 }: PlanTableProps) => {
   // Debug logging for props
   console.log('PlanTable props:', {
@@ -131,6 +133,16 @@ const PlanTable = ({
   const [verifyingItem, setVerifyingItem] = useState<CareItem | null>(null);
   const [showGlobalCalculationInfo, setShowGlobalCalculationInfo] = useState<boolean>(false);
   const [expandedItems, setExpandedItems] = useState<CareItem[]>([]);
+  const [duplicatingItem, setDuplicatingItem] = useState<CareItem | null>(null);
+  const [duplicateModifications, setDuplicateModifications] = useState<Partial<CareItem>>({});
+  
+  // Function to open the duplicate dialog
+  const openDuplicateDialog = (item: CareItem) => {
+    setDuplicatingItem(item);
+    setDuplicateModifications({
+      service: `${item.service} (Copy)`
+    });
+  };
   
   // Error states for validation messages
   const [ageRangeError, setAgeRangeError] = useState<string>("");
@@ -262,7 +274,36 @@ const PlanTable = ({
       return 4; // Hardcoded value for this specific pattern
     }
     
-    // Use the comprehensive parseFrequency function
+    // Special case for "2-4x per year 48 years" pattern
+    if (frequency.match(/2-4x\s+per\s+year\s+48\s+years/i)) {
+      console.log('Special case detected: 2-4x per year 48 years');
+      return 3; // Average of 2 and 4
+    }
+    
+    // Handle range patterns like "2-4x per year"
+    const rangeMatch = frequencyPart.match(/(\d+)-(\d+)x\s+per\s+(\w+)/i);
+    if (rangeMatch) {
+      const lowFreq = parseInt(rangeMatch[1], 10);
+      const highFreq = parseInt(rangeMatch[2], 10);
+      const unit = rangeMatch[3].toLowerCase();
+      
+      // Calculate the average frequency
+      const avgFreq = (lowFreq + highFreq) / 2;
+      
+      // Apply multiplier based on the unit
+      if (unit === 'week') {
+        return avgFreq * 52;
+      } else if (unit === 'month') {
+        return avgFreq * 12;
+      } else if (unit === 'day') {
+        return avgFreq * 365;
+      } else {
+        // Default to 'year' if unit is not recognized
+        return avgFreq;
+      }
+    }
+    
+    // Use the comprehensive parseFrequency function for other patterns
     const parsedFrequency = parseFrequency(frequencyPart);
     
     // If it's a one-time item, return 1 (we'll handle one-time items separately)
@@ -915,8 +956,20 @@ const PlanTable = ({
                           size="sm"
                           className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
                           onClick={() => openEditDialog(item)}
+                          title="Edit Item"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {onDuplicateItem && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0 text-purple-500 hover:text-purple-600 hover:bg-purple-50"
+                          onClick={() => openDuplicateDialog(item)}
+                          title="Duplicate Item"
+                        >
+                          <Copy className="h-4 w-4" />
                         </Button>
                       )}
                       {onDeleteItem && (
@@ -940,7 +993,7 @@ const PlanTable = ({
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => {
+                                onClick={async () => {
                                   if (onDeleteItem) {
                                     const itemIdToDelete = item._isAgeIncrementItem ? item._parentItemId! : item.id;
                                     
@@ -957,8 +1010,17 @@ const PlanTable = ({
                                       );
                                     }
                                     
+                                    // Also remove the item from the original items array for immediate UI update
+                                    // This creates an optimistic UI update before the actual deletion completes
+                                    const originalItemIndex = items.findIndex(i => i.id === itemIdToDelete);
+                                    if (originalItemIndex !== -1) {
+                                      // We don't need to modify the items array directly here
+                                      // as it will be updated by the parent component
+                                      // This is just for visual feedback to the user that the item is being deleted
+                                    }
+                                    
                                     // Call the delete function after UI updates
-                                    onDeleteItem(itemIdToDelete);
+                                    await onDeleteItem(itemIdToDelete);
                                   }
                                 }}
                                 className="bg-red-500 hover:bg-red-600"
@@ -1133,10 +1195,18 @@ const PlanTable = ({
                           <div className="border-t pt-1 mt-2">
                             <div className="flex justify-between text-sm font-bold mb-1">
                               <span>Sum of all costs:</span>
-                              <span>{formatCostRange(
-                                categoryTotals.reduce((sum, category) => sum + (isNaN(category.costRange.low) ? 0 : category.costRange.low), 0),
-                                categoryTotals.reduce((sum, category) => sum + (isNaN(category.costRange.high) ? 0 : category.costRange.high), 0)
-                              )}</span>
+                              <span>
+                                {formatCostRange(
+                                  categoryTotals.reduce((sum, category) => {
+                                    const lowValue = isNaN(category.costRange.low) ? 0 : category.costRange.low;
+                                    return sum + lowValue;
+                                  }, 0),
+                                  categoryTotals.reduce((sum, category) => {
+                                    const highValue = isNaN(category.costRange.high) ? 0 : category.costRange.high;
+                                    return sum + highValue;
+                                  }, 0)
+                                )}
+                              </span>
                             </div>
                             <div className="text-sm italic">
                               Note: The lifetime total shows the low and high range values, calculated by directly summing the low and high ranges from each category.
@@ -1256,6 +1326,90 @@ const PlanTable = ({
           <GlobalCalculationInfo />
           <DialogFooter>
             <Button onClick={() => setShowGlobalCalculationInfo(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Duplicate Item Dialog */}
+      <Dialog open={Boolean(duplicatingItem)} onOpenChange={(open) => !open && setDuplicatingItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate {duplicatingItem?.service}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-500 mb-4">
+              Create a copy of this item with optional modifications.
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="service">Service Name</Label>
+                <Input 
+                  id="service" 
+                  defaultValue={duplicatingItem ? `${duplicatingItem.service} (Copy)` : ''} 
+                  onChange={(e) => setDuplicateModifications({
+                    ...duplicateModifications,
+                    service: e.target.value
+                  })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="frequency">Frequency</Label>
+                <Input 
+                  id="frequency" 
+                  defaultValue={duplicatingItem?.frequency} 
+                  onChange={(e) => setDuplicateModifications({
+                    ...duplicateModifications,
+                    frequency: e.target.value
+                  })}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startAge">Age Initiated</Label>
+                  <Input 
+                    id="startAge" 
+                    type="number"
+                    defaultValue={duplicatingItem?.startAge} 
+                    onChange={(e) => setDuplicateModifications({
+                      ...duplicateModifications,
+                      startAge: e.target.value ? parseInt(e.target.value) : undefined
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="endAge">Through Age</Label>
+                  <Input 
+                    id="endAge" 
+                    type="number"
+                    defaultValue={duplicatingItem?.endAge} 
+                    onChange={(e) => setDuplicateModifications({
+                      ...duplicateModifications,
+                      endAge: e.target.value ? parseInt(e.target.value) : undefined
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setDuplicatingItem(null);
+              setDuplicateModifications({});
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (duplicatingItem && onDuplicateItem) {
+                onDuplicateItem(duplicatingItem.id, duplicateModifications);
+                setDuplicatingItem(null);
+                setDuplicateModifications({});
+              }
+            }}>
+              Duplicate Item
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

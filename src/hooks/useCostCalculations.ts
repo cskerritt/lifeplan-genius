@@ -43,19 +43,25 @@ export const useCostCalculations = () => {
   };
 
   const lookupCPTCode = async (code: string) => {
-    console.log('Looking up CPT code:', code);
+    console.log('🔍 Looking up CPT code:', code);
     try {
       // Use direct PostgreSQL connection to call the validate_cpt_code function
-      console.log('Using direct PostgreSQL connection for CPT code lookup...');
+      console.log('🔍 Using direct PostgreSQL connection for CPT code lookup...');
       const query = `SELECT * FROM validate_cpt_code($1)`;
+      console.log('🔍 CPT code lookup query:', query);
+      console.log('🔍 CPT code lookup params:', [code]);
+      
       const result = await executeQuery(query, [code]);
 
-      console.log('CPT code lookup result (raw):', result);
-      console.log('CPT code lookup rows:', result.rows);
+      console.log('🔍 CPT code lookup result (raw):', result);
+      console.log('🔍 CPT code lookup result type:', typeof result);
+      console.log('🔍 CPT code lookup has rows?', !!result.rows);
+      console.log('🔍 CPT code lookup rows length:', result.rows ? result.rows.length : 'N/A');
       
       if (result.rows && result.rows.length > 0) {
-        console.log('CPT code data fields:', Object.keys(result.rows[0]));
-        console.log('CPT code data values:', {
+        console.log('🔍 CPT code data found:', result.rows[0]);
+        console.log('🔍 CPT code data fields:', Object.keys(result.rows[0]));
+        console.log('🔍 CPT code data values:', {
           mfr_50th: result.rows[0].mfr_50th,
           mfr_75th: result.rows[0].mfr_75th,
           mfr_90th: result.rows[0].mfr_90th,
@@ -66,11 +72,27 @@ export const useCostCalculations = () => {
           mfu_75th: result.rows[0].mfu_75th,
           mfu_90th: result.rows[0].mfu_90th
         });
+        
+        // Check if any of the percentile values are null or undefined
+        const hasValidData = 
+          result.rows[0].mfu_50th != null || 
+          result.rows[0].mfu_75th != null || 
+          result.rows[0].pfr_50th != null || 
+          result.rows[0].pfr_75th != null;
+        
+        console.log('🔍 CPT code has valid percentile data:', hasValidData);
+        
+        // If we don't have valid data for this CPT code, log a warning
+        if (!hasValidData) {
+          console.warn('⚠️ CPT code lookup returned no valid percentile data for code:', code);
+        }
+      } else {
+        console.warn('⚠️ No CPT code data found for code:', code);
       }
       
       return result.rows;
     } catch (error) {
-      console.error('Error looking up CPT code:', error);
+      console.error('❌ Error looking up CPT code:', error);
       return null;
     }
   };
@@ -157,216 +179,236 @@ export const useCostCalculations = () => {
     mfrValues?: { min: number; max: number; factor: number };
     pfrValues?: { min: number; max: number; factor: number };
   }> => {
-    console.log('Calculating adjusted costs:', { baseRate, cptCode, category, costResources, zipCode });
+    console.log(`💰 [calculateAdjustedCosts] Starting with baseRate: ${baseRate}, cptCode: ${cptCode}, category: ${category}, zipCode: ${zipCode}`);
     
-    try {
-      // Special handling for vehicle modifications in transportation category
-      if (category === "transportation" && baseRate > 0) {
-        const total = new Decimal(baseRate).toDP(2).toNumber();
-        return { 
-          costRange: validateCosts({ low: total, average: total, high: total }) 
-        };
-      }
-
-      if (["transportation", "supplies", "dme", "medication"].includes(category) && costResources?.length) {
-        return { 
-          costRange: validateCosts(calculateMultiSourceCosts(costResources)) 
-        };
-      }
-
-      // Initialize with base rate
-      let low = new Decimal(baseRate);
-      let average = new Decimal(baseRate);
-      let high = new Decimal(baseRate);
-      
-      // Variables to store raw percentiles
-      let rawMfr50th: Decimal | null = null;
-      let rawMfr75th: Decimal | null = null;
-      let rawPfr50th: Decimal | null = null;
-      let rawPfr75th: Decimal | null = null;
-      
-      // Variables to store adjusted percentiles
-      let adjustedMfr50th: Decimal | null = null;
-      let adjustedMfr75th: Decimal | null = null;
-      let adjustedPfr50th: Decimal | null = null;
-      let adjustedPfr75th: Decimal | null = null;
-      
-      // Get geographic factors if ZIP code is provided
-      let geoFactorsResult = null;
-      if (zipCode) {
-        geoFactorsResult = await fetchGeoFactors(zipCode);
-        if (geoFactorsResult) {
-          console.log('Using geographic factors for calculations:', geoFactorsResult);
-        } else {
-          console.warn(`No geographic factors found for ZIP ${zipCode}, using default factors`);
-        }
-      }
-      
-      // Use default factors if none were found
-      const geoFactors = geoFactorsResult || {
-        mfr_factor: 1.0,
-        pfr_factor: 1.0
+    // Special case for transportation category with vehicle modifications
+    if (
+      category === "transportation" &&
+      vehicleModifications &&
+      vehicleModifications.length > 0
+    ) {
+      console.log(`💰 [calculateAdjustedCosts] Using vehicle modifications for transportation category`);
+      const vehicleTotal = calculateVehicleModificationTotal(vehicleModifications);
+      return { 
+        costRange: validateCosts({ low: vehicleTotal, average: vehicleTotal, high: vehicleTotal }) 
       };
-      
-      // Store MFR and PFR values for UI display
-      let mfrValues: { min: number; max: number; factor: number } | undefined;
-      let pfrValues: { min: number; max: number; factor: number } | undefined;
-      
+    }
+
+    if (["transportation", "supplies", "dme", "medication"].includes(category) && costResources?.length) {
+      console.log(`💰 [calculateAdjustedCosts] Using cost resources for category: ${category}`);
+      return { 
+        costRange: validateCosts(calculateMultiSourceCosts(costResources)) 
+      };
+    }
+
+    // Initialize with base rate
+    let low = new Decimal(baseRate);
+    let average = new Decimal(baseRate);
+    let high = new Decimal(baseRate);
+    
+    // Variables to store raw percentiles
+    let rawMfr50th: Decimal | null = null;
+    let rawMfr75th: Decimal | null = null;
+    let rawPfr50th: Decimal | null = null;
+    let rawPfr75th: Decimal | null = null;
+    
+    // Variables to store adjusted percentiles
+    let adjustedMfr50th: Decimal | null = null;
+    let adjustedMfr75th: Decimal | null = null;
+    let adjustedPfr50th: Decimal | null = null;
+    let adjustedPfr75th: Decimal | null = null;
+    
+    // Get geographic factors if ZIP code is provided
+    let geoFactorsResult = null;
+    if (zipCode) {
+      console.log(`💰 [calculateAdjustedCosts] Fetching geographic factors for ZIP: ${zipCode}`);
+      geoFactorsResult = await fetchGeoFactors(zipCode);
+      if (geoFactorsResult) {
+        console.log('💰 [calculateAdjustedCosts] Using geographic factors for calculations:', geoFactorsResult);
+      } else {
+        console.warn(`⚠️ [calculateAdjustedCosts] No geographic factors found for ZIP ${zipCode}, using default factors`);
+      }
+    }
+    
+    // Use default factors if none were found
+    const geoFactors = geoFactorsResult || {
+      mfr_factor: 1.0,
+      pfr_factor: 1.0
+    };
+    console.log(`💰 [calculateAdjustedCosts] Geographic factors being used:`, geoFactors);
+    
+    // Store MFR and PFR values for UI display
+    let mfrValues: { min: number; max: number; factor: number } | undefined;
+    let pfrValues: { min: number; max: number; factor: number } | undefined;
+    try {
+      // Get CPT code data if provided
+      let cptData = null;
       if (cptCode) {
+        console.log(`💰 [calculateAdjustedCosts] Looking up CPT code: ${cptCode}`);
         const cptResult = await lookupCPTCode(cptCode);
-        if (cptResult && Array.isArray(cptResult) && cptResult.length > 0) {
-          const cptData = cptResult;
-          console.log('Using CPT code data:', cptData[0]);
-          
-  // Check if we have MFU data (stored as mfu_* in the database)
-  const hasMfuData = cptData[0].mfu_50th !== undefined && cptData[0].mfu_75th !== undefined;
-  
-  // Check if we have PFR data
-  const hasPfrData = cptData[0].pfr_50th !== undefined && cptData[0].pfr_75th !== undefined;
-  
-  console.log('Data availability:', { 
-    hasMfuData, 
-    hasPfrData,
-    mfu_50th_exists: cptData[0].mfu_50th !== undefined,
-    mfu_75th_exists: cptData[0].mfu_75th !== undefined,
-    pfr_50th_exists: cptData[0].pfr_50th !== undefined,
-    pfr_75th_exists: cptData[0].pfr_75th !== undefined
-  });
-          
-          // Store the raw percentiles
-          if (hasMfuData) {
-            rawMfr50th = new Decimal(cptData[0].mfu_50th);
-            rawMfr75th = new Decimal(cptData[0].mfu_75th);
-            console.log('Using raw MFU data (from mfu_* fields):', { 
-              mfu_50th: rawMfr50th.toNumber(), 
-              mfu_75th: rawMfr75th.toNumber() 
-            });
-            
-            // Store MFU values for UI display
-            mfrValues = {
-              min: rawMfr50th.toNumber(),
-              max: rawMfr75th.toNumber(),
-              factor: geoFactors.mfr_factor
-            };
-            
-            // Apply geographic adjustment to MFU percentiles
-            adjustedMfr50th = rawMfr50th.times(new Decimal(geoFactors.mfr_factor));
-            adjustedMfr75th = rawMfr75th.times(new Decimal(geoFactors.mfr_factor));
-            
-            console.log('Adjusted MFU data with factor:', { 
-              factor: geoFactors.mfr_factor,
-              adjusted_mfu_50th: adjustedMfr50th.toNumber(), 
-              adjusted_mfu_75th: adjustedMfr75th.toNumber() 
-            });
-          }
-          
-          if (hasPfrData) {
-            rawPfr50th = new Decimal(cptData[0].pfr_50th);
-            rawPfr75th = new Decimal(cptData[0].pfr_75th);
-            console.log('Using raw PFR data:', { 
-              pfr_50th: rawPfr50th.toNumber(), 
-              pfr_75th: rawPfr75th.toNumber() 
-            });
-            
-            // Store PFR values for UI display
-            pfrValues = {
-              min: rawPfr50th.toNumber(),
-              max: rawPfr75th.toNumber(),
-              factor: geoFactors.pfr_factor
-            };
-            
-            // Apply geographic adjustment to PFR percentiles
-            adjustedPfr50th = rawPfr50th.times(new Decimal(geoFactors.pfr_factor));
-            adjustedPfr75th = rawPfr75th.times(new Decimal(geoFactors.pfr_factor));
-            
-            console.log('Adjusted PFR data with factor:', { 
-              factor: geoFactors.pfr_factor,
-              adjusted_pfr_50th: adjustedPfr50th.toNumber(), 
-              adjusted_pfr_75th: adjustedPfr75th.toNumber() 
-            });
-          }
-          
-          // Calculate low, high, and average costs based on available adjusted data
-          if (adjustedMfr50th && adjustedPfr50th && adjustedMfr75th && adjustedPfr75th) {
-            // If we have both adjusted MFU and PFR data, use both for the calculation
-            // Use 50th percentiles for low
-            low = adjustedMfr50th.plus(adjustedPfr50th).dividedBy(2);
-            // Use 75th percentiles for high
-            high = adjustedMfr75th.plus(adjustedPfr75th).dividedBy(2);
-            // Calculate average as (low + high) / 2
-            average = low.plus(high).dividedBy(2);
-            
-            console.log('Calculated costs using both adjusted MFU and PFR data:', {
-              low: low.toNumber(),
-              high: high.toNumber(),
-              average: average.toNumber()
-            });
-          } 
-          else if (adjustedMfr50th && adjustedMfr75th) {
-            // If we only have adjusted MFU data
-            low = adjustedMfr50th; // 50th percentile for low
-            high = adjustedMfr75th; // 75th percentile for high
-            average = low.plus(high).dividedBy(2); // Average of low and high
-            
-            console.log('Calculated costs using only adjusted MFU data:', {
-              low: low.toNumber(),
-              high: high.toNumber(),
-              average: average.toNumber()
-            });
-          } 
-          else if (adjustedPfr50th && adjustedPfr75th) {
-            // If we only have adjusted PFR data
-            low = adjustedPfr50th; // 50th percentile for low
-            high = adjustedPfr75th; // 75th percentile for high
-            average = low.plus(high).dividedBy(2); // Average of low and high
-            
-            console.log('Calculated costs using only adjusted PFR data:', {
-              low: low.toNumber(),
-              high: high.toNumber(),
-              average: average.toNumber()
-            });
-          } 
-          else if (rawMfr50th && rawPfr50th && rawMfr75th && rawPfr75th) {
-            // If we have both raw MFU and PFR data but no adjustments, calculate from raw
-            low = rawMfr50th.plus(rawPfr50th).dividedBy(2);
-            high = rawMfr75th.plus(rawPfr75th).dividedBy(2);
-            average = low.plus(high).dividedBy(2);
-            
-            console.log('Calculated costs using both raw MFU and PFR data (no adjustments):', {
-              low: low.toNumber(),
-              high: high.toNumber(),
-              average: average.toNumber()
-            });
-          } 
-          else if (rawMfr50th && rawMfr75th) {
-            // If we only have raw MFU data
-            low = rawMfr50th;
-            high = rawMfr75th;
-            average = low.plus(high).dividedBy(2);
-            
-            console.log('Calculated costs using only raw MFU data (no adjustments):', {
-              low: low.toNumber(),
-              high: high.toNumber(),
-              average: average.toNumber()
-            });
-          } 
-          else if (rawPfr50th && rawPfr75th) {
-            // If we only have raw PFR data
-            low = rawPfr50th;
-            high = rawPfr75th;
-            average = low.plus(high).dividedBy(2);
-            
-            console.log('Calculated costs using only raw PFR data (no adjustments):', {
-              low: low.toNumber(),
-              high: high.toNumber(),
-              average: average.toNumber()
-            });
-          } 
-          else {
-            // If we don't have either, use base rate
-            console.warn(`No percentile data found for CPT code ${cptCode}, using base rate`);
-          }
+        if (cptResult && cptResult.length > 0) {
+          cptData = cptResult[0];
+          console.log(`💰 [calculateAdjustedCosts] CPT code data found:`, cptData);
+        } else {
+          console.warn(`⚠️ [calculateAdjustedCosts] No CPT code data found for: ${cptCode}`);
         }
+      }
+
+      // Check if we have MFU data
+      let hasMfuData = false;
+      if (cptData && (cptData.mfu_50th != null || cptData.mfu_75th != null)) {
+        console.log(`💰 [calculateAdjustedCosts] MFU data available:`, {
+          mfu_50th: cptData.mfu_50th,
+          mfu_75th: cptData.mfu_75th
+        });
+        hasMfuData = true;
+
+        // Get raw MFU values
+        rawMfr50th = cptData.mfu_50th != null ? new Decimal(cptData.mfu_50th) : null;
+        rawMfr75th = cptData.mfu_75th != null ? new Decimal(cptData.mfu_75th) : null;
+        console.log(`💰 [calculateAdjustedCosts] Raw MFU values - 50th: ${rawMfr50th}, 75th: ${rawMfr75th}`);
+
+        // Apply geographic adjustment to MFU percentiles
+        if (rawMfr50th) {
+          adjustedMfr50th = rawMfr50th.times(geoFactors.mfr_factor);
+          console.log(`💰 [calculateAdjustedCosts] Adjusted MFU 50th: ${rawMfr50th} * ${geoFactors.mfr_factor} = ${adjustedMfr50th}`);
+        }
+        
+        if (rawMfr75th) {
+          adjustedMfr75th = rawMfr75th.times(geoFactors.mfr_factor);
+          console.log(`💰 [calculateAdjustedCosts] Adjusted MFU 75th: ${rawMfr75th} * ${geoFactors.mfr_factor} = ${adjustedMfr75th}`);
+        }
+
+        // Store MFR values for UI display
+        if (rawMfr50th && rawMfr75th) {
+          mfrValues = {
+            min: rawMfr50th.toNumber(),
+            max: rawMfr75th.toNumber(),
+            factor: geoFactors.mfr_factor
+          };
+          console.log(`💰 [calculateAdjustedCosts] MFR values for UI:`, mfrValues);
+        }
+      } else {
+        console.log(`💰 [calculateAdjustedCosts] No MFU data available for CPT code ${cptCode}`);
+      }
+
+      // Check if we have PFR data
+      let hasPfrData = false;
+      if (cptData && (cptData.pfr_50th != null || cptData.pfr_75th != null)) {
+        console.log(`💰 [calculateAdjustedCosts] PFR data available:`, {
+          pfr_50th: cptData.pfr_50th,
+          pfr_75th: cptData.pfr_75th
+        });
+        hasPfrData = true;
+
+        // Get raw PFR values
+        rawPfr50th = cptData.pfr_50th != null ? new Decimal(cptData.pfr_50th) : null;
+        rawPfr75th = cptData.pfr_75th != null ? new Decimal(cptData.pfr_75th) : null;
+        console.log(`💰 [calculateAdjustedCosts] Raw PFR values - 50th: ${rawPfr50th}, 75th: ${rawPfr75th}`);
+
+        // Apply geographic adjustment to PFR percentiles
+        if (rawPfr50th) {
+          adjustedPfr50th = rawPfr50th.times(geoFactors.pfr_factor);
+          console.log(`💰 [calculateAdjustedCosts] Adjusted PFR 50th: ${rawPfr50th} * ${geoFactors.pfr_factor} = ${adjustedPfr50th}`);
+        }
+        
+        if (rawPfr75th) {
+          adjustedPfr75th = rawPfr75th.times(geoFactors.pfr_factor);
+          console.log(`💰 [calculateAdjustedCosts] Adjusted PFR 75th: ${rawPfr75th} * ${geoFactors.pfr_factor} = ${adjustedPfr75th}`);
+        }
+
+        // Store PFR values for UI display
+        if (rawPfr50th && rawPfr75th) {
+          pfrValues = {
+            min: rawPfr50th.toNumber(),
+            max: rawPfr75th.toNumber(),
+            factor: geoFactors.pfr_factor
+          };
+          console.log(`💰 [calculateAdjustedCosts] PFR values for UI:`, pfrValues);
+        }
+      } else {
+        console.log(`💰 [calculateAdjustedCosts] No PFR data available for CPT code ${cptCode}`);
+      }
+
+      // Calculate low, high, and average costs based on available adjusted data
+      if (adjustedMfr50th && adjustedPfr50th && adjustedMfr75th && adjustedPfr75th) {
+        // If we have both adjusted MFU and PFR data, use both for the calculation
+        // Use 50th percentiles for low
+        low = adjustedMfr50th.plus(adjustedPfr50th).dividedBy(2);
+        // Use 75th percentiles for high
+        high = adjustedMfr75th.plus(adjustedPfr75th).dividedBy(2);
+        // Calculate average as (low + high) / 2
+        average = low.plus(high).dividedBy(2);
+        
+        console.log('Calculated costs using both adjusted MFU and PFR data:', {
+          low: low.toNumber(),
+          high: high.toNumber(),
+          average: average.toNumber()
+        });
+      } 
+      else if (adjustedMfr50th && adjustedMfr75th) {
+        // If we only have adjusted MFU data
+        low = adjustedMfr50th; // 50th percentile for low
+        high = adjustedMfr75th; // 75th percentile for high
+        average = low.plus(high).dividedBy(2); // Average of low and high
+        
+        console.log('Calculated costs using only adjusted MFU data:', {
+          low: low.toNumber(),
+          high: high.toNumber(),
+          average: average.toNumber()
+        });
+      } 
+      else if (adjustedPfr50th && adjustedPfr75th) {
+        // If we only have adjusted PFR data
+        low = adjustedPfr50th; // 50th percentile for low
+        high = adjustedPfr75th; // 75th percentile for high
+        average = low.plus(high).dividedBy(2); // Average of low and high
+        
+        console.log('Calculated costs using only adjusted PFR data:', {
+          low: low.toNumber(),
+          high: high.toNumber(),
+          average: average.toNumber()
+        });
+      } 
+      else if (rawMfr50th && rawPfr50th && rawMfr75th && rawPfr75th) {
+        // If we have both raw MFU and PFR data but no adjustments, calculate from raw
+        low = rawMfr50th.plus(rawPfr50th).dividedBy(2);
+        high = rawMfr75th.plus(rawPfr75th).dividedBy(2);
+        average = low.plus(high).dividedBy(2);
+        
+        console.log('Calculated costs using both raw MFU and PFR data (no adjustments):', {
+          low: low.toNumber(),
+          high: high.toNumber(),
+          average: average.toNumber()
+        });
+      } 
+      else if (rawMfr50th && rawMfr75th) {
+        // If we only have raw MFU data
+        low = rawMfr50th;
+        high = rawMfr75th;
+        average = low.plus(high).dividedBy(2);
+        
+        console.log('Calculated costs using only raw MFU data (no adjustments):', {
+          low: low.toNumber(),
+          high: high.toNumber(),
+          average: average.toNumber()
+        });
+      } 
+      else if (rawPfr50th && rawPfr75th) {
+        // If we only have raw PFR data
+        low = rawPfr50th;
+        high = rawPfr75th;
+        average = low.plus(high).dividedBy(2);
+        
+        console.log('Calculated costs using only raw PFR data (no adjustments):', {
+          low: low.toNumber(),
+          high: high.toNumber(),
+          average: average.toNumber()
+        });
+      } 
+      else {
+        // If we don't have either, use base rate
+        console.warn(`No percentile data found for CPT code ${cptCode}, using base rate`);
       }
 
       const costRange = validateCosts({

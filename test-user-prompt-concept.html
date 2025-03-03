@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Prompt System Concept</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .dialog {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .dialog h2 {
+      margin-top: 0;
+    }
+    .dialog input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .dialog-buttons {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .dialog-buttons button {
+      margin-left: 10px;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .info-box {
+      background-color: #e8f4f8;
+      border-left: 4px solid #4a90e2;
+      padding: 10px 15px;
+      margin: 15px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .info-box h3 {
+      margin-top: 0;
+      color: #4a90e2;
+    }
+    .info-box pre {
+      background-color: #f8f8f8;
+      margin-bottom: 0;
+    }
+    .section {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>User Prompt System Concept</h1>
+  
+  <div class="card">
+    <h2>About This Demo</h2>
+    <p>This page demonstrates the concept of the User Prompt System for handling missing data in the LifePlan Genius application. Instead of using default fallback values when data is missing, the system prompts the user to provide the missing data, ensuring more accurate calculations.</p>
+  </div>
+  
+  <div class="card">
+    <h2>Cost Calculator</h2>
+    <p>Enter a ZIP code and click the button to calculate costs. For demonstration purposes, try using ZIP code 02917 to trigger the user prompt.</p>
+    
+    <div class="form-group">
+      <label for="zipCodeInput">ZIP Code:</label>
+      <input type="text" id="zipCodeInput" placeholder="Enter ZIP code (e.g., 02917)" value="02917">
+    </div>
+    
+    <button id="calculateButton">Calculate Costs</button>
+    
+    <div id="queryInfo" class="info-box" style="display: none;">
+      <h3>Database Query</h3>
+      <p id="queryDescription"></p>
+      <pre id="queryResult"></pre>
+    </div>
+    
+    <div id="result" class="section" style="margin-top: 20px;"></div>
+    
+    <div id="cachedData" class="info-box" style="display: none;">
+      <h3>Cached Data</h3>
+      <p>The following geographic factors have been cached for future use:</p>
+      <pre id="cachedDataResult"></pre>
+    </div>
+  </div>
+  
+  <div id="dialogOverlay" class="dialog-overlay" style="display: none;">
+    <div class="dialog">
+      <h2 id="dialogTitle">Geographic Adjustment Factors</h2>
+      <p id="dialogMessage">No geographic factors found for ZIP code. Please provide the Medicare Facility Rate (MFR) factor:</p>
+      <input type="text" id="dialogInput" placeholder="Enter value" value="1.0">
+      <div id="validationError" class="error" style="display: none;"></div>
+      <div class="dialog-buttons">
+        <button id="cancelButton">Cancel</button>
+        <button id="submitButton">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulate the MissingDataError class
+    class MissingDataError extends Error {
+      constructor(dataType, message, defaultValue) {
+        super(message);
+        this.name = 'MissingDataError';
+        this.dataType = dataType;
+        this.defaultValue = defaultValue;
+      }
+    }
+
+    // Simulate a database of ZIP codes with geographic factors
+    const zipCodeDatabase = {
+      '90210': { mfr_factor: 1.2, pfr_factor: 1.3 },
+      '10001': { mfr_factor: 1.5, pfr_factor: 1.6 },
+      '60601': { mfr_factor: 1.1, pfr_factor: 1.2 },
+      // 02917 is intentionally missing to trigger the prompt
+    };
+
+    // Function to update the cached data display
+    function updateCachedDataDisplay() {
+      const cachedDataElement = document.getElementById('cachedData');
+      const cachedDataResultElement = document.getElementById('cachedDataResult');
+      
+      cachedDataElement.style.display = 'block';
+      cachedDataResultElement.textContent = JSON.stringify(zipCodeDatabase, null, 2);
+    }
+
+    // Simulate the calculation function that might throw a MissingDataError
+    async function calculateAdjustedCosts(zipCode) {
+      // Simulate a database lookup for geographic factors
+      console.log(`Looking up geographic factors for ZIP code: ${zipCode}`);
+      
+      // Show the query info
+      const queryInfoElement = document.getElementById('queryInfo');
+      const queryDescriptionElement = document.getElementById('queryDescription');
+      const queryResultElement = document.getElementById('queryResult');
+      
+      queryInfoElement.style.display = 'block';
+      queryDescriptionElement.textContent = `Executing query: SELECT * FROM geographic_factors WHERE zip_code = '${zipCode}'`;
+      
+      // Check if the ZIP code exists in our database
+      const geoFactors = zipCodeDatabase[zipCode];
+      
+      if (!geoFactors) {
+        queryResultElement.textContent = 'No results found';
+        
+        throw new MissingDataError(
+          'Geographic Adjustment Factors',
+          `No geographic factors found for ZIP code ${zipCode}. Please provide the Medicare Facility Rate (MFR) factor:`,
+          1.0
+        );
+      }
+      
+      // If we get here, we have the geographic factors
+      queryResultElement.textContent = JSON.stringify(geoFactors, null, 2);
+      
+      // Calculate the costs based on the geographic factors
+      const result = {
+        costRange: {
+          low: 100 * geoFactors.mfr_factor,
+          average: 150 * geoFactors.mfr_factor,
+          high: 200 * geoFactors.mfr_factor
+        },
+        mfrValues: {
+          min: 100,
+          max: 200,
+          factor: geoFactors.mfr_factor
+        }
+      };
+      
+      return result;
+    }
+
+    // Simulate the executeWithPrompt function from the useDataPrompt hook
+    async function executeWithPrompt(operation) {
+      try {
+        return await operation();
+      } catch (error) {
+        if (error instanceof MissingDataError) {
+          // Show the dialog
+          document.getElementById('dialogTitle').textContent = error.dataType;
+          document.getElementById('dialogMessage').textContent = error.message;
+          document.getElementById('dialogInput').value = error.defaultValue || '';
+          document.getElementById('dialogOverlay').style.display = 'flex';
+          
+          // Return a new promise that will be resolved when the user provides the missing data
+          return new Promise((resolve, reject) => {
+            // Store the resolve/reject functions for later use
+            window.currentPromise = { resolve, reject, operation };
+          });
+        }
+        
+        // Re-throw other errors
+        throw error;
+      }
+    }
+
+    // Validate the input
+    function validateInput(value) {
+      if (!value) {
+        return { valid: false, error: 'Value is required' };
+      }
+      
+      const numValue = parseFloat(value);
+      if (isNaN(numValue)) {
+        return { valid: false, error: 'Value must be a number' };
+      }
+      
+      if (numValue <= 0) {
+        return { valid: false, error: 'Value must be greater than 0' };
+      }
+      
+      if (numValue > 5) {
+        return { valid: false, error: 'Value must be less than or equal to 5' };
+      }
+      
+      return { valid: true };
+    }
+
+    // Handle the calculate button click
+    document.getElementById('calculateButton').addEventListener('click', async () => {
+      const zipCode = document.getElementById('zipCodeInput').value.trim();
+      const resultElement = document.getElementById('result');
+      
+      if (!zipCode) {
+        resultElement.innerHTML = '<p class="error">Please enter a ZIP code</p>';
+        return;
+      }
+      
+      resultElement.innerHTML = '<p>Calculating costs...</p>';
+      
+      try {
+        // Use executeWithPrompt to handle missing data
+        const result = await executeWithPrompt(() => calculateAdjustedCosts(zipCode));
+        
+        // Display the result
+        resultElement.innerHTML = `
+          <h3>Calculation Result:</h3>
+          <pre>${JSON.stringify(result, null, 2)}</pre>
+        `;
+        
+        // Update the cached data display
+        updateCachedDataDisplay();
+      } catch (error) {
+        resultElement.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+      }
+    });
+
+    // Handle the submit button click
+    document.getElementById('submitButton').addEventListener('click', () => {
+      const inputElement = document.getElementById('dialogInput');
+      const value = inputElement.value;
+      const zipCode = document.getElementById('zipCodeInput').value.trim();
+      
+      // Validate the input
+      const validationResult = validateInput(value);
+      if (!validationResult.valid) {
+        document.getElementById('validationError').textContent = validationResult.error;
+        document.getElementById('validationError').style.display = 'block';
+        return;
+      }
+      
+      // Hide the validation error
+      document.getElementById('validationError').style.display = 'none';
+      
+      // Hide the dialog
+      document.getElementById('dialogOverlay').style.display = 'none';
+      
+      // Add the user-provided factor to the database for future use
+      const mfrFactor = parseFloat(value);
+      zipCodeDatabase[zipCode] = {
+        mfr_factor: mfrFactor,
+        pfr_factor: mfrFactor * 1.1 // Just a simple calculation for demo purposes
+      };
+      
+      console.log(`Added geographic factors for ZIP code ${zipCode}:`, zipCodeDatabase[zipCode]);
+      
+      // Update the query result to show the new data
+      const queryResultElement = document.getElementById('queryResult');
+      queryResultElement.textContent = JSON.stringify(zipCodeDatabase[zipCode], null, 2);
+      
+      // Resolve the promise with a simulated result
+      if (window.currentPromise) {
+        const result = {
+          costRange: {
+            low: 100 * mfrFactor,
+            average: 150 * mfrFactor,
+            high: 200 * mfrFactor
+          },
+          mfrValues: {
+            min: 100,
+            max: 200,
+            factor: mfrFactor
+          }
+        };
+        
+        window.currentPromise.resolve(result);
+      }
+    });
+
+    // Handle the cancel button click
+    document.getElementById('cancelButton').addEventListener('click', () => {
+      // Hide the dialog
+      document.getElementById('dialogOverlay').style.display = 'none';
+      
+      // Reject the promise
+      if (window.currentPromise) {
+        window.currentPromise.reject(new Error('User cancelled the operation'));
+      }
+    });
+    
+    // Initialize the cached data display
+    updateCachedDataDisplay();
+  </script>
+</body>
+</html>

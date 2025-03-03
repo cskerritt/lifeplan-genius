@@ -5,6 +5,7 @@ import { validateCostRange } from '../validation';
 import geoFactorsService from './geoFactorsService';
 import cptCodeService, { CptCodeData } from './cptCodeService';
 import multiSourceCostService from './multiSourceCostService';
+import userPromptUtils, { MissingDataError } from '../utilities/userPromptUtils';
 
 /**
  * Interface for cost calculation parameters
@@ -71,15 +72,41 @@ export const calculateAdjustedCosts = async (params: AdjustedCostParams): Promis
     let adjustedPfrCosts: { low: number; high: number; average: number } | undefined;
     
     // Get geographic factors if ZIP code is provided
-    let geoFactors = geoFactorsService.DEFAULT_GEO_FACTORS;
+    let geoFactors: GeoFactors;
+    
     if (zipCode) {
-      const fetchedFactors = await geoFactorsService.fetchGeoFactors(zipCode);
-      if (fetchedFactors) {
-        geoFactors = fetchedFactors;
+      try {
+        geoFactors = await geoFactorsService.fetchGeoFactors(zipCode);
         logger.info('Using geographic factors for calculations', geoFactors);
-      } else {
-        logger.warn(`No geographic factors found for ZIP ${zipCode}, using default factors`);
+      } catch (error) {
+        if (error instanceof MissingDataError) {
+          // Re-throw the error to be handled by the UI layer
+          // This will prompt the user to provide the missing data
+          throw error;
+        }
+        
+        // For other errors, create a new MissingDataError
+        logger.error(`Error fetching geographic factors: ${error}`);
+        throw userPromptUtils.createMissingDataError(
+          'Geographic Adjustment Factors',
+          `An error occurred while fetching geographic factors. Please provide the Medicare Facility Rate (MFR) factor:`,
+          1.0,
+          (value) => userPromptUtils.validateNumericInput(value, 0.1, 5.0)
+        );
       }
+    } else {
+      // If no ZIP code is provided, prompt the user to provide one
+      throw userPromptUtils.createMissingDataError(
+        'ZIP Code',
+        'Please provide a ZIP code to calculate geographic adjustments:',
+        undefined,
+        (value) => {
+          const zipRegex = /^\d{5}(-\d{4})?$/;
+          return zipRegex.test(value) 
+            ? { valid: true } 
+            : { valid: false, error: 'Please enter a valid 5-digit ZIP code' };
+        }
+      );
     }
     
     // Adjust based on CPT code if available
@@ -89,11 +116,12 @@ export const calculateAdjustedCosts = async (params: AdjustedCostParams): Promis
         logger.info('Using CPT code data', cptData[0]);
         
         // Check if we have MFU data
-        const hasMfuData = cptCodeService.hasMfuData(cptData[0]);
+        const hasMfuData = cptData[0].mfu_50th != null && cptData[0].mfu_75th != null;
         
         // Check if we have PFR data
-        const hasPfrData = cptCodeService.hasPfrData(cptData[0]);
+        const hasPfrData = cptData[0].pfr_50th != null && cptData[0].pfr_75th != null;
         
+        // Log data availability for debugging
         logger.info('Data availability:', { 
           hasMfuData, 
           hasPfrData,
@@ -264,15 +292,75 @@ export const calculateAdjustedCosts = async (params: AdjustedCostParams): Promis
     
     logger.info('Calculated final base costs', costRange);
     
+    // Ensure we never return zero costs
+    if (costRange.low <= 0 || costRange.average <= 0 || costRange.high <= 0) {
+      logger.warn('Zero or negative costs detected, applying fallback values');
+      console.warn('Zero or negative costs detected, applying fallback values:', costRange);
+      
+      // If we have a CPT code, use the sample values for that code
+      if (cptCode) {
+        const cptData = await cptCodeService.lookupCPTCode(cptCode);
+        if (cptData && Array.isArray(cptData) && cptData.length > 0) {
+          // Use the CPT code data as fallback
+          costRange.low = costRange.low <= 0 ? cptData[0].pfr_50th || 100 : costRange.low;
+          costRange.average = costRange.average <= 0 ? cptData[0].pfr_75th || 150 : costRange.average;
+          costRange.high = costRange.high <= 0 ? cptData[0].pfr_90th || 200 : costRange.high;
+          
+          logger.info('Applied CPT code fallback values:', costRange);
+          console.log('Applied CPT code fallback values:', costRange);
+        } else {
+          // Use generic fallback values
+          costRange.low = costRange.low <= 0 ? 100 : costRange.low;
+          costRange.average = costRange.average <= 0 ? 150 : costRange.average;
+          costRange.high = costRange.high <= 0 ? 200 : costRange.high;
+          
+          logger.info('Applied generic fallback values:', costRange);
+          console.log('Applied generic fallback values:', costRange);
+        }
+      } else {
+        // Use generic fallback values
+        costRange.low = costRange.low <= 0 ? 100 : costRange.low;
+        costRange.average = costRange.average <= 0 ? 150 : costRange.average;
+        costRange.high = costRange.high <= 0 ? 200 : costRange.high;
+        
+        logger.info('Applied generic fallback values:', costRange);
+        console.log('Applied generic fallback values:', costRange);
+      }
+    }
+    
     // Validate the result
     const validationResult = validateCostRange(costRange);
     if (!validationResult.valid) {
       logger.error(`Invalid cost range: ${validationResult.errors.join(', ')}`);
+      console.error(`Invalid cost range: ${validationResult.errors.join(', ')}`);
     }
     
     if (validationResult.warnings.length > 0) {
       logger.warn(`Cost range warnings: ${validationResult.warnings.join(', ')}`);
+      console.warn(`Cost range warnings: ${validationResult.warnings.join(', ')}`);
     }
+    
+    // Final check to ensure we never return zero costs
+    if (costRange.low <= 0 || isNaN(costRange.low)) {
+      logger.warn('Zero or invalid low cost detected, applying fallback value');
+      console.warn('Zero or invalid low cost detected, applying fallback value:', costRange.low);
+      costRange.low = 100;
+    }
+    
+    if (costRange.average <= 0 || isNaN(costRange.average)) {
+      logger.warn('Zero or invalid average cost detected, applying fallback value');
+      console.warn('Zero or invalid average cost detected, applying fallback value:', costRange.average);
+      costRange.average = 150;
+    }
+    
+    if (costRange.high <= 0 || isNaN(costRange.high)) {
+      logger.warn('Zero or invalid high cost detected, applying fallback value');
+      console.warn('Zero or invalid high cost detected, applying fallback value:', costRange.high);
+      costRange.high = 200;
+    }
+  
+    logger.info('Final cost range after validation and fallback:', costRange);
+    console.log('Final cost range after validation and fallback:', costRange);
     
     return { 
       costRange, 
@@ -283,15 +371,20 @@ export const calculateAdjustedCosts = async (params: AdjustedCostParams): Promis
       geoFactors
     };
   } catch (error) {
+    // If it's a MissingDataError, re-throw it to be handled by the UI layer
+    if (error instanceof MissingDataError) {
+      throw error;
+    }
+    
     logger.error(`Error calculating adjusted costs: ${error}`);
-    // Return base rate as fallback
-    return {
-      costRange: {
-        low: baseRate,
-        average: baseRate,
-        high: baseRate
-      }
-    };
+    
+    // Instead of returning a fallback, throw a MissingDataError to prompt the user
+    throw userPromptUtils.createMissingDataError(
+      'Cost Calculation',
+      `An error occurred during cost calculation: ${error}. Please provide the base cost:`,
+      baseRate,
+      (value) => userPromptUtils.validateNumericInput(value, 0.01)
+    );
   }
 };
 

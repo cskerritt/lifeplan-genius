@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -9,13 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAgeCalculations } from '@/hooks/useAgeCalculations';
 import { useEvalueeFormSubmit } from '@/hooks/useEvalueeFormSubmit';
 import { useGafLookup } from '@/hooks/useGafLookup';
 import { useEvalueeFormState } from '@/hooks/useEvalueeFormState';
+import { useEvalueesDb } from '@/hooks/useEvalueesDb';
 import EvalueeTabs from './EvalueeTabs';
+import DuplicateEvalueeDialog from './DuplicateEvalueeDialog';
 import { Evaluee } from '@/types/lifecare';
 
 interface EvalueeFormProps {
@@ -28,8 +29,15 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isEditing, setIsEditing] = useState(!initialData);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const { formData, updateFormData } = useEvalueeFormState(initialData);
   const { geoFactors, lookupGeoFactors } = useGafLookup();
+  const { duplicateEvaluee } = useEvalueesDb(() => {
+    // Refresh the page after duplication
+    if (id && id !== 'new') {
+      navigate(`/plans`);
+    }
+  });
   
   useEffect(() => {
     if (formData.zipCode && formData.zipCode.length === 5) {
@@ -71,6 +79,12 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
     setIsEditing(false);
   };
 
+  const handleDuplicateEvaluee = (evalueeId: string, modifications: any) => {
+    if (id && id !== 'new') {
+      duplicateEvaluee(evalueeId, modifications);
+    }
+  };
+
   const formatNumber = (value: number | undefined | null) => {
     if (value === null || value === undefined) return 'N/A';
     return value.toFixed(4);
@@ -93,14 +107,24 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
           </CardDescription>
         </div>
         {initialData && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            {isEditing ? "Cancel Editing" : "Edit Information"}
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDuplicateDialog(true)}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicate
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              {isEditing ? "Cancel Editing" : "Edit Information"}
+            </Button>
+          </div>
         )}
       </CardHeader>
       <CardContent>
@@ -155,6 +179,14 @@ export default function EvalueeForm({ onSave, initialData }: EvalueeFormProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Duplicate Evaluee Dialog */}
+      <DuplicateEvalueeDialog
+        evaluee={initialData}
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        onDuplicate={handleDuplicateEvaluee}
+      />
     </Card>
   );
 }

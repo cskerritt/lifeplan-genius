@@ -81,8 +81,15 @@ app.post('/api/query', async (req, res) => {
   try {
     const { query, params } = req.body;
     
+    console.log('Received query request:', { 
+      query, 
+      params: params ? params.map(p => typeof p === 'object' ? '[Object]' : p) : [] 
+    });
+    
     // Execute query
     const result = await pool.query(query, params);
+    
+    console.log('Query executed successfully, returned', result.rowCount, 'rows');
     
     // Return data as JSON
     res.json({ 
@@ -91,11 +98,25 @@ app.post('/api/query', async (req, res) => {
     });
   } catch (error) {
     console.error('Query error:', error);
+    console.error('Query error stack:', error.stack);
     res.status(500).json({ error: error.message });
   }
 });
 
 // Start server
-app.listen(port, () => {
-  console.log(`API server listening at http://localhost:${port}`);
-});
+const startServer = (attemptPort) => {
+  const server = app.listen(attemptPort)
+    .on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${attemptPort} is in use, trying another one...`);
+        startServer(attemptPort + 1);
+      } else {
+        console.error('Server error:', err);
+      }
+    })
+    .on('listening', () => {
+      console.log(`API server listening at http://localhost:${attemptPort}`);
+    });
+};
+
+startServer(port);

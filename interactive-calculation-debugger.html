@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Calculation Debugger</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary-color: #6b7280;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --background-color: #f9fafb;
+            --card-background: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3, h4 {
+            margin-top: 0;
+            color: var(--text-color);
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: var(--secondary-color);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .btn-error {
+            background-color: var(--error-color);
+        }
+
+        .btn-error:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+        }
+
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .step {
+            border-left: 2px solid var(--border-color);
+            padding-left: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .step::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+        }
+
+        .step.error::before {
+            background-color: var(--error-color);
+        }
+
+        .step.warning::before {
+            background-color: var(--warning-color);
+        }
+
+        .step.success::before {
+            background-color: var(--success-color);
+        }
+
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .step-content {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f3f4f6;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .state-item {
+            margin-bottom: 10px;
+        }
+
+        .state-key {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .state-value {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f3f4f6;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .code-view {
+            font-family: monospace;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 4px;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        .code-line {
+            display: block;
+        }
+
+        .code-line.highlight {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .code-comment {
+            color: #94a3b8;
+        }
+
+        .code-keyword {
+            color: #93c5fd;
+        }
+
+        .code-string {
+            color: #86efac;
+        }
+
+        .code-number {
+            color: #fca5a5;
+        }
+
+        .code-function {
+            color: #c4b5fd;
+        }
+
+        .breakpoint {
+            position: relative;
+        }
+
+        .breakpoint::before {
+            content: '●';
+            position: absolute;
+            left: -15px;
+            color: var(--error-color);
+        }
+
+        .age-increment-container {
+            margin-top: 10px;
+        }
+
+        .age-increment-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .age-increment-item input {
+            flex: 1;
+        }
+
+        .remove-increment {
+            background-color: var(--error-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .remove-increment:hover {
+            background-color: #dc2626;
+        }
+
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .debug-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .result-table th, .result-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .result-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .result-diff {
+            color: var(--error-color);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Interactive Calculation Debugger</h1>
+        <p>This tool allows you to debug and visualize the calculation process step by step.</p>
+
+        <div class="two-columns">
+            <!-- Left Column: Input Parameters -->
+            <div>
+                <div class="card">
+                    <h2>Input Parameters</h2>
+                    <form id="calculationForm">
+                        <div class="form-group">
+                            <label for="baseRate">Base Rate ($)</label>
+                            <input type="number" id="baseRate" name="baseRate" step="0.01" min="0" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="frequency">Frequency</label>
+                            <select id="frequency" name="frequency" required>
+                                <option value="">Select frequency</option>
+                                <option value="one-time">One-time</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="annually">Annually</option>
+                                <option value="2x weekly">2x Weekly</option>
+                                <option value="3x weekly">3x Weekly</option>
+                                <option value="2x monthly">2x Monthly</option>
+                                <option value="every 2 weeks">Every 2 Weeks</option>
+                                <option value="every 3 months">Every 3 Months</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="currentAge">Current Age</label>
+                            <input type="number" id="currentAge" name="currentAge" min="0" step="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lifeExpectancy">Life Expectancy</label>
+                            <input type="number" id="lifeExpectancy" name="lifeExpectancy" min="0" step="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="startAge">Start Age (optional)</label>
+                            <input type="number" id="startAge" name="startAge" min="0" step="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="endAge">End Age (optional)</label>
+                            <input type="number" id="endAge" name="endAge" min="0" step="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select id="category" name="category">
+                                <option value="">Select category</option>
+                                <option value="Medical">Medical</option>
+                                <option value="Therapy">Therapy</option>
+                                <option value="Equipment">Equipment</option>
+                                <option value="Supplies">Supplies</option>
+                                <option value="Home Care">Home Care</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cptCode">CPT Code (optional)</label>
+                            <input type="text" id="cptCode" name="cptCode" placeholder="e.g., 99213">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="zipCode">ZIP Code (optional)</label>
+                            <input type="text" id="zipCode" name="zipCode" placeholder="e.g., 90210">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Age Increments (optional)</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="enableAgeIncrements">
+                                <label for="enableAgeIncrements">Enable Age Increments</label>
+                            </div>
+                            <div id="ageIncrementContainer" class="age-increment-container" style="display: none;">
+                                <button type="button" id="addIncrement" class="btn-secondary">Add Age Increment</button>
+                            </div>
+                        </div>
+
+                        <div class="debug-controls">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="stepByStep">
+                                <label for="stepByStep">Step-by-Step Execution</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="enableBreakpoints">
+                                <label for="enableBreakpoints">Enable Breakpoints</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="runCalculation">Run Calculation</button>
+                    </form>
+                </div>
+
+                <div class="card" id="debugControls" style="display: none;">
+                    <h2>Debug Controls</h2>
+                    <div class="flex gap-4">
+                        <button id="stepButton" class="btn-secondary">Step</button>
+                        <button id="continueButton" class="btn-success">Continue</button>
+                        <button id="resetButton" class="btn-error">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Visualization and Results -->
+            <div>
+                <div class="card">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="visualization">Visualization</div>
+                        <div class="tab" data-tab="stateInspector">State Inspector</div>
+                        <div class="tab" data-tab="resultComparison">Result Comparison</div>
+                        <div class="tab" data-tab="codeView">Code View</div>
+                    </div>
+
+                    <div class="tab-content active" id="visualization">
+                        <div id="calculationSteps"></div>
+                    </div>
+
+                    <div class="tab-content" id="stateInspector">
+                        <div id="stateItems"></div>
+                    </div>
+
+                    <div class="tab-content" id="resultComparison">
+                        <h3>Expected vs. Actual Results</h3>
+                        <div class="form-group">
+                            <label for="expectedAnnual">Expected Annual Cost</label>
+                            <input type="number" id="expectedAnnual" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="expectedLifetime">Expected Lifetime Cost</label>
+                            <input type="number" id="expectedLifetime" step="0.01" min="0">
+                        </div>
+                        <button id="compareResults" class="btn-secondary">Compare Results</button>
+                        <div id="comparisonResult" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <div class="tab-content" id="codeView">
+                        <div class="code-view" id="codeViewContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { runCalculation, getCalculationSteps } from './interactive-calculation-debugger.mjs';
+
+        // DOM elements
+        const calculationForm = document.getElementById('calculationForm');
+        const enableAgeIncrements = document.getElementById('enableAgeIncrements');
+        const ageIncrementContainer = document.getElementById('ageIncrementContainer');
+        const addIncrementButton = document.getElementById('addIncrement');
+        const calculationStepsContainer = document.getElementById('calculationSteps');
+        const stateItemsContainer = document.getElementById('stateItems');
+        const debugControls = document.getElementById('debugControls');
+        const stepButton = document.getElementById('stepButton');
+        const continueButton = document.getElementById('continueButton');
+        const resetButton = document.getElementById('resetButton');
+        const stepByStepCheckbox = document.getElementById('stepByStep');
+        const enableBreakpointsCheckbox = document.getElementById('enableBreakpoints');
+        const compareResultsButton = document.getElementById('compareResults');
+        const comparisonResultContainer = document.getElementById('comparisonResult');
+        const codeViewContent = document.getElementById('codeViewContent');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // State
+        let calculationResult = null;
+        let calculationSteps = [];
+        let currentStepIndex = 0;
+        let isStepByStep = false;
+        let breakpoints = new Set();
+        let ageIncrementCount = 0;
+
+        // Initialize
+        init();
+
+        function init() {
+            // Set up event listeners
+            calculationForm.addEventListener('submit', handleFormSubmit);
+            enableAgeIncrements.addEventListener('change', toggleAgeIncrements);
+            addIncrementButton.addEventListener('click', addAgeIncrement);
+            stepButton.addEventListener('click', handleStep);
+            continueButton.addEventListener('click', handleContinue);
+            resetButton.addEventListener('click', handleReset);
+            stepByStepCheckbox.addEventListener('change', toggleStepByStep);
+            enableBreakpointsCheckbox.addEventListener('change', toggleBreakpoints);
+            compareResultsButton.addEventListener('click', compareResults);
+
+            // Set up tabs
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+
+            // Add initial age increment if enabled
+            if (enableAgeIncrements.checked) {
+                toggleAgeIncrements();
+            }
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            // Get form data
+            const formData = new FormData(calculationForm);
+            const params = {
+                baseRate: parseFloat(formData.get('baseRate')),
+                frequency: formData.get('frequency'),
+                category: formData.get('category') || undefined
+            };
+            
+            // Add optional parameters if provided
+            if (formData.get('currentAge')) {
+                params.currentAge = parseInt(formData.get('currentAge'));
+            }
+            
+            if (formData.get('lifeExpectancy')) {
+                params.lifeExpectancy = parseInt(formData.get('lifeExpectancy'));
+            }
+            
+            if (formData.get('startAge')) {
+                params.startAge = parseInt(formData.get('startAge'));
+            }
+            
+            if (formData.get('endAge')) {
+                params.endAge = parseInt(formData.get('endAge'));
+            }
+            
+            if (formData.get('cptCode')) {
+                params.cptCode = formData.get('cptCode');
+            }
+            
+            if (formData.get('zipCode')) {
+                params.zipCode = formData.get('zipCode');
+            }
+            
+            // Add age increments if enabled
+            if (enableAgeIncrements.checked) {
+                params.ageIncrements = [];
+                const incrementElements = document.querySelectorAll('.age-increment-item');
+                
+                incrementElements.forEach(element => {
+                    const startAge = parseInt(element.querySelector('.increment-start-age').value);
+                    const endAge = parseInt(element.querySelector('.increment-end-age').value);
+                    const adjustmentFactor = parseFloat(element.querySelector('.increment-adjustment-factor').value);
+                    
+                    if (!isNaN(startAge) && !isNaN(endAge) && !isNaN(adjustmentFactor)) {
+                        params.ageIncrements.push({
+                            startAge,
+                            endAge,
+                            adjustmentFactor
+                        });
+                    }
+                });
+            }
+            
+            // Run calculation
+            isStepByStep = stepByStepCheckbox.checked;
+            
+            if (isStepByStep) {
+                debugControls.style.display = 'block';
+                currentStepIndex = 0;
+                runCalculationAsync(params);
+            } else {
+                runCalculationSync(params);
+            }
+        }
+
+        async function runCalculationAsync(params) {
+            try {
+                calculationResult = await runCalculation(params);
+                const steps = getCalculationSteps();
+                calculationSteps = steps.steps;
+                
+                // Clear previous steps
+                calculationStepsContainer.innerHTML = '';
+                
+                // Show first step
+                if (calculationSteps.length > 0) {
+                    showStep(0);
+                }
+                
+                // Update state inspector
+                updateStateInspector(steps.state);
+                
+                // Update code view
+                updateCodeView(steps.code);
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        async function runCalculationSync(params) {
+            try {
+                calculationResult = await runCalculation(params);
+                const steps = getCalculationSteps();
+                calculationSteps = steps.steps;
+                
+                // Show all steps
+                showAllSteps();
+                
+                // Update state inspector
+                updateStateInspector(steps.state);
+                
+                // Update code view
+                updateCodeView(steps.code);
+                
+                // Hide debug controls
+                debugControls.style.display = 'none';
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function showStep(index) {
+            if (index < 0 || index >= calculationSteps.length) {
+                return;
+            }
+            
+            const step = calculationSteps[index];
+            
+            // Create step element
+            const stepElement = document.createElement('div');
+            stepElement.className = 'step';
+            stepElement.id = `step-${index}`;
+            
+            // Add step title
+            const titleElement = document.createElement('div');
+            titleElement.className = 'step-title';
+            titleElement.textContent = step.title;
+            stepElement.appendChild(titleElement);
+            
+            // Add step content
+            const contentElement = document.createElement('div');
+            contentElement.className = 'step-content';
+            contentElement.textContent = step.content;
+            stepElement.appendChild(contentElement);
+            
+            // Add to container
+            calculationStepsContainer.appendChild(stepElement);
+            
+            // Scroll to step
+            stepElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Update current step index
+            currentStepIndex = index;
+        }
+
+        function showAllSteps() {
+            // Clear previous steps
+            calculationStepsContainer.innerHTML = '';
+            
+            // Show all steps
+            calculationSteps.forEach((step, index) => {
+                // Create step element
+                const stepElement = document.createElement('div');
+                stepElement.className = 'step';
+                stepElement.id = `step-${index}`;
+                
+                // Add step title
+                const titleElement = document.createElement('div');
+                titleElement.className = 'step-title';
+                titleElement.textContent = step.title;
+                stepElement.appendChild(titleElement);
+                
+                // Add step content
+                const contentElement = document.createElement('div');
+                contentElement.className = 'step-content';
+                contentElement.textContent = step.content;
+                stepElement.appendChild(contentElement);
+                
+                // Add to container
+                calculationStepsContainer.appendChild(stepElement);
+            });
+        }
+
+        function updateStateInspector(state) {
+            // Clear previous state items
+            stateItemsContainer.innerHTML = '';
+            
+            // Add state items
+            for (const [key, value] of Object.entries(state)) {
+                // Create state item element
+                const itemElement = document.createElement('div');
+                itemElement.className = 'state-item';
+                
+                // Add state key
+                const keyElement = document.createElement('div');
+                keyElement.className = 'state-key';
+                keyElement.textContent = key;
+                itemElement.appendChild(keyElement);
+                
+                // Add state value
+                const valueElement = document.createElement('div');
+                valueElement.className = 'state-value';
+                valueElement.textContent = JSON.stringify(value, null, 2);
+                itemElement.appendChild(valueElement);
+                
+                // Add to container
+                stateItemsContainer.appendChild(itemElement);
+            }
+        }
+
+        function updateCodeView(code) {
+            // If no code provided, show placeholder
+            if (!code) {
+                codeViewContent.innerHTML = '<div class="code-line code-comment">// No code available for this calculation</div>';
+                return;
+            }
+            
+            // Split code into lines
+            const lines = code.split('\n');
+            
+            // Clear previous code
+            codeViewContent.innerHTML = '';
+            
+            // Add code lines
+            lines.forEach((line, index) => {
+                const lineElement = document.createElement('div');
+                lineElement.className = 'code-line';
+                lineElement.textContent = line;
+                lineElement.dataset.line = index + 1;
+                
+                // Add to container
+                codeViewContent.appendChild(lineElement);
+            });
+        }
+
+        function handleStep() {
+            if (currentStepIndex < calculationSteps.length - 1) {
+                showStep(currentStepIndex + 1);
+            }
+        }
+
+        function handleContinue() {
+            // Show all remaining steps
+            for (let i = currentStepIndex + 1; i < calculationSteps.length; i++) {
+                showStep(i);
+            }
+        }
+
+        function handleReset() {
+            // Clear steps
+            calculationStepsContainer.innerHTML = '';
+            currentStepIndex = -1;
+        }
+
+        function toggleStepByStep() {
+            isStepByStep = stepByStepCheckbox.checked;
+        }
+
+        function toggleBreakpoints() {
+            // TODO: Implement breakpoints
+        }
+
+        function compareResults() {
+            const expectedAnnual = parseFloat(document.getElementById('expectedAnnual').value);
+            const expectedLifetime = parseFloat(document.getElementById('expectedLifetime').value);
+            
+            if (!calculationResult) {
+                comparisonResultContainer.innerHTML = '<div class="error">No calculation result available. Run a calculation first.</div>';
+                return;
+            }
+            
+            if (isNaN(expectedAnnual) && isNaN(expectedLifetime)) {
+                comparisonResultContainer.innerHTML = '<div class="error">Please enter at least one expected value.</div>';
+                return;
+            }
+            
+            // Create comparison table
+            const table = document.createElement('table');
+            table.className = 'result-table';
+            
+            // Add header
+            const header = document.createElement('tr');
+            header.innerHTML = `
+                <th>Metric</th>
+                <th>Expected</th>
+                <th>Actual</th>
+                <th>Difference</th>
+            `;
+            table.appendChild(header);
+            
+            // Add annual row if expected value provided
+            if (!isNaN(expectedAnnual)) {
+                const annualDiff = calculationResult.annual - expectedAnnual;
+                const annualRow = document.createElement('tr');
+                annualRow.innerHTML = `
+                    <td>Annual Cost</td>
+                    <td>${formatCurrency(expectedAnnual)}</td>
+                    <td>${formatCurrency(calculationResult.annual)}</td>
+                    <td class="${Math.abs(annualDiff) > 0.01 ? 'result-diff' : ''}">${formatCurrency(annualDiff)} (${formatPercentage(annualDiff / expectedAnnual)})</td>
+                `;
+                table.appendChild(annualRow);
+            }
+            
+            // Add lifetime row if expected value provided
+            if (!isNaN(expectedLifetime)) {
+                const lifetimeDiff = calculationResult.lifetime - expectedLifetime;
+                const lifetimeRow = document.createElement('tr');
+                lifetimeRow.innerHTML = `
+                    <td>Lifetime Cost</td>
+                    <td>${formatCurrency(expectedLifetime)}</td>
+                    <td>${formatCurrency(calculationResult.lifetime)}</td>
+                    <td class="${Math.abs(lifetimeDiff) > 0.01 ? 'result-diff' : ''}">${formatCurrency(lifetimeDiff)} (${formatPercentage(lifetimeDiff / expectedLifetime)})</td>
+                `;
+                table.appendChild(lifetimeRow);
+            }
+            
+            // Clear previous comparison result
+            comparisonResultContainer.innerHTML = '';
+            
+            // Add table to container
+            comparisonResultContainer.appendChild(table);
+        }
+
+        function toggleAgeIncrements() {
+            if (enableAgeIncrements.checked) {
+                ageIncrementContainer.style.display = 'block';
+                if (ageIncrementCount === 0) {
+                    addAgeIncrement();
+                }
+            } else {
+                ageIncrementContainer.style.display = 'none';
+            }
+        }
+
+        function addAgeIncrement() {
+            const incrementId = ageIncrementCount++;
+            
+            // Create increment element
+            const incrementElement = document.createElement('div');
+            incrementElement.className = 'age-increment-item';
+            incrementElement.id = `age-increment-${incrementId}`;
+            
+            // Add start age input
+            const startAgeInput = document.createElement('input');
+            startAgeInput.type = 'number';
+            startAgeInput.className = 'increment-start-age';
+            startAgeInput.placeholder = 'Start Age';
+            startAgeInput.min = '0';
+            startAgeInput.step = '1';
+            startAgeInput.required = true;
+            incrementElement.appendChild(startAgeInput);
+            
+            // Add end age input
+            const endAgeInput = document.createElement('input');
+            endAgeInput.type = 'number';
+            endAgeInput.className = 'increment-end-age';
+            endAgeInput.placeholder = 'End Age';
+            endAgeInput.min = '0';
+            endAgeInput.step = '1';
+            endAgeInput.required = true;
+            incrementElement.appendChild(endAgeInput);
+            
+            // Add adjustment factor input
+            const adjustmentFactorInput = document.createElement('input');
+            adjustmentFactorInput.type = 'number';
+            adjustmentFactorInput.className = 'increment-adjustment-factor';
+            adjustmentFactorInput.placeholder = 'Adjustment Factor';
+            adjustmentFactorInput.min = '0.1';
+            adjustmentFactorInput.step = '0.1';
+            adjustmentFactorInput.value = '1.0';
+            adjustmentFactorInput.required = true;
+            incrementElement.appendChild(adjustmentFactorInput);
+            
+            // Add remove button
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'remove-increment';
+            removeButton.textContent = '×';
+            removeButton.addEventListener('click', () => {
+                incrementElement.remove();
+            });
+            incrementElement.appendChild(removeButton);
+            
+            // Add to container before the add button
+            ageIncrementContainer.insertBefore(incrementElement, addIncrementButton);
+        }
+
+        function showError(message) {
+            // Create error step
+            const errorStep = document.createElement('div');
+            errorStep.className = 'step error';
+            
+            // Add error title
+            const titleElement = document.createElement('div');
+            titleElement.className = 'step-title';
+            titleElement.textContent = 'Error';
+            errorStep.appendChild(titleElement);
+            
+            // Add error message
+            const contentElement = document.createElement('div');
+            contentElement.className = 'step-content';
+            contentElement.textContent = message;
+            errorStep.appendChild(contentElement);
+            
+            // Add to container
+            calculationStepsContainer.appendChild(errorStep);
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function formatPercentage(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'percent',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+    </script>

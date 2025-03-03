@@ -1,4 +1,3 @@
-
 import { Separator } from "@/components/ui/separator";
 import { CategorySelect } from "./FormSections/CategorySelect";
 import { FrequencyForm } from "./FrequencyForm";
@@ -34,6 +33,9 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
     setAgeIncrements,
     resetForm
   } = usePlanFormState();
+  
+  const [isManualCost, setIsManualCost] = useState(false);
+  const [notes, setNotes] = useState("");
 
   const { lookupCPTCode } = useCostCalculations();
 
@@ -127,11 +129,15 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
               <CostDetails
                 cptCode={cptCode}
                 costRange={costRange}
+                isManualCost={isManualCost}
+                notes={notes}
                 onCPTCodeChange={setCptCode}
                 onCostRangeChange={(field, value) => 
                   setCostRange(prev => ({ ...prev, [field]: value }))
                 }
                 onCPTLookup={handleCPTLookup}
+                onIsManualCostChange={setIsManualCost}
+                onNotesChange={setNotes}
               />
             </>
           )}
@@ -145,10 +151,16 @@ const PlanForm = ({ onSubmit, dateOfBirth, dateOfInjury, lifeExpectancy }: PlanF
               frequencyDetails,
               medicationDetails,
               useAgeIncrements,
-              ageIncrements
+              ageIncrements,
+              isManualCost,
+              notes
             }}
             onSubmit={onSubmit}
-            onReset={resetForm}
+            onReset={() => {
+              resetForm();
+              setIsManualCost(false);
+              setNotes("");
+            }}
           />
         </>
       )}

@@ -1,16 +1,14 @@
 import Decimal from 'decimal.js';
 import { CostCalculationStrategy } from './costCalculationStrategy';
-import { CostCalculationParams, CalculatedCosts, CostRange } from '../types';
+import { CostCalculationParams, CalculatedCosts } from '../types';
 import calculationLogger from '../logger';
-import adjustedCostService from '../services/adjustedCostService';
-import geoFactorsService from '../services/geoFactorsService';
 import frequencyParser from '../frequencyParser';
-import { calculateAverageGeoFactor, applyAverageGeoFactor } from '../utilities/costAdjustmentUtils';
+import { BaseCostCalculationStrategy } from './baseCostCalculationStrategy';
 
 /**
  * Strategy for calculating recurring costs
  */
-export class RecurringCostStrategy implements CostCalculationStrategy {
+export class RecurringCostStrategy extends BaseCostCalculationStrategy implements CostCalculationStrategy {
   /**
    * Calculate recurring costs
    * @param params - The calculation parameters
@@ -21,15 +19,11 @@ export class RecurringCostStrategy implements CostCalculationStrategy {
     logger.info('Calculating recurring item costs', params);
     
     const { 
-      baseRate, 
       frequency, 
       currentAge, 
       lifeExpectancy, 
       startAge, 
-      endAge,
-      cptCode,
-      category,
-      zipCode
+      endAge
     } = params;
     
     try {
@@ -53,57 +47,8 @@ export class RecurringCostStrategy implements CostCalculationStrategy {
         throw new Error(`Failed to parse duration: ${parsedDuration.error}`);
       }
       
-      // Get raw base costs without geographic adjustments
-      const { costRange: baseCostRange, mfrCosts, pfrCosts } = await adjustedCostService.calculateAdjustedCosts({
-        baseRate,
-        cptCode,
-        category
-      });
-      
-      // Apply geographic adjustments if ZIP code is provided
-      let geoFactors = geoFactorsService.DEFAULT_GEO_FACTORS;
-      if (zipCode) {
-        const fetchedFactors = await geoFactorsService.fetchGeoFactors(zipCode);
-        if (fetchedFactors) {
-          geoFactors = fetchedFactors;
-          logger.info('Using geographic factors for calculations', geoFactors);
-        } else {
-          logger.warn(`No geographic factors found for ZIP ${zipCode}, using default factors`);
-        }
-      }
-      
-      // Calculate the average of MFU and PFR factors
-      const avgGeoFactor = calculateAverageGeoFactor(geoFactors);
-      
-      // Apply geographic adjustments to costs based on their source
-      let adjustedCostRange: CostRange;
-      
-      if (mfrCosts && pfrCosts) {
-        // If we have both MFR and PFR costs, use the average of the raw costs and apply the average factor
-        logger.info('Applying average geographic factor to combined MFR and PFR costs');
-        
-        const combinedLow = new Decimal(mfrCosts.low).plus(pfrCosts.low).dividedBy(2);
-        const combinedHigh = new Decimal(mfrCosts.high).plus(pfrCosts.high).dividedBy(2);
-        const combinedAvg = new Decimal(mfrCosts.average).plus(pfrCosts.average).dividedBy(2);
-        
-        // Apply the average geographic factor
-        adjustedCostRange = {
-          low: combinedLow.times(avgGeoFactor).toDP(2).toNumber(),
-          high: combinedHigh.times(avgGeoFactor).toDP(2).toNumber(),
-          average: combinedAvg.times(avgGeoFactor).toDP(2).toNumber()
-        };
-        
-        logger.info('Combined costs with average geographic factor', adjustedCostRange);
-      } else if (mfrCosts) {
-        // If we only have MFR costs, apply the average factor
-        adjustedCostRange = applyAverageGeoFactor(mfrCosts, avgGeoFactor, 'MFR');
-      } else if (pfrCosts) {
-        // If we only have PFR costs, apply the average factor
-        adjustedCostRange = applyAverageGeoFactor(pfrCosts, avgGeoFactor, 'PFR');
-      } else {
-        // If we don't have specific cost sources, apply the average factor to base costs
-        adjustedCostRange = applyAverageGeoFactor(baseCostRange, avgGeoFactor, 'base');
-      }
+      // Get adjusted costs with geographic factors applied
+      const { adjustedCostRange } = await this.getAdjustedCostsWithGeoFactors(params);
       
       // Calculate annual costs for recurring items
       const lowAnnualCost = new Decimal(adjustedCostRange.low).times(parsedFrequency.lowFrequency);

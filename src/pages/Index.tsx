@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -108,8 +108,16 @@ const Index = () => {
     refetch();
   }, [refetch]);
 
+  const queryClient = useQueryClient();
+
   const handleDelete = async (planId: string) => {
     try {
+      // Optimistic UI update - remove the plan from the UI immediately
+      queryClient.setQueryData(["life-care-plans"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.filter((plan: any) => plan.id !== planId);
+      });
+
       // First delete related records in life_care_plan_totals
       const { error: totalsError } = await supabase
         .from('life_care_plan_totals')
@@ -147,7 +155,7 @@ const Index = () => {
         description: "Life care plan deleted successfully",
       });
 
-      // After successful deletion, refetch the plans
+      // After successful deletion, refetch the plans to ensure data consistency
       refetch();
     } catch (error: any) {
       toast({

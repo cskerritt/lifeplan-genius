@@ -25,6 +25,7 @@ import {
   hasFeeScheduleData,
   recalculateCostRange
 } from "@/utils/calculations/feeSchedule";
+import { parseFrequency, parseDuration } from "@/utils/calculations/frequencyParser";
 import InputVariablesSection from './InputVariablesSection';
 import CalculationStepsSection from './CalculationStepsSection';
 import ResultsSection from './ResultsSection';
@@ -54,17 +55,26 @@ const ItemCalculationDetails: React.FC<ItemCalculationDetailsProps> = ({
   const isOneTime = isOneTimeItem(item);
   debugLog('Item type:', isOneTime ? 'One-time' : 'Recurring');
   
-  // Parse frequency for display
-  const parsedFrequency = isOneTime ? 0 : 
-    (item.frequency.toLowerCase().includes('week') ? Math.round(parseInt(item.frequency.match(/\d+/)?.[0] || '1') * 52.1429) : 
-     item.frequency.toLowerCase().includes('month') ? parseInt(item.frequency.match(/\d+/)?.[0] || '1') * 12 : 
-     item.frequency.toLowerCase().includes('day') ? parseInt(item.frequency.match(/\d+/)?.[0] || '1') * 365 : 
-     parseInt(item.frequency.match(/\d+/)?.[0] || '1'));
+  // Parse frequency using the proper frequency parser
+  const parsedFrequencyObj = parseFrequency(item.frequency);
+  debugLog('Parsed frequency object:', parsedFrequencyObj);
   
-  debugLog('Parsed frequency:', parsedFrequency);
+  // Calculate average frequency for display and calculations
+  const avgFrequency = parsedFrequencyObj.valid 
+    ? (parsedFrequencyObj.lowFrequency + parsedFrequencyObj.highFrequency) / 2 
+    : 0;
   
-  // For display purposes only, not used in calculations
-  const duration = 29;
+  // Parse duration using the proper duration parser
+  const parsedDurationObj = parseDuration(item.frequency, currentAge, lifeExpectancy);
+  debugLog('Parsed duration object:', parsedDurationObj);
+  
+  // Calculate average duration for calculations
+  const avgDuration = parsedDurationObj.valid 
+    ? (parsedDurationObj.lowDuration + parsedDurationObj.highDuration) / 2 
+    : 30;
+  
+  debugLog('Average frequency:', avgFrequency);
+  debugLog('Average duration:', avgDuration);
   
   // Check if we have fee schedule data
   const { hasMFRData, hasPFRData, hasFeeScheduleData: hasFeeData } = hasFeeScheduleData(item);
@@ -93,17 +103,31 @@ const ItemCalculationDetails: React.FC<ItemCalculationDetailsProps> = ({
     itemCostHigh = recalculatedCosts.itemCostHigh;
   }
   
-  // The base cost is already the correct value, no need to apply frequency multiplier
-  // as it's already factored into the data
-  const annualCost = isOneTime ? 0 : itemCostAvg.toNumber();
+  // Ensure we have valid costs even if the original item has zero values
+  if (itemCostLow.isZero() && itemCostAvg.isZero() && itemCostHigh.isZero()) {
+    // Use fallback values if all costs are zero
+    itemCostLow = new Decimal(item.costPerUnit || 80);
+    itemCostAvg = new Decimal(item.costPerUnit || 100);
+    itemCostHigh = new Decimal(item.costPerUnit || 120);
+  }
   
-  // The lifetime cost is the same as the annual cost, as the duration
-  // is already factored into the data elsewhere
-  const lifetimeCost = isOneTime 
+  // Calculate annual cost based on frequency and base cost
+  let annualCost = isOneTime
+    ? 0
+    : new Decimal(itemCostAvg).times(avgFrequency).toNumber();
+  
+  // Calculate lifetime cost based on annual cost and duration
+  let lifetimeCost = isOneTime
     ? itemCostAvg.toNumber()
-    : annualCost;
+    : new Decimal(annualCost).times(avgDuration).toNumber();
   
-  debugLog('Calculated costs:', { annualCost, lifetimeCost });
+  debugLog('Calculated costs:', { 
+    baseRate: itemCostAvg.toNumber(),
+    frequency: avgFrequency,
+    duration: avgDuration,
+    annualCost, 
+    lifetimeCost 
+  });
   
   return (
     <Dialog>
@@ -133,7 +157,7 @@ const ItemCalculationDetails: React.FC<ItemCalculationDetailsProps> = ({
                 {/* Input Variables Section */}
                 <InputVariablesSection 
                   item={item}
-                  parsedFrequency={parsedFrequency}
+                  parsedFrequency={avgFrequency}
                   isOneTime={isOneTime}
                   mfrValues={mfrValues}
                   pfrValues={pfrValues}
@@ -143,7 +167,7 @@ const ItemCalculationDetails: React.FC<ItemCalculationDetailsProps> = ({
                   combinedLow={combinedLow}
                   combinedHigh={combinedHigh}
                   combinedAvg={combinedAvg}
-                  duration={duration}
+                  duration={avgDuration}
                   currentAge={currentAge}
                   lifeExpectancy={lifeExpectancy}
                 />
@@ -161,10 +185,10 @@ const ItemCalculationDetails: React.FC<ItemCalculationDetailsProps> = ({
                   hasFeeScheduleData={hasFeeData}
                   combinedLow={combinedLow}
                   combinedHigh={combinedHigh}
-                  parsedFrequency={parsedFrequency}
+                  parsedFrequency={avgFrequency}
                   annualCost={annualCost}
                   lifetimeCost={lifetimeCost}
-                  duration={duration}
+                  duration={avgDuration}
                 />
                 
                 <Separator />

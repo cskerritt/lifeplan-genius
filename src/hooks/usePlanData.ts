@@ -68,12 +68,20 @@ export const usePlanData = (id: string) => {
           WHERE plan_id = $1
           ORDER BY category
         `;
+        console.log('Care plan entries query:', entriesQuery);
+        console.log('Care plan entries params:', [id]);
+        
         const entriesResult = await executeQuery(entriesQuery, [id]);
         
+        console.log('Care plan entries result:', entriesResult);
+        console.log('Care plan entries rows available:', !!entriesResult.rows);
+        
         if (!entriesResult.rows) {
+          console.warn('No rows returned from care plan entries query');
           return [];
         }
         
+        console.log('Care plan entries raw data:', entriesResult.rows);
         console.log('Care plan entries fetched successfully:', entriesResult.rows.length, 'entries');
 
         // Transform and return entries data

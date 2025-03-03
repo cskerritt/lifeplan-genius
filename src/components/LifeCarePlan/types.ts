@@ -15,4 +15,7 @@ export interface FormState {
   medicationDetails: MedicationDetails;
   useAgeIncrements?: boolean;
   ageIncrements?: AgeIncrement[];
+  isManualCost?: boolean;
+  notes?: string;
+  rationale?: string;
 }

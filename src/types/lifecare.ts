@@ -63,6 +63,8 @@ export interface CareItem {
   endAge?: number;
   isOneTime?: boolean;
   notes?: string;
+  rationale?: string;
+  isManualCost?: boolean;
   
   // MFR and PFR values
   mfrMin?: number;

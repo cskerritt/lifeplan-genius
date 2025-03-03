@@ -10,6 +10,7 @@ import JsonViewer from "@/components/Debug/JsonViewer";
 import { usePlanItems } from "@/hooks/usePlanItems";
 import { usePlanData } from "@/hooks/usePlanData";
 import { useCostCalculations } from "@/hooks/useCostCalculations";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const PlanDetail = () => {
@@ -19,8 +20,9 @@ const PlanDetail = () => {
   const [responseData, setResponseData] = useState<any>(null);
   const [forceUpdate, setForceUpdate] = useState(0);
   const { evaluee, setEvaluee, isLoading, items, refetch } = usePlanData(id);
-  const { addItem: originalAddItem, deleteItem: originalDeleteItem, calculateTotals } = usePlanItems(id, items, refetch, evaluee || undefined);
+  const { addItem: originalAddItem, deleteItem: originalDeleteItem, duplicateItem: originalDuplicateItem, calculateTotals } = usePlanItems(id, items, refetch, evaluee || undefined);
   const { fetchGeoFactors } = useCostCalculations();
+  const queryClient = useQueryClient();
 
   const handleEvalueeSave = async (newEvaluee: any) => {
     try {
@@ -73,20 +75,84 @@ const PlanDetail = () => {
 
   const deleteItem = async (itemId: string) => {
     try {
-      await originalDeleteItem(itemId);
-      setForceUpdate(prev => prev + 1);
-      await refetch();
+      // Create a copy of the current items without the one being deleted
+      // This is for optimistic UI updates
+      const updatedItems = items.filter(item => item.id !== itemId);
       
-      toast({
-        title: "Success",
-        description: "Care item deleted successfully"
-      });
+      // Store the original items for rollback in case of error
+      const originalItems = [...items];
+      
+      try {
+        // Update the query cache with the filtered items
+        queryClient.setQueryData(['plan-data', id], (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            items: updatedItems
+          };
+        });
+        
+        // Perform the actual deletion
+        await originalDeleteItem(itemId);
+        
+        // Force a refresh to ensure everything is in sync
+        setForceUpdate(prev => prev + 1);
+        
+        // Explicitly call refetch to update the data from the server
+        await refetch();
+        
+        toast({
+          title: "Success",
+          description: "Care item deleted successfully"
+        });
+      } catch (deleteError) {
+        console.error("Error during delete operation:", deleteError);
+        
+        // Rollback the optimistic update
+        queryClient.setQueryData(['plan-data', id], (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            items: originalItems
+          };
+        });
+        
+        // Re-throw the error to be caught by the outer try-catch
+        throw deleteError;
+      }
     } catch (error) {
       console.error("Error deleting item:", error);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to delete care item"
+      });
+      
+      // If there was an error, refetch to ensure the UI is in sync with the server
+      try {
+        await refetch();
+      } catch (refetchError) {
+        console.error("Error refetching after delete failure:", refetchError);
+      }
+    }
+  };
+  
+  const duplicateItem = async (itemId: string, modifications: Partial<any> = {}) => {
+    try {
+      await originalDuplicateItem(itemId, modifications);
+      setForceUpdate(prev => prev + 1);
+      await refetch();
+      
+      toast({
+        title: "Success",
+        description: "Care item duplicated successfully"
+      });
+    } catch (error) {
+      console.error("Error duplicating item:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to duplicate care item"
       });
     }
   };
@@ -145,6 +211,7 @@ const PlanDetail = () => {
                 lifetimeLow={lifetimeLow}
                 lifetimeHigh={lifetimeHigh}
                 onDeleteItem={deleteItem}
+                onDuplicateItem={duplicateItem}
                 evalueeName={evalueeFullName}
                 planId={id}
                 evaluee={evaluee || undefined}
@@ -162,6 +229,7 @@ const PlanDetail = () => {
             lifetimeLow={lifetimeLow}
             lifetimeHigh={lifetimeHigh}
             onDeleteItem={deleteItem}
+            onDuplicateItem={duplicateItem}
             evalueeName={evalueeFullName}
             planId={id}
             evaluee={evaluee || undefined}

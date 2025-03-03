@@ -30,19 +30,80 @@ const DEFAULT_VALUES = {
  * @param frequency - The frequency string to parse
  * @returns A parsed frequency object
  */
-export const parseFrequency = (frequency: string): ParsedFrequency => {
-  const logger = calculationLogger.createContext('parseFrequency');
-  logger.info(`Parsing frequency: "${frequency}"`);
+export function parseFrequency(
+  frequencyStr: string | undefined,
+  defaultLowFrequency: number = DEFAULT_VALUES.frequency.low,
+  defaultHighFrequency: number = DEFAULT_VALUES.frequency.high
+): ParsedFrequency {
+  console.log(`[FrequencyParser] Parsing frequency: "${frequencyStr}"`);
+  
+  if (!frequencyStr) {
+    console.warn('[FrequencyParser] No frequency string provided, using defaults');
+    return {
+      lowFrequency: defaultLowFrequency,
+      highFrequency: defaultHighFrequency,
+      isOneTime: false,
+      original: '',
+      valid: false,
+      error: 'No frequency string provided',
+    };
+  }
+
+  // Normalize the frequency string
+  const normalizedFrequency = frequencyStr.toLowerCase().trim();
+  console.log(`[FrequencyParser] Normalized frequency: "${normalizedFrequency}"`);
+  
+  // Check for range pattern (e.g., "2-1x per year")
+  const rangeMatch = normalizedFrequency.match(/(\d+)-(\d+)x\s+(per|every|each)\s+(\w+)/i);
+  if (rangeMatch) {
+    const lowFreq = parseInt(rangeMatch[1], 10);
+    const highFreq = parseInt(rangeMatch[2], 10);
+    
+    // If the range is inverted (e.g., "2-1x"), swap the values
+    if (lowFreq > highFreq) {
+      console.warn(`[FrequencyParser] Detected inverted range: ${lowFreq}-${highFreq}x. Swapping values.`);
+      const temp = lowFreq;
+      const lowFreqFixed = highFreq;
+      const highFreqFixed = temp;
+      
+      // Use the average for calculation purposes
+      const avgFreq = Math.round((lowFreqFixed + highFreqFixed) / 2);
+      console.log(`[FrequencyParser] Using average frequency: ${avgFreq}x per ${rangeMatch[4]}`);
+      
+      // Continue with parsing using the average frequency
+      const durationUnit = rangeMatch[4];
+      return parseStandardFrequency(`${avgFreq}x per ${durationUnit}`, defaultLowFrequency, defaultHighFrequency);
+    }
+    
+    // If range is valid, use the average
+    const avgFreq = Math.round((lowFreq + highFreq) / 2);
+    console.log(`[FrequencyParser] Using average frequency for range ${lowFreq}-${highFreq}x: ${avgFreq}x per ${rangeMatch[4]}`);
+    
+    // Continue with parsing using the average frequency
+    const durationUnit = rangeMatch[4];
+    return parseStandardFrequency(`${avgFreq}x per ${durationUnit}`, defaultLowFrequency, defaultHighFrequency);
+  }
+  
+  // Try to parse standard frequency patterns
+  return parseStandardFrequency(normalizedFrequency, defaultLowFrequency, defaultHighFrequency);
+}
+
+function parseStandardFrequency(
+  normalizedFrequency: string,
+  defaultLowFrequency: number,
+  defaultHighFrequency: number
+): ParsedFrequency {
+  console.log(`[FrequencyParser] Parsing standard frequency: "${normalizedFrequency}"`);
   
   // Validate input
-  const validationResult = validateFrequency(frequency);
+  const validationResult = validateFrequency(normalizedFrequency);
   if (!validationResult.valid) {
-    logger.error(`Invalid frequency: ${validationResult.errors.join(', ')}`);
+    console.error(`[FrequencyParser] Invalid frequency: ${validationResult.errors.join(', ')}`);
     return {
-      lowFrequency: DEFAULT_VALUES.frequency.low,
-      highFrequency: DEFAULT_VALUES.frequency.high,
+      lowFrequency: defaultLowFrequency,
+      highFrequency: defaultHighFrequency,
       isOneTime: false,
-      original: frequency,
+      original: normalizedFrequency,
       valid: false,
       error: validationResult.errors.join(', '),
     };
@@ -50,25 +111,22 @@ export const parseFrequency = (frequency: string): ParsedFrequency => {
   
   // Handle warnings
   if (validationResult.warnings.length > 0) {
-    logger.warn(`Frequency warnings: ${validationResult.warnings.join(', ')}`);
+    console.warn(`[FrequencyParser] Frequency warnings: ${validationResult.warnings.join(', ')}`);
   }
   
   // Default values
-  let lowFrequency = DEFAULT_VALUES.frequency.low;
-  let highFrequency = DEFAULT_VALUES.frequency.high;
+  let lowFrequency = defaultLowFrequency;
+  let highFrequency = defaultHighFrequency;
   let isOneTime = false;
-  
-  // Convert to lowercase for case-insensitive matching
-  const frequencyLower = frequency.toLowerCase();
   
   // Check for one-time occurrences first
   if (
-    frequencyLower.includes('one time') ||
-    frequencyLower.includes('one-time') ||
-    frequencyLower.includes('onetime') ||
-    frequencyLower.includes('once') && !frequencyLower.includes('once a') && !frequencyLower.includes('once per')
+    normalizedFrequency.includes('one time') ||
+    normalizedFrequency.includes('one-time') ||
+    normalizedFrequency.includes('onetime') ||
+    normalizedFrequency.includes('once') && !normalizedFrequency.includes('once a') && !normalizedFrequency.includes('once per')
   ) {
-    logger.info('Detected one-time occurrence');
+    console.info('[FrequencyParser] Detected one-time occurrence');
     isOneTime = true;
     lowFrequency = 0;
     highFrequency = 0;
@@ -77,128 +135,128 @@ export const parseFrequency = (frequency: string): ParsedFrequency => {
       lowFrequency,
       highFrequency,
       isOneTime,
-      original: frequency,
+      original: normalizedFrequency,
       valid: true,
     };
   }
   
   // Check for range pattern (e.g., "3-5 times per year")
   const rangePattern = /(\d+)-(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)year/i;
-  if (rangePattern.test(frequencyLower)) {
-    const match = frequencyLower.match(rangePattern);
+  if (rangePattern.test(normalizedFrequency)) {
+    const match = normalizedFrequency.match(rangePattern);
     if (match) {
       lowFrequency = parseInt(match[1]);
       highFrequency = parseInt(match[2]);
-      logger.info(`Parsed range pattern: ${lowFrequency}-${highFrequency} times per year`);
+      console.info(`[FrequencyParser] Parsed range pattern: ${lowFrequency}-${highFrequency} times per year`);
     }
   }
   // Check for weekly pattern (e.g., "3 times per week")
-  else if (/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)week/i.test(frequencyLower)) {
-    const match = frequencyLower.match(/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)week/i);
+  else if (/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)week/i.test(normalizedFrequency)) {
+    const match = normalizedFrequency.match(/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)week/i);
     if (match) {
       const times = parseInt(match[1]);
       // More precise calculation: 52.1429 weeks per year
       lowFrequency = Math.round(times * 52.1429 * 100) / 100;
       highFrequency = lowFrequency;
-      logger.info(`Parsed weekly pattern: ${times} times per week = ${lowFrequency} times per year`);
+      console.info(`[FrequencyParser] Parsed weekly pattern: ${times} times per week = ${lowFrequency} times per year`);
     }
   }
   // Check for monthly pattern (e.g., "2 times per month")
-  else if (/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)month/i.test(frequencyLower)) {
-    const match = frequencyLower.match(/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)month/i);
+  else if (/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)month/i.test(normalizedFrequency)) {
+    const match = normalizedFrequency.match(/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)month/i);
     if (match) {
       const times = parseInt(match[1]);
       lowFrequency = times * 12;
       highFrequency = lowFrequency;
-      logger.info(`Parsed monthly pattern: ${times} times per month = ${lowFrequency} times per year`);
+      console.info(`[FrequencyParser] Parsed monthly pattern: ${times} times per month = ${lowFrequency} times per year`);
     }
   }
   // Check for quarterly pattern (e.g., "quarterly" or "every 3 months")
-  else if (/quarterly|every\s+3\s+months/i.test(frequencyLower)) {
+  else if (/quarterly|every\s+3\s+months/i.test(normalizedFrequency)) {
     lowFrequency = 4;
     highFrequency = 4;
-    logger.info('Parsed quarterly pattern: 4 times per year');
+    console.info('[FrequencyParser] Parsed quarterly pattern: 4 times per year');
   }
   // Check for biweekly pattern (e.g., "biweekly" or "every other week")
-  else if (/bi-?weekly|every\s+other\s+week|every\s+2\s+weeks/i.test(frequencyLower)) {
+  else if (/bi-?weekly|every\s+other\s+week|every\s+2\s+weeks/i.test(normalizedFrequency)) {
     lowFrequency = 26; // 52 weeks / 2
     highFrequency = 26;
-    logger.info('Parsed biweekly pattern: 26 times per year');
+    console.info('[FrequencyParser] Parsed biweekly pattern: 26 times per year');
   }
   // Check for twice weekly pattern (e.g., "twice a week")
-  else if (/twice\s+(?:a\s+)?week/i.test(frequencyLower)) {
+  else if (/twice\s+(?:a\s+)?week/i.test(normalizedFrequency)) {
     lowFrequency = 104; // 2 * 52 weeks
     highFrequency = 104;
-    logger.info('Parsed twice weekly pattern: 104 times per year');
+    console.info('[FrequencyParser] Parsed twice weekly pattern: 104 times per year');
   }
   // Check for twice monthly pattern (e.g., "twice a month")
-  else if (/twice\s+(?:a\s+)?month/i.test(frequencyLower)) {
+  else if (/twice\s+(?:a\s+)?month/i.test(normalizedFrequency)) {
     lowFrequency = 24; // 2 * 12 months
     highFrequency = 24;
-    logger.info('Parsed twice monthly pattern: 24 times per year');
+    console.info('[FrequencyParser] Parsed twice monthly pattern: 24 times per year');
   }
   // Check for daily pattern (e.g., "daily" or "every day")
-  else if (/daily|every\s+day|each\s+day/i.test(frequencyLower)) {
+  else if (/daily|every\s+day|each\s+day/i.test(normalizedFrequency)) {
     lowFrequency = 365;
     highFrequency = 365;
-    logger.info('Parsed daily pattern: 365 times per year');
+    console.info('[FrequencyParser] Parsed daily pattern: 365 times per year');
   }
   // Check for annual pattern (e.g., "annual", "yearly", "once a year")
-  else if (/annual|yearly|once\s+(?:a|per)\s+year/i.test(frequencyLower)) {
+  else if (/annual|yearly|once\s+(?:a|per)\s+year/i.test(normalizedFrequency)) {
     lowFrequency = 1;
     highFrequency = 1;
-    logger.info('Parsed annual pattern: 1 time per year');
+    console.info('[FrequencyParser] Parsed annual pattern: 1 time per year');
   }
   // Check for semi-annual pattern (e.g., "semi-annual", "twice a year")
-  else if (/semi-?annual|twice\s+(?:a|per)\s+year/i.test(frequencyLower)) {
+  else if (/semi-?annual|twice\s+(?:a|per)\s+year/i.test(normalizedFrequency)) {
     lowFrequency = 2;
     highFrequency = 2;
-    logger.info('Parsed semi-annual pattern: 2 times per year');
+    console.info('[FrequencyParser] Parsed semi-annual pattern: 2 times per year');
   }
   // Check for every X days pattern (e.g., "every 3 days")
-  else if (/every\s+(\d+)\s+days/i.test(frequencyLower)) {
-    const match = frequencyLower.match(/every\s+(\d+)\s+days/i);
+  else if (/every\s+(\d+)\s+days/i.test(normalizedFrequency)) {
+    const match = normalizedFrequency.match(/every\s+(\d+)\s+days/i);
     if (match) {
       const days = parseInt(match[1]);
       lowFrequency = Math.round(365 / days * 100) / 100;
       highFrequency = lowFrequency;
-      logger.info(`Parsed every ${days} days pattern: ${lowFrequency} times per year`);
+      console.info(`[FrequencyParser] Parsed every ${days} days pattern: ${lowFrequency} times per year`);
     }
   }
   // Check for X times per day pattern (e.g., "3 times per day")
-  else if (/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)day/i.test(frequencyLower)) {
-    const match = frequencyLower.match(/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)day/i);
+  else if (/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)day/i.test(normalizedFrequency)) {
+    const match = normalizedFrequency.match(/(\d+)(?:x|times?)?\s*(?:\/|\s+per\s+|\s+a\s+)day/i);
     if (match) {
       const times = parseInt(match[1]);
       lowFrequency = times * 365;
       highFrequency = lowFrequency;
-      logger.info(`Parsed ${times} times per day pattern: ${lowFrequency} times per year`);
+      console.info(`[FrequencyParser] Parsed ${times} times per day pattern: ${lowFrequency} times per year`);
     }
   }
   // Check for "Nx per year" pattern (e.g., "1x per year", "2x per year")
-  else if (/(\d+)x\s+per\s+year/i.test(frequencyLower)) {
-    const match = frequencyLower.match(/(\d+)x\s+per\s+year/i);
+  else if (/(\d+)x\s+per\s+year/i.test(normalizedFrequency)) {
+    const match = normalizedFrequency.match(/(\d+)x\s+per\s+year/i);
     if (match) {
       const times = parseInt(match[1]);
       lowFrequency = times;
       highFrequency = times;
-      logger.info(`Parsed Nx per year pattern: ${times} times per year`);
+      console.info(`[FrequencyParser] Parsed Nx per year pattern: ${times} times per year`);
     }
   }
   // Check for simple numeric pattern (e.g., "4x" or "4 times")
-  else if (/^(\d+)(?:x|times?)?$/i.test(frequencyLower)) {
-    const match = frequencyLower.match(/^(\d+)(?:x|times?)?$/i);
+  else if (/^(\d+)(?:x|times?)?$/i.test(normalizedFrequency)) {
+    const match = normalizedFrequency.match(/^(\d+)(?:x|times?)?$/i);
     if (match) {
       const times = parseInt(match[1]);
       // Assume per year if no unit specified
       lowFrequency = times;
       highFrequency = times;
-      logger.info(`Parsed simple numeric pattern: ${times} times per year`);
+      console.info(`[FrequencyParser] Parsed simple numeric pattern: ${times} times per year`);
     }
   }
   // If no pattern matched, use default values
   else {
-    logger.warn(`No pattern matched for frequency: "${frequency}". Using default values.`);
+    console.warn(`[FrequencyParser] No pattern matched for frequency: "${normalizedFrequency}". Using default values.`);
   }
   
   // Create the result object
@@ -206,14 +264,14 @@ export const parseFrequency = (frequency: string): ParsedFrequency => {
     lowFrequency,
     highFrequency,
     isOneTime,
-    original: frequency,
+    original: normalizedFrequency,
     valid: true,
   };
   
   // Validate the result
   const resultValidation = validateParsedFrequency(result);
   if (!resultValidation.valid) {
-    logger.error(`Invalid parsed frequency: ${resultValidation.errors.join(', ')}`);
+    console.error(`[FrequencyParser] Invalid parsed frequency: ${resultValidation.errors.join(', ')}`);
     return {
       ...result,
       valid: false,
@@ -221,9 +279,9 @@ export const parseFrequency = (frequency: string): ParsedFrequency => {
     };
   }
   
-  logger.info('Successfully parsed frequency', { result });
+  console.info('[FrequencyParser] Successfully parsed frequency', { result });
   return result;
-};
+}
 
 /**
  * Parses duration information from a frequency string or age range

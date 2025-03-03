@@ -127,7 +127,24 @@ export interface ValidationResult {
  */
 export interface CalculationLogEntry {
   timestamp: Date;
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: 'trace' | 'debug' | 'info' | 'warn' | 'error';
   message: string;
   data?: any;
+  calculationStack?: string[];
+}
+
+export type CalculationTraceType = 'start' | 'step' | 'end' | 'zero-value';
+
+export interface CalculationTraceEntry {
+  calculationId: string;
+  timestamp: Date;
+  type: CalculationTraceType;
+  name?: string;
+  params?: any;
+  step?: string;
+  data?: any;
+  result?: any;
+  field?: string;
+  context?: any;
+  stack: string[];
 }

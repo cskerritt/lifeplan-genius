@@ -207,86 +207,58 @@ const sanitizeParamsForDevelopment = (query: string, params: any[]): any[] => {
  */
 export const executeQueryViaApi = async (query: string, params: any[] = []): Promise<any> => {
   try {
-    debugLog(`Executing query via API: ${query}`);
-    debugLog(`With parameters:`, params);
+    debugLog('Executing query via API');
+    debugLog('Query:', query);
+    debugLog('Parameters:', params);
     
-    // Sanitize parameters for development mode
-    const sanitizedParams = sanitizeParamsForDevelopment(query, params);
+    console.log('[API Connection] Executing query via API');
+    console.log('[API Connection] Query:', query);
+    console.log('[API Connection] Parameters:', params);
     
-    // Check if we're in development mode and it's an INSERT or UPDATE to life_care_plans
-    if (isDevelopmentMode() && 
-        (query.toUpperCase().includes('INSERT INTO life_care_plans') || 
-         query.toUpperCase().includes('UPDATE life_care_plans'))) {
-      
-      debugLog(`Development mode detected, bypassing API for life_care_plans operations`);
-      
-      // For INSERT operations, simulate a successful insert
-      if (query.toUpperCase().includes('INSERT INTO life_care_plans')) {
-        // Extract the data being inserted
-        const dataIndex = sanitizedParams.findIndex(p => typeof p === 'object');
-        const data = dataIndex >= 0 ? sanitizedParams[dataIndex] : {};
-        
-        // Generate a mock ID
-        const mockId = generateMockId();
-        
-        // Create a mock result
-        const mockResult = {
-          rows: [{ ...data, id: mockId }],
-          rowCount: 1
-        };
-        
-        debugLog(`Simulated INSERT result:`, mockResult);
-        
-        return mockResult;
-      }
-      
-      // For UPDATE operations, simulate a successful update
-      if (query.toUpperCase().includes('UPDATE life_care_plans')) {
-        // Extract the data being updated
-        const dataIndex = sanitizedParams.findIndex(p => typeof p === 'object');
-        const data = dataIndex >= 0 ? sanitizedParams[dataIndex] : {};
-        
-        // Create a mock result
-        const mockResult = {
-          rows: [{ ...data }],
-          rowCount: 1
-        };
-        
-        debugLog(`Simulated UPDATE result:`, mockResult);
-        
-        return mockResult;
-      }
-    }
+    // Determine the API endpoint
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+    const endpoint = `${apiUrl}/api/query`;
     
-    // If not in development mode or not a life_care_plans operation, proceed with API call
-    // Get authentication headers
-    const authHeaders = await djangoAuth.getAuthHeaders();
+    console.log('[API Connection] API endpoint:', endpoint);
     
-    // Send the query to the API endpoint
-    const response = await fetch('/api/query', {
+    // Make the API request
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...authHeaders
       },
-      body: JSON.stringify({ query, params: sanitizedParams }),
+      body: JSON.stringify({ query, params }),
     });
     
+    console.log('[API Connection] API response status:', response.status);
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`API error: ${errorData.error || response.statusText}`);
+      const errorText = await response.text();
+      console.error('[API Connection] API error response:', errorText);
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
     
-    // Parse the response as JSON
     const result = await response.json();
     
-    debugLog(`Query executed successfully via API, returned ${result.rowCount} rows`);
+    console.log('[API Connection] API response data:', {
+      hasRows: !!result.rows,
+      rowCount: result.rowCount,
+      rowsLength: result.rows ? result.rows.length : 0
+    });
     
     return result;
   } catch (error) {
-    errorLog(`Error executing query via API`, error);
+    errorLog('Error executing query via API', error);
+    console.error('[API Connection] Error executing query via API:', error);
     throw error;
   }
+};
+
+// Helper function to extract table name from a query
+const extractTableName = (query: string): string | null => {
+  // Simple regex to extract table name from SELECT queries
+  const match = query.match(/from\s+([a-zA-Z_]+)/i);
+  return match ? match[1] : null;
 };
 
 /**

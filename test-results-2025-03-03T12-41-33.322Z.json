@@ -1,0 +1,1922 @@
+[
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "daily",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "daily",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 3.65,
+      "lifetime": 182.5,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "daily",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 36500,
+      "lifetime": 365000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "daily",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 3650000,
+      "lifetime": 36500000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "daily",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "daily",
+      "category": "Therapy",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 3.65,
+      "lifetime": 182.5,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "daily",
+      "category": "Therapy",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 36500,
+      "lifetime": 912500,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "daily",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 3650000,
+      "lifetime": 36500000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "daily",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "daily",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 3.65,
+      "lifetime": 36.5,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "daily",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 36500,
+      "lifetime": 365000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "daily",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 3650000,
+      "lifetime": 91250000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "daily",
+      "category": "Supplies",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "daily",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 3.65,
+      "lifetime": 91.25,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "daily",
+      "category": "Supplies",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 36500,
+      "lifetime": 365000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "daily",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 3650000,
+      "lifetime": 36500000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "weekly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "weekly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0.52,
+      "lifetime": 26,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "weekly",
+      "category": "Medical",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 5200,
+      "lifetime": 260000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "weekly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 520000,
+      "lifetime": 26000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "weekly",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "weekly",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0.52,
+      "lifetime": 5.2,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "weekly",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 5200,
+      "lifetime": 52000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "weekly",
+      "category": "Therapy",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 520000,
+      "lifetime": 26000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "weekly",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "weekly",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0.52,
+      "lifetime": 5.2,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "weekly",
+      "category": "Equipment",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 5200,
+      "lifetime": 52000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "weekly",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 520000,
+      "lifetime": 26000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "weekly",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "weekly",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0.52,
+      "lifetime": 26,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "weekly",
+      "category": "Supplies",
+      "zipCode": "90210",
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 5200,
+      "lifetime": 130000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "weekly",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 520000,
+      "lifetime": 13000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "monthly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "monthly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0.12,
+      "lifetime": 6,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "monthly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 1200,
+      "lifetime": 60000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "monthly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 120000,
+      "lifetime": 3000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "monthly",
+      "category": "Therapy",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "monthly",
+      "category": "Therapy",
+      "zipCode": "90210",
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0.12,
+      "lifetime": 6,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "monthly",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 1200,
+      "lifetime": 12000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "monthly",
+      "category": "Therapy",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 120000,
+      "lifetime": 6000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "monthly",
+      "category": "Equipment",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "monthly",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0.12,
+      "lifetime": 6,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "monthly",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 1200,
+      "lifetime": 60000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "monthly",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 120000,
+      "lifetime": 1200000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "monthly",
+      "category": "Supplies",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "monthly",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0.12,
+      "lifetime": 1.2,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "monthly",
+      "category": "Supplies",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 1200,
+      "lifetime": 12000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "monthly",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 120000,
+      "lifetime": 6000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "quarterly",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "quarterly",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 0.04,
+      "lifetime": 1,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "quarterly",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 400,
+      "lifetime": 20000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "quarterly",
+      "category": "Medical",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 40000,
+      "lifetime": 2000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "quarterly",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "quarterly",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 0.04,
+      "lifetime": 1,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "quarterly",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 400,
+      "lifetime": 10000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "quarterly",
+      "category": "Therapy",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 40000,
+      "lifetime": 1000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "quarterly",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "quarterly",
+      "category": "Equipment",
+      "zipCode": null,
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0.04,
+      "lifetime": 2,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "quarterly",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 400,
+      "lifetime": 20000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "quarterly",
+      "category": "Equipment",
+      "zipCode": null,
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 40000,
+      "lifetime": 2000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "quarterly",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "quarterly",
+      "category": "Supplies",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0.04,
+      "lifetime": 2,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "quarterly",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 400,
+      "lifetime": 10000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "quarterly",
+      "category": "Supplies",
+      "zipCode": "90210",
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 40000,
+      "lifetime": 2000000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "annually",
+      "category": "Medical",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "annually",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0.01,
+      "lifetime": 0.1,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "annually",
+      "category": "Medical",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 100,
+      "lifetime": 5000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "annually",
+      "category": "Medical",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 10000,
+      "lifetime": 250000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "annually",
+      "category": "Therapy",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "annually",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0.01,
+      "lifetime": 0.5,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "annually",
+      "category": "Therapy",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 100,
+      "lifetime": 2500,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "annually",
+      "category": "Therapy",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 10000,
+      "lifetime": 500000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "annually",
+      "category": "Equipment",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "annually",
+      "category": "Equipment",
+      "zipCode": null,
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0.01,
+      "lifetime": 0.5,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "annually",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 100,
+      "lifetime": 5000,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "annually",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 10000,
+      "lifetime": 500000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "annually",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "annually",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 0.01,
+      "lifetime": 0.25,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "annually",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 100,
+      "lifetime": 2500,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "annually",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 10000,
+      "lifetime": 100000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": false
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "one-time",
+      "category": "Medical",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "one-time",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0.01,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "one-time",
+      "category": "Medical",
+      "zipCode": "90210",
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 100,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "one-time",
+      "category": "Medical",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 10000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "one-time",
+      "category": "Therapy",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "one-time",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0.01,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "one-time",
+      "category": "Therapy",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 100,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "one-time",
+      "category": "Therapy",
+      "zipCode": null,
+      "cptCode": "99213",
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 10000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "one-time",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "one-time",
+      "category": "Equipment",
+      "zipCode": "90210",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0.01,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "one-time",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": null,
+      "currentAge": 30,
+      "lifeExpectancy": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 100,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "one-time",
+      "category": "Equipment",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 30,
+      "endAge": 80
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 10000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0,
+      "frequency": "one-time",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0,
+      "low": 0,
+      "average": 0,
+      "high": 0,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 0.01,
+      "frequency": "one-time",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "currentAge": 60,
+      "lifeExpectancy": 85
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 0.01,
+      "low": 0.008,
+      "average": 0.01,
+      "high": 0.012,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 100,
+      "frequency": "one-time",
+      "category": "Supplies",
+      "zipCode": "10001",
+      "cptCode": "99213",
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 100,
+      "low": 80,
+      "average": 100,
+      "high": 120,
+      "isOneTime": true
+    },
+    "isValid": true
+  },
+  {
+    "testCase": {
+      "baseRate": 10000,
+      "frequency": "one-time",
+      "category": "Supplies",
+      "zipCode": null,
+      "cptCode": null,
+      "startAge": 60,
+      "endAge": 70
+    },
+    "result": {
+      "annual": 0,
+      "lifetime": 10000,
+      "low": 8000,
+      "average": 10000,
+      "high": 12000,
+      "isOneTime": true
+    },
+    "isValid": true
+  }
+]
